@@ -119,3 +119,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://genfin-genfin-n8n.watryz.easypanel.host",
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
