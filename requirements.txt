@@ -3,3 +3,4 @@ djangorestframework
 gunicorn
 django-jazzmin
 whitenoise
+psycopg2-binary
