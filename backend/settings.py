@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -127,3 +128,30 @@ CSRF_TRUSTED_ORIGINS = [
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+JAZZMIN_SETTINGS = {
+    "site_title": "GenFin Admin",
+    "site_header": "GenFin",
+    "site_brand": "GenFin Backend",
+    "site_logo": None,
+
+    "welcome_sign": "Bem-vindo ao painel administrativo",
+    "copyright": "GenFin © 2026",
+
+    "search_model": ["accounts.UserAccount"],
+
+    "topmenu_links": [
+        {"name": "Site", "url": "/", "new_window": True},
+    ],
+
+    "icons": {
+        "accounts.UserAccount": "fas fa-phone",
+        "auth.User": "fas fa-user",
+        "auth.Group": "fas fa-users",
+    },
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+
+    "theme": "darkly",  # dark mode
+}
