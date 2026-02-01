@@ -2,7 +2,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import UserAccount
+from datetime import datetime
+from django.db.models import Sum
+
+from .models import UserAccount, FinancialEntry
+
+def get_logged_user(request):
+    phone = request.session.get("user_phone")
+    if not phone:
+        return None
+    return UserAccount.objects.filter(phone_number=phone).first()
+
 
 class ValidatePhoneView(APIView):
 
@@ -102,3 +112,76 @@ class FinancialEntryCreateView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+
+class PhoneLoginView(APIView):
+    def post(self, request):
+        phone_number = request.data.get("phone_number")
+
+        if not phone_number:
+            return Response(
+                {"error": "phone_number é obrigatório"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = UserAccount.objects.get(
+                phone_number=phone_number,
+                is_active=True
+            )
+        except UserAccount.DoesNotExist:
+            return Response(
+                {"error": "Usuário não encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # cria sessão simples
+        request.session["user_phone"] = user.phone_number
+
+        return Response(
+            {"message": "Login realizado com sucesso"},
+            status=status.HTTP_200_OK
+        )
+
+class DashboardView(APIView):
+
+    def get(self, request):
+        user = get_logged_user(request)
+
+        if not user:
+            return Response(
+                {"error": "Não autenticado"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        receitas = user.entries.filter(entry_type="RECEITA")
+        despesas = user.entries.filter(entry_type="DESPESA")
+
+        total_receita = receitas.aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        total_despesa = despesas.aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        return Response(
+            {
+                "phone_number": user.phone_number,
+                "total_receita": total_receita,
+                "total_despesa": total_despesa,
+                "saldo": total_receita - total_despesa
+            },
+            status=status.HTTP_200_OK
+        )
+    
+from django.shortcuts import render, redirect
+
+def login_page(request):
+    return render(request, "login.html")
+
+
+def dashboard_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "dashboard.html")

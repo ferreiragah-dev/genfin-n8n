@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>GenFin | Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-box {
+            background: #020617;
+            padding: 32px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.4);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #22c55e;
+            color: #020617;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #16a34a;
+        }
+
+        .error {
+            color: #f87171;
+            text-align: center;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <h2>GenFin</h2>
+
+    <input
+        type="text"
+        id="phone"
+        placeholder="Número de telefone (ex: 5511913305093)"
+    />
+
+    <button onclick="login()">Entrar</button>
+
+    <div class="error" id="error"></div>
+</div>
+
+<script>
+function login() {
+    const phone = document.getElementById("phone").value;
+    const errorDiv = document.getElementById("error");
+
+    errorDiv.innerText = "";
+
+    fetch("/api/login/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            phone_number: phone
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            window.location.href = "/dashboard/";
+        } else {
+            return res.json().then(data => {
+                errorDiv.innerText = data.error || "Erro ao logar";
+            });
+        }
+    })
+    .catch(() => {
+        errorDiv.innerText = "Erro de conexão com o servidor";
+    });
+}
+</script>
+
+</body>
+</html>
