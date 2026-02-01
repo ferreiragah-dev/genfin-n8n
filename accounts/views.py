@@ -7,6 +7,17 @@ from django.db.models import Sum
 
 from .models import UserAccount, FinancialEntry
 
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.permissions import AllowAny
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+
 def get_logged_user(request):
     phone = request.session.get("user_phone")
     if not phone:
@@ -114,7 +125,11 @@ class FinancialEntryCreateView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class PhoneLoginView(APIView):
+    authentication_classes = []      # 🔥 DESLIGA SessionAuthentication
+    permission_classes = [AllowAny]  # 🔓 público
+
     def post(self, request):
         phone_number = request.data.get("phone_number")
 
@@ -135,13 +150,15 @@ class PhoneLoginView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # cria sessão simples
+        # cria sessão manualmente
         request.session["user_phone"] = user.phone_number
 
         return Response(
             {"message": "Login realizado com sucesso"},
             status=status.HTTP_200_OK
         )
+
+
 
 class DashboardView(APIView):
 
@@ -185,3 +202,37 @@ def dashboard_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "dashboard.html")
+
+class FinancialEntryListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=401)
+
+        entries = user.entries.order_by("-date")[:20]
+
+        return Response([
+            {
+                "date": e.date.strftime("%d/%m/%Y"),
+                "category": e.category,
+                "entry_type": e.entry_type,
+                "amount": e.amount
+            } for e in entries
+        ])
+
+
+class DashboardCategoryView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = (
+            user.entries
+            .filter(entry_type="DESPESA")
+            .values("category")
+            .annotate(total=Sum("amount"))
+            .order_by("-total")
+        )
+
+        return Response(list(data))

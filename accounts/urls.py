@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     ValidatePhoneView,
     FinancialEntryCreateView,
-    PhoneLoginView, DashboardView
+    PhoneLoginView, DashboardView, FinancialEntryListView ,DashboardCategoryView
 )
 
 urlpatterns = [
@@ -10,5 +10,8 @@ urlpatterns = [
     path("financial-entry/", FinancialEntryCreateView.as_view()),
         path("login/", PhoneLoginView.as_view()),
     path("dashboard/", DashboardView.as_view()),
+    path("entries/", FinancialEntryListView.as_view()),
+ path("dashboard/categories/", DashboardCategoryView.as_view()),
+
     
 ]

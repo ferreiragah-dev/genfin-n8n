@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --bg: #0f172a;
+  --panel: #020617;
+  --border: #1e293b;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #38bdf8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  font-size: 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.card h4 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.card p {
+  margin-top: 10px;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+.green { color: var(--green); }
+.red { color: var(--red); }
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+
+.panel h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  color: var(--muted);
+}
+
+.badge-receita {
+  color: var(--green);
+  font-weight: bold;
+}
+
+.badge-despesa {
+  color: var(--red);
+  font-weight: bold;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>📊 GenFin — Dashboard Financeiro</header>
+
+<div class="container">
+
+  <!-- CARDS -->
+  <div class="cards">
+    <div class="card">
+      <h4>Receita Total</h4>
+      <p class="green" id="receita">R$ 0</p>
+    </div>
+    <div class="card">
+      <h4>Despesa Total</h4>
+      <p class="red" id="despesa">R$ 0</p>
+    </div>
+    <div class="card">
+      <h4>Saldo</h4>
+      <p id="saldo">R$ 0</p>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div class="grid">
+    <div class="panel">
+      <h3>Receita x Despesa</h3>
+      <canvas id="barChart"></canvas>
+    </div>
+    <div class="panel">
+      <h3>Gastos por Categoria</h3>
+      <canvas id="donutChart"></canvas>
+    </div>
+  </div>
+
+  <!-- LISTAGEM -->
+  <div class="panel">
+    <h3>Últimos Lançamentos</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Categoria</th>
+          <th>Tipo</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody id="entries"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+async function loadDashboard() {
+  const dash = await fetch("/api/dashboard/", {
+    credentials: "same-origin"
+  }).then(r => r.json());
+
+  const entries = await fetch("/api/entries/", {
+    credentials: "same-origin"
+  }).then(r => r.json());
+
+  const categories = await fetch("/api/dashboard/categories/", {
+    credentials: "same-origin"
+  }).then(r => r.json());
+
+  // CARDS
+  document.getElementById("receita").innerText = "R$ " + dash.total_receita;
+  document.getElementById("despesa").innerText = "R$ " + dash.total_despesa;
+  document.getElementById("saldo").innerText = "R$ " + dash.saldo;
+
+  // TABELA
+  const tbody = document.getElementById("entries");
+  tbody.innerHTML = "";
+  entries.forEach(e => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.category}</td>
+        <td class="${e.entry_type === "RECEITA" ? "badge-receita" : "badge-despesa"}">
+          ${e.entry_type}
+        </td>
+        <td>R$ ${e.amount}</td>
+      </tr>
+    `;
+  });
+
+  // BAR CHART
+  new Chart(document.getElementById("barChart"), {
+    type: "bar",
+    data: {
+      labels: ["Receita", "Despesa"],
+      datasets: [{
+        data: [dash.total_receita, dash.total_despesa],
+        backgroundColor: ["#22c55e", "#ef4444"]
+      }]
+    }
+  });
+
+  // DONUT CHART
+  new Chart(document.getElementById("donutChart"), {
+    type: "doughnut",
+    data: {
+      labels: categories.map(c => c.category),
+      datasets: [{
+        data: categories.map(c => c.total),
+        backgroundColor: [
+          "#ef4444",
+          "#f97316",
+          "#eab308",
+          "#22c55e",
+          "#38bdf8"
+        ]
+      }]
+    }
+  });
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

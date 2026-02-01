@@ -14,6 +14,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
         }
 
         .login-box {
@@ -37,6 +38,7 @@
             border-radius: 8px;
             border: none;
             font-size: 16px;
+            outline: none;
         }
 
         button {
@@ -59,6 +61,7 @@
             color: #f87171;
             text-align: center;
             margin-top: 12px;
+            min-height: 18px;
         }
     </style>
 </head>
@@ -71,22 +74,29 @@
         type="text"
         id="phone"
         placeholder="Número de telefone (ex: 5511913305093)"
+        autocomplete="off"
     />
 
-    <button onclick="login()">Entrar</button>
+    <button type="button" onclick="doLogin()">Entrar</button>
 
     <div class="error" id="error"></div>
 </div>
 
 <script>
-function login() {
-    const phone = document.getElementById("phone").value;
+function doLogin() {
+    const phone = document.getElementById("phone").value.trim();
     const errorDiv = document.getElementById("error");
 
     errorDiv.innerText = "";
 
+    if (!phone) {
+        errorDiv.innerText = "Informe o número de telefone";
+        return;
+    }
+
     fetch("/api/login/", {
         method: "POST",
+        credentials: "same-origin", // 🔑 garante cookie de sessão
         headers: {
             "Content-Type": "application/json"
         },
@@ -94,13 +104,12 @@ function login() {
             phone_number: phone
         })
     })
-    .then(res => {
+    .then(async res => {
         if (res.ok) {
             window.location.href = "/dashboard/";
         } else {
-            return res.json().then(data => {
-                errorDiv.innerText = data.error || "Erro ao logar";
-            });
+            const data = await res.json().catch(() => ({}));
+            errorDiv.innerText = data.error || "Erro ao logar";
         }
     })
     .catch(() => {
