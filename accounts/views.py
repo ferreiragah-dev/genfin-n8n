@@ -236,3 +236,39 @@ class DashboardCategoryView(APIView):
         )
 
         return Response(list(data))
+
+class PlannerListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=401)
+
+        data = user.planned_expenses.all().order_by("date")
+
+        return Response([
+            {
+                "id": p.id,
+                "date": p.date.strftime("%Y-%m-%d"),
+                "category": p.category,
+                "description": p.description,
+                "amount": p.amount
+            }
+            for p in data
+        ])
+
+
+class PlannerCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=401)
+
+        PlannedExpense.objects.create(
+            user=user,
+            date=request.data["date"],
+            category=request.data["category"],
+            description=request.data.get("description", ""),
+            amount=request.data["amount"]
+        )
+
+        return Response({"message": "Despesa planejada criada"}, status=201)

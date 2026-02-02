@@ -2,319 +2,448 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>GenFin | Dashboard</title>
+<title>GenFin | Painel Financeiro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root {
-  --bg: #0b1220;
-  --panel: #121a2f;
-  --border: #1e2a4a;
-  --text: #e5e7eb;
-  --muted: #94a3b8;
-  --green: #22c55e;
-  --red: #ef4444;
-  --yellow: #facc15;
+:root{
+  --bg:#0b0f1a;
+  --panel:#141a2e;
+  --panel2:#1b2240;
+  --border:#27305c;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --green:#22c55e;
+  --red:#ef4444;
+  --blue:#38bdf8;
+  --purple:#a855f7;
+  --pink:#ec4899;
+  --yellow:#facc15;
 }
 
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-body {
-  margin: 0;
-  font-family: Inter, Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  height: 100vh;
+body{
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+  background:radial-gradient(circle at top,#2a0b59,#070912 60%);
+  color:var(--text);
 }
 
-/* SIDEBAR */
-.sidebar {
-  width: 80px;
-  background: #070d1a;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  gap: 20px;
-}
-
-.sidebar div {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* MAIN */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.container{
+  padding:20px;
+  display:grid;
+  grid-template-rows:auto 1fr;
+  gap:20px;
 }
 
 /* HEADER */
-.header {
-  padding: 20px 32px;
-  display: flex;
-  align-items: center;
+.header{
+  background:linear-gradient(90deg,#141a2e,#1b2240);
+  border-radius:16px;
+  padding:16px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
-.avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #22c55e);
-  margin-right: 12px;
+.user{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-/* CONTENT */
-.content {
-  padding: 24px 32px;
-  overflow-y: auto;
+.avatar{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  background:#111;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
 }
 
-/* CARDS */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+/* GRID PRINCIPAL */
+.grid{
+  display:grid;
+  grid-template-columns:2.5fr 1.5fr;
+  gap:20px;
 }
 
-.card {
-  background: var(--panel);
-  border-radius: 16px;
-  padding: 18px;
-  border: 1px solid var(--border);
+.left, .right{
+  display:grid;
+  gap:20px;
 }
 
-.card h4 {
-  margin: 0;
-  font-size: 14px;
-  color: var(--muted);
+/* PAINEL */
+.panel{
+  background:var(--panel);
+  border-radius:18px;
+  padding:16px;
+  border:1px solid var(--border);
 }
 
-.card p {
-  margin-top: 10px;
-  font-size: 26px;
-  font-weight: 600;
+.panel h3{
+  margin:0 0 12px;
+  font-size:15px;
+  color:var(--muted);
 }
 
-.green { color: var(--green); }
-.red { color: var(--red); }
-.yellow { color: var(--yellow); }
-
-/* GRID */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+/* CARDS SUPERIORES */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
 }
 
-.panel {
-  background: var(--panel);
-  border-radius: 16px;
-  padding: 18px;
-  border: 1px solid var(--border);
+.card{
+  background:linear-gradient(135deg,#1f2937,#111827);
+  border-radius:14px;
+  padding:14px;
 }
 
-.panel h3 {
-  margin: 0 0 12px;
-  font-size: 15px;
+.card span{color:var(--muted);font-size:12px}
+.card strong{font-size:20px}
+
+.green{color:var(--green)}
+.red{color:var(--red)}
+.yellow{color:var(--yellow)}
+
+/* GAUGES */
+.gauges{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
 }
 
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
+.gauge{
+  background:var(--panel2);
+  border-radius:14px;
+  padding:12px;
+  text-align:center;
 }
 
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
+.gauge canvas{max-height:90px}
+
+/* BARRAS */
+.bar-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
 }
 
-th {
-  color: var(--muted);
-  text-align: left;
+.bar-bg{
+  flex:1;
+  height:10px;
+  background:#0f1325;
+  border-radius:10px;
+  overflow:hidden;
 }
 
-.badge-receita { color: var(--green); font-weight: 600; }
-.badge-despesa { color: var(--red); font-weight: 600; }
+.bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--pink),var(--purple));
+}
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+/* DIREITA */
+.side-box{
+  background:var(--panel2);
+  border-radius:16px;
+  padding:14px;
+}
+
+.side-box h4{
+  margin:0 0 10px;
+  font-size:14px;
+  color:var(--muted);
+}
+
+/* TABELA */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:8px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+
+th{color:var(--muted);text-align:left}
+
+@media(max-width:1100px){
+  .grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <div>🏠</div>
-  <div>📊</div>
-  <div>💳</div>
-  <div>⚙️</div>
-</div>
+<div class="container">
 
-<!-- MAIN -->
-<div class="main">
-
-  <!-- HEADER -->
-  <div class="header">
-    <div class="avatar"></div>
+<!-- HEADER -->
+<div class="header">
+  <div class="user">
+    <div class="avatar">GF</div>
     <div>
-      <div style="color:var(--muted);font-size:13px">Bem-vindo</div>
-      <strong>Usuário GenFin</strong>
+      <strong>GenFin</strong><br>
+      <small style="color:var(--muted)">Painel Financeiro</small>
+    </div>
+  </div>
+      <div onclick="openPlanner()">📅</div>
+</div>
+
+<!-- GRID -->
+<div class="grid">
+
+<!-- ESQUERDA -->
+<div class="left">
+
+  <!-- CARDS -->
+  <div class="cards">
+    <div class="card">
+      <span>Receitas</span>
+      <strong class="green" id="receita">R$ 0</strong>
+    </div>
+    <div class="card">
+      <span>Despesas</span>
+      <strong class="red" id="despesa">R$ 0</strong>
+    </div>
+    <div class="card">
+      <span>Saldo</span>
+      <strong class="yellow" id="saldo">R$ 0</strong>
     </div>
   </div>
 
-  <!-- CONTENT -->
-  <div class="content">
-
-    <!-- CARDS -->
-    <div class="cards">
-      <div class="card">
-        <h4>Saldo Total</h4>
-        <p class="yellow" id="saldo">R$ 0</p>
-      </div>
-      <div class="card">
-        <h4>Total de Receitas</h4>
-        <p class="green" id="receita">R$ 0</p>
-      </div>
-      <div class="card">
-        <h4>Total de Despesas</h4>
-        <p class="red" id="despesa">R$ 0</p>
-      </div>
+  <!-- GAUGES -->
+  <div class="panel">
+    <h3>Desempenho por Categoria</h3>
+    <div class="gauges">
+      <div class="gauge"><canvas id="g1"></canvas><small>Moradia</small></div>
+      <div class="gauge"><canvas id="g2"></canvas><small>Alimentação</small></div>
+      <div class="gauge"><canvas id="g3"></canvas><small>Transporte</small></div>
+      <div class="gauge"><canvas id="g4"></canvas><small>Lazer</small></div>
     </div>
+  </div>
 
-    <!-- COMPARATIVOS -->
-    <div class="grid">
-      <div class="panel">
-        <h3>Hoje</h3>
-        <canvas id="dailyChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Últimos 7 dias</h3>
-        <canvas id="weeklyChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Últimos 30 dias</h3>
-        <canvas id="monthlyChart"></canvas>
-      </div>
+  <!-- BARRAS -->
+  <div class="panel">
+    <h3>Receita x Despesa</h3>
+    <div class="bar-row">
+      Receita
+      <div class="bar-bg"><div class="bar-fill" style="width:70%"></div></div>
     </div>
-
-    <!-- GRÁFICOS -->
-    <div class="grid">
-      <div class="panel">
-        <h3>Evolução do Saldo</h3>
-        <canvas id="lineChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Despesas por Categoria</h3>
-        <canvas id="donutChart"></canvas>
-      </div>
+    <div class="bar-row">
+      Despesa
+      <div class="bar-bg"><div class="bar-fill" style="width:45%"></div></div>
     </div>
+  </div>
 
-    <!-- TRANSAÇÕES -->
-    <div class="panel">
-      <h3>Transações Recentes</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Categoria</th>
-            <th>Tipo</th>
-            <th>Valor</th>
-          </tr>
-        </thead>
-        <tbody id="entries"></tbody>
-      </table>
-    </div>
+  <!-- LINHA -->
+  <div class="panel">
+    <h3>Saldo ao longo do ano</h3>
+    <canvas id="lineChart"></canvas>
+  </div>
 
+</div>
+
+<!-- DIREITA -->
+<div class="right">
+
+  <!-- DONUT -->
+  <div class="side-box">
+    <h4>Distribuição de Despesas</h4>
+    <canvas id="donutChart"></canvas>
+  </div>
+
+  <!-- ENTRADAS -->
+  <div class="side-box">
+    <h4 style="color:#22c55e">Entradas Recentes</h4>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Categoria</th><th>Valor</th></tr>
+      </thead>
+      <tbody id="entriesReceita"></tbody>
+    </table>
+  </div>
+
+  <!-- DESPESAS -->
+  <div class="side-box">
+    <h4 style="color:#ef4444">Despesas Recentes</h4>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Categoria</th><th>Valor</th></tr>
+      </thead>
+      <tbody id="entriesDespesa"></tbody>
+    </table>
+  </div>
+
+</div>
+
+</div>
+</div>
+
+
+<div id="plannerModal" style="display:none;position:fixed;inset:0;background:#000a;z-index:99;">
+  <div style="background:#141a2e;margin:40px auto;padding:20px;border-radius:16px;width:90%;max-width:900px;">
+    
+    <h2>Planner Financeiro</h2>
+
+    <div id="calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;"></div>
+
+    <hr style="margin:20px 0">
+
+    <div id="dayDetails"></div>
+
+    <button onclick="closePlanner()">Fechar</button>
   </div>
 </div>
+
 
 <script>
-async function loadDashboard() {
-  const dash = await fetch("/api/dashboard/", { credentials: "same-origin" }).then(r => r.json());
-  const entries = await fetch("/api/entries/", { credentials: "same-origin" }).then(r => r.json());
-  const cats = await fetch("/api/dashboard/categories/", { credentials: "same-origin" }).then(r => r.json());
+async function load(){
+  const dash = await fetch("/api/dashboard/",{credentials:"same-origin"}).then(r=>r.json());
+  const entries = await fetch("/api/entries/",{credentials:"same-origin"}).then(r=>r.json());
+  const cats = await fetch("/api/dashboard/categories/",{credentials:"same-origin"}).then(r=>r.json());
 
-  document.getElementById("saldo").innerText = "R$ " + dash.saldo;
-  document.getElementById("receita").innerText = "R$ " + dash.total_receita;
-  document.getElementById("despesa").innerText = "R$ " + dash.total_despesa;
+  receita.innerText="R$ "+dash.total_receita;
+  despesa.innerText="R$ "+dash.total_despesa;
+  saldo.innerText="R$ "+dash.saldo;
 
-  // TABELA
-  const tbody = document.getElementById("entries");
-  tbody.innerHTML = "";
-  entries.slice(0,8).forEach(e => {
-    tbody.innerHTML += `
+  entries.slice(0,12).forEach(e=>{
+    const row = `
       <tr>
         <td>${e.date}</td>
         <td>${e.category}</td>
-        <td class="${e.entry_type === "RECEITA" ? "badge-receita" : "badge-despesa"}">
-          ${e.entry_type === "RECEITA" ? "Receita" : "Despesa"}
-        </td>
         <td>R$ ${e.amount}</td>
       </tr>
     `;
-  });
-
-  function bar(id) {
-    new Chart(document.getElementById(id), {
-      type: "bar",
-      data: {
-        labels: ["Receitas", "Despesas"],
-        datasets: [{
-          data: [dash.total_receita, dash.total_despesa],
-          backgroundColor: ["#22c55e", "#ef4444"]
-        }]
-      },
-      options: { plugins: { legend: { display: false } } }
-    });
-  }
-
-  bar("dailyChart");
-  bar("weeklyChart");
-  bar("monthlyChart");
-
-  new Chart(document.getElementById("lineChart"), {
-    type: "line",
-    data: {
-      labels: ["Jan","Fev","Mar","Abr","Mai","Jun"],
-      datasets: [{
-        label: "Saldo",
-        data: [2000,3000,4200,4800, dash.saldo],
-        borderColor: "#facc15",
-        tension: .4,
-        fill: true
-      }]
+    if(e.entry_type==="RECEITA"){
+      entriesReceita.innerHTML+=row;
+    }else{
+      entriesDespesa.innerHTML+=row;
     }
   });
 
-  new Chart(document.getElementById("donutChart"), {
-    type: "doughnut",
-    data: {
-      labels: cats.map(c => c.category),
-      datasets: [{
-        data: cats.map(c => c.total),
-        backgroundColor: ["#ef4444","#f97316","#eab308","#22c55e","#38bdf8"]
+  function gauge(id,val,color){
+    new Chart(document.getElementById(id),{
+      type:"doughnut",
+      data:{datasets:[{data:[val,100-val],backgroundColor:[color,"#111"]}]},
+      options:{cutout:"75%",plugins:{legend:{display:false}}}
+    });
+  }
+
+  gauge("g1",72,"#a855f7");
+  gauge("g2",63,"#22c55e");
+  gauge("g3",45,"#38bdf8");
+  gauge("g4",53,"#ec4899");
+
+  new Chart(lineChart,{
+    type:"line",
+    data:{
+      labels:["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"],
+      datasets:[{
+        data:[2000,3200,2800,4500,3800,5200,6100,5900,dash.saldo],
+        borderColor:"#22c55e",
+        tension:.4
+      }]
+    },
+    options:{plugins:{legend:{display:false}}}
+  });
+
+  new Chart(donutChart,{
+    type:"doughnut",
+    data:{
+      labels:cats.map(c=>c.category),
+      datasets:[{
+        data:cats.map(c=>c.total),
+        backgroundColor:["#22c55e","#ef4444","#38bdf8","#a855f7","#facc15"]
       }]
     }
   });
 }
 
-loadDashboard();
+let plannerData = [];
+
+function openPlanner(){
+  document.getElementById("plannerModal").style.display="block";
+  loadPlanner();
+}
+
+function closePlanner(){
+  document.getElementById("plannerModal").style.display="none";
+}
+
+async function loadPlanner(){
+  plannerData = await fetch("/api/planner/", {credentials:"same-origin"}).then(r=>r.json());
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+
+  for(let d=1; d<=31; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const hasExpense = plannerData.some(p => p.date === dateStr);
+
+    cal.innerHTML += `
+      <div onclick="openDay('${dateStr}')"
+        style="padding:10px;border-radius:10px;
+        background:${hasExpense ? '#ec4899' : '#1b2240'};
+        cursor:pointer;text-align:center">
+        ${d}
+      </div>
+    `;
+  }
+}
+
+function openDay(date){
+  const day = plannerData.filter(p => p.date === date);
+  let html = `<h3>${date}</h3>`;
+
+  day.forEach(p=>{
+    html += `
+      <div style="margin-bottom:10px">
+        <strong>${p.category} - R$ ${p.amount}</strong><br>
+        <small>${p.description}</small>
+      </div>
+    `;
+  });
+
+  html += `
+    <button onclick="openCreate('${date}')">
+      Cadastrar despesa neste dia
+    </button>
+  `;
+
+  document.getElementById("dayDetails").innerHTML = html;
+}
+
+function openCreate(date){
+  const category = prompt("Categoria:");
+  const amount = prompt("Valor:");
+  const description = prompt("Descrição:");
+
+  fetch("/api/planner/create/",{
+    method:"POST",
+    credentials:"same-origin",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({date,category,amount,description})
+  }).then(()=>loadPlanner());
+}
+
+
+load();
 </script>
 
 </body>

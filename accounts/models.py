@@ -39,3 +39,20 @@ class FinancialEntry(models.Model):
 
     def __str__(self):
         return f"{self.entry_type} - {self.amount}"
+
+
+class PlannedExpense(models.Model):
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="planned_expenses"
+    )
+    date = models.DateField()
+    category = models.CharField(max_length=50)
+    description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.date} - {self.category} - {self.amount}"
