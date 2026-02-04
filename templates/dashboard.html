@@ -183,6 +183,48 @@ async function load(){
     else entriesDespesa.innerHTML += row;
   });
 
+  // ===============================
+  // NOVOS INDICADORES (SEM ALTERAR O RESTO)
+  // ===============================
+  const hoje = new Date();
+  const diaDoMes = hoje.getDate();
+  const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+
+  const taxaPoupanca = dash.total_receita > 0
+    ? Math.round((dash.saldo / dash.total_receita) * 100)
+    : 0;
+
+  const burnRate = dash.total_despesa / Math.max(diaDoMes,1);
+  const despesaProjetada = (dash.total_despesa / Math.max(diaDoMes,1)) * diasNoMes;
+  const saldoProjetado = dash.total_receita - despesaProjetada;
+
+  document.getElementById("taxa_poupanca").innerText = taxaPoupanca + "%";
+  document.getElementById("burn_rate").innerText = "R$ " + burnRate.toFixed(2).replace(".", ",");
+  document.getElementById("projecao_fim_mes").innerText = "R$ " + saldoProjetado.toFixed(2).replace(".", ",");
+
+  // ===============================
+  // HEATMAP POR DIA DA SEMANA
+  // ===============================
+  const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+  entries.forEach(e=>{
+    if(e.entry_type === "DESPESA"){
+      const d = new Date(e.date);
+      weekMap[d.getDay()] += Number(e.amount);
+    }
+  });
+
+  new Chart(document.getElementById("heatmapWeek"),{
+    type:"bar",
+    data:{
+      labels:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"],
+      datasets:[{ data:Object.values(weekMap), backgroundColor:"#ef4444" }]
+    },
+    options:{ plugins:{ legend:{display:false} } }
+  });
+
+  // ===============================
+  // RESTANTE DO SEU CÓDIGO ORIGINAL
+  // ===============================
   const daily   = await fetch("/api/stats/daily/",   {credentials:"same-origin"}).then(r=>r.json());
   const weekly  = await fetch("/api/stats/weekly/",  {credentials:"same-origin"}).then(r=>r.json());
   const monthly = await fetch("/api/stats/monthly/", {credentials:"same-origin"}).then(r=>r.json());
@@ -292,6 +334,14 @@ load();
         <div class="card"><span>Movimentações</span><strong class="blue" id="movimentacoes">—</strong></div>
       </div>
 
+      <!-- NOVOS CARDS -->
+      <div class="cards">
+        <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
+        <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
+        <div class="card"><span>Projeção Fim do Mês</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
+        <div class="card"><span>—</span><strong class="blue">—</strong></div>
+      </div>
+
       <div class="panel">
         <h3>Resumo de Movimentações</h3>
         <div class="stats">
@@ -335,6 +385,11 @@ load();
           <div class="gauge"><canvas id="g3"></canvas><small>—</small></div>
           <div class="gauge"><canvas id="g4"></canvas><small>—</small></div>
         </div>
+      </div>
+
+      <div class="panel">
+        <h3>Gastos por Dia da Semana</h3>
+        <canvas id="heatmapWeek"></canvas>
       </div>
 
       <div class="panel">
