@@ -5,111 +5,26 @@
 <title>GenFin | Painel Financeiro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script>
-async function load(){
-  // 🔒 TODAS AS FONTES MANTIDAS
-  const dash = await fetch("/api/dashboard/", {credentials:"same-origin"}).then(r=>r.json());
-  const entries = await fetch("/api/entries/", {credentials:"same-origin"}).then(r=>r.json());
-  const cats = await fetch("/api/dashboard/categories/", {credentials:"same-origin"}).then(r=>r.json());
-
-  // 🔹 CARDS
-  receita.innerText = "R$ " + dash.total_receita;
-  despesa.innerText = "R$ " + dash.total_despesa;
-  saldo.innerText   = "R$ " + dash.saldo;
-  movimentacoes.innerText = entries.length;
-
-  // 🔹 TABELAS
-  entriesReceita.innerHTML = "";
-  entriesDespesa.innerHTML = "";
-
-  entries.slice(0,12).forEach(e=>{
-    const row = `
-      <tr>
-        <td>${e.date}</td>
-        <td>${e.category}</td>
-        <td>R$ ${e.amount}</td>
-      </tr>
-    `;
-    if(e.entry_type === "RECEITA"){
-      entriesReceita.innerHTML += row;
-    } else {
-      entriesDespesa.innerHTML += row;
-    }
-  });
-
-  // 🔹 GAUGES (AGORA USANDO DADOS REAIS)
-  function gauge(id, value, color){
-    new Chart(document.getElementById(id),{
-      type:"doughnut",
-      data:{
-        datasets:[{
-          data:[value, 100 - value],
-          backgroundColor:[color, "#111"]
-        }]
-      },
-      options:{
-        cutout:"75%",
-        plugins:{legend:{display:false}}
-      }
-    });
-  }
-
-  // Exemplo: cálculo percentual real por categoria
-  const totalDespesa = cats.reduce((s,c)=>s + c.total, 0);
-
-  const byCat = name => {
-    const c = cats.find(x => x.category === name);
-    return c ? Math.round((c.total / totalDespesa) * 100) : 0;
-  };
-
-  gauge("g1", byCat("Moradia"), "#a855f7");
-  gauge("g2", byCat("Alimentação"), "#22c55e");
-  gauge("g3", byCat("Transporte"), "#38bdf8");
-  gauge("g4", byCat("Lazer"), "#ec4899");
-
-  // 🔹 LINHA (mantida)
-  new Chart(lineChart,{
-    type:"line",
-    data:{
-      labels:["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"],
-      datasets:[{
-        data:[
-          dash.saldo_jan,
-          dash.saldo_fev,
-          dash.saldo_mar,
-          dash.saldo_abr,
-          dash.saldo_mai,
-          dash.saldo_jun,
-          dash.saldo_jul,
-          dash.saldo_ago,
-          dash.saldo
-        ],
-        borderColor:"#22c55e",
-        tension:.4
-      }]
-    },
-    options:{plugins:{legend:{display:false}}}
-  });
-}
-
-load();
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+/* === DARK FINTECH THEME === */
 :root{
-  --bg:#0b0f1a;
-  --panel:#141a2e;
-  --panel2:#1b2240;
-  --border:#27305c;
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --panel:#0b1224;
+  --panel2:#0f1630;
+  --border:rgba(56,189,248,.15);
   --text:#e5e7eb;
   --muted:#9ca3af;
   --green:#22c55e;
   --red:#ef4444;
   --blue:#38bdf8;
-  --purple:#a855f7;
-  --pink:#ec4899;
-  --yellow:#facc15;
+  --purple:#7c3aed;
+  --pink:#db2777;
+  --yellow:#eab308;
 }
 
 *{box-sizing:border-box}
@@ -117,7 +32,7 @@ load();
 body{
   margin:0;
   font-family:Inter,Arial,sans-serif;
-  background:radial-gradient(circle at top,#2a0b59,#070912 60%);
+  background: var(--bg-grad);
   color:var(--text);
 }
 
@@ -130,46 +45,31 @@ body{
 
 /* HEADER */
 .header{
-  background:linear-gradient(90deg,#141a2e,#1b2240);
+  background:linear-gradient(180deg, #0b1224, #070b18);
   border-radius:16px;
   padding:16px 24px;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  border:1px solid var(--border);
 }
 
-.user{
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
+.user{display:flex;align-items:center;gap:12px;}
 .avatar{
-  width:42px;
-  height:42px;
-  border-radius:10px;
-  background:#111;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,#0b1224,#020617);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:#38bdf8;
+  border:1px solid rgba(56,189,248,.25);
 }
 
 /* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:3fr 2fr;
-  gap:20px;
-}
+.grid{display:grid;grid-template-columns:3fr 2fr;gap:20px;}
+.left,.right{display:grid;gap:20px;}
 
-.left, .right{
-  display:grid;
-  gap:20px;
-}
-
-/* PAINEL */
+/* PAINEL PADRÃO */
 .panel{
-  background:var(--panel);
+  background:linear-gradient(180deg,#070b18,#020617);
   border-radius:18px;
   padding:18px;
   border:1px solid var(--border);
@@ -177,210 +77,278 @@ body{
 
 .panel h3{
   margin:0 0 12px;
-  font-size:15px;
-  color:var(--muted);
+  font-size:13px;
+  color:#94a3b8;
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
 
-/* CARDS */
-.cards{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
-
+/* CARDS PRINCIPAIS */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
 .card{
-  background:linear-gradient(135deg,#1f2937,#111827);
+  background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
   padding:18px;
+  border:1px solid var(--border);
 }
+.card span{color:var(--muted);font-size:12px;}
+.card strong{font-size:22px;display:block;margin-top:6px;}
+.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
 
-.card span{
-  color:var(--muted);
+/* RESUMO NEON DARK */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+.stat-card{
+  background:linear-gradient(180deg,#060b1a,#020617);
+  border-radius:18px;
+  padding:18px;
+  border:1px solid rgba(56,189,248,.12);
+  box-shadow:0 0 18px rgba(56,189,248,.08);
+  transition:.25s;
+}
+.stat-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 0 28px rgba(56,189,248,.18);
+}
+.stat-card h4{
+  margin:0 0 12px;
+  color:#38bdf8;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-size:11px;
+}
+.metric{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px dashed rgba(255,255,255,.06);
   font-size:12px;
 }
-
-.card strong{
-  font-size:22px;
-  display:block;
-  margin-top:4px;
-}
-
-.green{color:var(--green)}
-.red{color:var(--red)}
-.yellow{color:var(--yellow)}
-.blue{color:var(--blue)}
+.metric b{font-size:13px;}
+.stat-card canvas{margin-top:12px;max-height:120px}
 
 /* GAUGES */
-.gauges{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
-
+.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
 .gauge{
-  background:var(--panel2);
+  background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:14px;
   padding:12px;
   text-align:center;
+  border:1px solid var(--border);
 }
-
 .gauge canvas{max-height:90px}
 
 /* BARRAS */
-.bar-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.bar-bg{
-  flex:1;
-  height:10px;
-  background:#0f1325;
-  border-radius:10px;
-  overflow:hidden;
-}
-
-.bar-fill{
-  height:100%;
-  background:linear-gradient(90deg,var(--pink),var(--purple));
-}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;color:#9ca3af;}
+.bar-bg{flex:1;height:8px;background:#020617;border-radius:10px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#db2777);}
 
 /* DIREITA */
 .side-box{
-  background:var(--panel2);
+  background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
   padding:16px;
-}
-
-.side-box h4{
-  margin:0 0 12px;
-  font-size:14px;
-  color:var(--muted);
+  border:1px solid var(--border);
 }
 
 /* TABELA */
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th,td{
-  padding:8px;
-  border-bottom:1px solid var(--border);
-  font-size:13px;
-}
-
-th{color:var(--muted);text-align:left}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;}
+th{color:#9ca3af;text-align:left;}
 
 @media(max-width:1100px){
   .grid{grid-template-columns:1fr}
   .cards{grid-template-columns:1fr 1fr}
 }
 </style>
+
+<script>
+async function load(){
+  const dash = await fetch("/api/dashboard/", {credentials:"same-origin"}).then(r=>r.json());
+  const entries = await fetch("/api/entries/", {credentials:"same-origin"}).then(r=>r.json());
+  const cats = await fetch("/api/dashboard/categories/", {credentials:"same-origin"}).then(r=>r.json());
+
+  receita.innerText = "R$ " + dash.total_receita;
+  despesa.innerText = "R$ " + dash.total_despesa;
+  saldo.innerText   = "R$ " + dash.saldo;
+  movimentacoes.innerText = entries.length;
+
+  entriesReceita.innerHTML = "";
+  entriesDespesa.innerHTML = "";
+
+  entries.slice(0,12).forEach(e=>{
+    const row = `<tr><td>${e.date}</td><td>${e.category}</td><td>R$ ${e.amount}</td></tr>`;
+    if(e.entry_type === "RECEITA") entriesReceita.innerHTML += row;
+    else entriesDespesa.innerHTML += row;
+  });
+
+  const daily   = await fetch("/api/stats/daily/",   {credentials:"same-origin"}).then(r=>r.json());
+  const weekly  = await fetch("/api/stats/weekly/",  {credentials:"same-origin"}).then(r=>r.json());
+  const monthly = await fetch("/api/stats/monthly/", {credentials:"same-origin"}).then(r=>r.json());
+
+  function render(prefix, data, chartId){
+    document.getElementById(prefix+"_in").innerText = "R$ " + data.total_receita;
+    document.getElementById(prefix+"_out").innerText = "R$ " + data.total_despesa;
+    document.getElementById(prefix+"_mov").innerText = data.movimentacoes;
+    document.getElementById(prefix+"_in_p").innerText = data.percent_receita + "%";
+    document.getElementById(prefix+"_out_p").innerText = data.percent_despesa + "%";
+
+    new Chart(document.getElementById(chartId),{
+      type:"bar",
+      data:{ labels:["Entradas","Saídas"], datasets:[{ data:[data.total_receita, data.total_despesa], backgroundColor:["#22c55e","#ef4444"] }] },
+      options:{ plugins:{ legend:{display:false} } }
+    });
+  }
+
+  render("d", daily, "chartDaily");
+  render("w", weekly, "chartWeekly");
+  render("m", monthly, "chartMonthly");
+
+  // === PLUGIN TEXTO CENTRAL ===
+  const centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw(chart, args, opts) {
+      const { ctx } = chart;
+      const value = chart.config.data.datasets[0].data[0] + "%";
+      ctx.save();
+      ctx.font = "600 14px Inter";
+      ctx.fillStyle = "#e5e7eb";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(value, chart.width / 2, chart.height / 2);
+    }
+  };
+
+  // === CATEGORIAS (% DESPESA) ===
+  const totalDespesa = cats.reduce((sum,c)=>sum + c.total, 0);
+
+  cats.slice(0,4).forEach((c, i)=>{
+    const pct = Math.round((c.total / totalDespesa) * 100);
+
+    new Chart(document.getElementById("g"+(i+1)),{
+      type:"doughnut",
+      plugins:[centerTextPlugin],
+      data:{
+        labels:["Despesa","Restante"],
+        datasets:[{
+          data:[pct, 100-pct],
+          backgroundColor:["#ef4444","#1e293b"],
+          borderWidth:0
+        }]
+      },
+      options:{
+        cutout:"70%",
+        plugins:{legend:{display:false}, tooltip:{enabled:false}}
+      }
+    });
+
+    document.querySelectorAll(".gauge small")[i].innerText = c.category;
+  });
+}
+load();
+</script>
 </head>
 
 <body>
 
 <div class="container">
 
-<!-- HEADER -->
-<div class="header">
-  <div class="user">
-    <div class="avatar">GF</div>
-    <div>
-      <strong>GenFin</strong><br>
-      <small style="color:var(--muted)">Painel Financeiro</small>
+  <div class="header">
+    <div class="user">
+      <div class="avatar">GF</div>
+      <div>
+        <strong>GenFin</strong><br>
+        <small style="color:#94a3b8">Painel Financeiro</small>
+      </div>
     </div>
+    <div onclick="openPlanner()" style="cursor:pointer;color:#94a3b8">📅 Planner</div>
   </div>
-  <div onclick="openPlanner()" style="cursor:pointer">📅 Planner</div>
+
+  <div class="grid">
+
+    <div class="left">
+
+      <div class="cards">
+        <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0</strong></div>
+        <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0</strong></div>
+        <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0</strong></div>
+        <div class="card"><span>Movimentações</span><strong class="blue" id="movimentacoes">—</strong></div>
+      </div>
+
+      <div class="panel">
+        <h3>Resumo de Movimentações</h3>
+        <div class="stats">
+          <div class="stat-card">
+            <h4>Hoje</h4>
+            <div class="metric">Entrou: <b id="d_in">R$ 0</b></div>
+            <div class="metric">Saiu: <b id="d_out">R$ 0</b></div>
+            <div class="metric">Movimentações: <b id="d_mov">0</b></div>
+            <div class="metric">Entrada %: <b id="d_in_p">0%</b></div>
+            <div class="metric">Saída %: <b id="d_out_p">0%</b></div>
+            <canvas id="chartDaily"></canvas>
+          </div>
+
+          <div class="stat-card">
+            <h4>Últimos 7 dias</h4>
+            <div class="metric">Entrou: <b id="w_in">R$ 0</b></div>
+            <div class="metric">Saiu: <b id="w_out">R$ 0</b></div>
+            <div class="metric">Movimentações: <b id="w_mov">0</b></div>
+            <div class="metric">Entrada %: <b id="w_in_p">0%</b></div>
+            <div class="metric">Saída %: <b id="w_out_p">0%</b></div>
+            <canvas id="chartWeekly"></canvas>
+          </div>
+
+          <div class="stat-card">
+            <h4>Últimos 30 dias</h4>
+            <div class="metric">Entrou: <b id="m_in">R$ 0</b></div>
+            <div class="metric">Saiu: <b id="m_out">R$ 0</b></div>
+            <div class="metric">Movimentações: <b id="m_mov">0</b></div>
+            <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
+            <div class="metric">Saída %: <b id="m_out_p">0%</b></div>
+            <canvas id="chartMonthly"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Desempenho por Categoria (% da Despesa)</h3>
+        <div class="gauges">
+          <div class="gauge"><canvas id="g1"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g2"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g3"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g4"></canvas><small>—</small></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Receita x Despesa</h3>
+        <div class="bar-row">Receita<div class="bar-bg"><div class="bar-fill" style="width:70%"></div></div></div>
+        <div class="bar-row">Despesa<div class="bar-bg"><div class="bar-fill" style="width:45%"></div></div></div>
+      </div>
+
+    </div>
+
+    <div class="right">
+
+      <div class="side-box">
+        <h4 style="color:#22c55e">Entradas Recentes</h4>
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+          <tbody id="entriesReceita"></tbody>
+        </table>
+      </div>
+
+      <div class="side-box">
+        <h4 style="color:#ef4444">Despesas Recentes</h4>
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+          <tbody id="entriesDespesa"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
-<div class="grid">
-
-<!-- ESQUERDA -->
-<div class="left">
-
-  <!-- CARDS -->
-  <div class="cards">
-    <div class="card">
-      <span>Receitas</span>
-      <strong class="green" id="receita">R$ 0</strong>
-    </div>
-    <div class="card">
-      <span>Despesas</span>
-      <strong class="red" id="despesa">R$ 0</strong>
-    </div>
-    <div class="card">
-      <span>Saldo Atual</span>
-      <strong class="yellow" id="saldo">R$ 0</strong>
-    </div>
-    <div class="card">
-      <span>Movimentações</span>
-      <strong class="blue" id="movimentacoes">—</strong>
-    </div>
-  </div>
-
-  <!-- GAUGES -->
-  <div class="panel">
-    <h3>Desempenho por Categoria</h3>
-    <div class="gauges">
-      <div class="gauge"><canvas id="g1"></canvas><small>Moradia</small></div>
-      <div class="gauge"><canvas id="g2"></canvas><small>Alimentação</small></div>
-      <div class="gauge"><canvas id="g3"></canvas><small>Transporte</small></div>
-      <div class="gauge"><canvas id="g4"></canvas><small>Lazer</small></div>
-    </div>
-  </div>
-
-  <!-- BARRAS -->
-  <div class="panel">
-    <h3>Receita x Despesa</h3>
-    <div class="bar-row">
-      Receita
-      <div class="bar-bg"><div class="bar-fill" style="width:70%"></div></div>
-    </div>
-    <div class="bar-row">
-      Despesa
-      <div class="bar-bg"><div class="bar-fill" style="width:45%"></div></div>
-    </div>
-  </div>
-
-  <!-- LINHA -->
-  <div class="panel">
-    <h3>Saldo ao longo do ano</h3>
-    <canvas id="lineChart"></canvas>
-  </div>
-
-</div>
-
-<!-- DIREITA -->
-<div class="right">
-
-  <div class="side-box">
-    <h4 style="color:#22c55e">Entradas Recentes</h4>
-    <table>
-      <thead>
-        <tr><th>Data</th><th>Categoria</th><th>Valor</th></tr>
-      </thead>
-      <tbody id="entriesReceita"></tbody>
-    </table>
-  </div>
-
-  <div class="side-box">
-    <h4 style="color:#ef4444">Despesas Recentes</h4>
-    <table>
-      <thead>
-        <tr><th>Data</th><th>Categoria</th><th>Valor</th></tr>
-      </thead>
-      <tbody id="entriesDespesa"></tbody>
-    </table>
-  </div>
-
-</div>
-</div>
-</div>
-
-<!-- PLANNER (mantido igual ao seu) -->
-<div id="plannerModal" style="display:none;position:fixed;inset:0;background:#000a;z-index:99;">
-  <div style="background:#141a2e;margin:40px auto;padding:2
+</body>
+</html>

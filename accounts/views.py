@@ -7,6 +7,8 @@ from django.db.models import Sum
 
 from .models import UserAccount, FinancialEntry
 
+from django.utils import timezone
+from datetime import timedelta
 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -272,3 +274,44 @@ class PlannerCreateView(APIView):
         )
 
         return Response({"message": "Despesa planejada criada"}, status=201)
+
+class StatsBaseView(APIView):
+    delta_days = 1
+
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        start_date = timezone.now().date() - timedelta(days=self.delta_days - 1)
+
+        qs = FinancialEntry.objects.filter(user=user, date__gte=start_date)
+
+        total_receita = qs.filter(entry_type="RECEITA").aggregate(total=Sum("amount"))["total"] or 0
+        total_despesa = qs.filter(entry_type="DESPESA").aggregate(total=Sum("amount"))["total"] or 0
+        movimentacoes = qs.count()
+
+        total = total_receita + total_despesa or 1
+
+        percent_receita = round((total_receita / total) * 100)
+        percent_despesa = round((total_despesa / total) * 100)
+
+        return Response({
+            "total_receita": total_receita,
+            "total_despesa": total_despesa,
+            "movimentacoes": movimentacoes,
+            "percent_receita": percent_receita,
+            "percent_despesa": percent_despesa,
+        })
+
+
+class DailyStatsView(StatsBaseView):
+    delta_days = 1
+
+
+class WeeklyStatsView(StatsBaseView):
+    delta_days = 7
+
+
+class MonthlyStatsView(StatsBaseView):
+    delta_days = 30

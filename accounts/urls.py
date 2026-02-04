@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     ValidatePhoneView,
     FinancialEntryCreateView,
-    PhoneLoginView, DashboardView, FinancialEntryListView ,DashboardCategoryView,PlannerListView,PlannerCreateView
+    PhoneLoginView, DashboardView, FinancialEntryListView ,DashboardCategoryView,PlannerListView,PlannerCreateView,DailyStatsView,WeeklyStatsView,
+    MonthlyStatsView
 )
 
 urlpatterns = [
@@ -14,6 +15,9 @@ urlpatterns = [
  path("dashboard/categories/", DashboardCategoryView.as_view()),
      path("planner/", PlannerListView.as_view()),
     path("planner/create/", PlannerCreateView.as_view()),
+      path("stats/daily/", DailyStatsView.as_view()),
+    path("stats/weekly/", WeeklyStatsView.as_view()),
+    path("stats/monthly/", MonthlyStatsView.as_view()),
 
     
 ]
