@@ -6,10 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
+        :root{
+            --bg1:#020617;
+            --bg2:#0f172a;
+            --card:#020617;
+            --border:#1e293b;
+            --text:#e5e7eb;
+            --muted:#9ca3af;
+            --green:#22c55e;
+            --green-dark:#16a34a;
+            --error:#f87171;
+        }
+
+        *{
+            box-sizing:border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e5e7eb;
+            font-family: Inter, Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, #1e1b4b, transparent 40%),
+                linear-gradient(180deg, var(--bg2), var(--bg1));
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,50 +36,91 @@
         }
 
         .login-box {
-            background: #020617;
-            padding: 32px;
-            border-radius: 12px;
+            background: linear-gradient(180deg, #020617, #020617cc);
+            padding: 36px 32px;
+            border-radius: 18px;
             width: 100%;
-            max-width: 360px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.4);
+            max-width: 380px;
+            border: 1px solid var(--border);
+            box-shadow:
+                0 20px 40px rgba(0,0,0,.6),
+                inset 0 1px 0 rgba(255,255,255,.04);
+            backdrop-filter: blur(6px);
         }
 
         h2 {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 6px;
+            font-size: 28px;
+            letter-spacing: .5px;
+        }
+
+        .subtitle{
+            text-align:center;
+            font-size:13px;
+            color:var(--muted);
+            margin-bottom:28px;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 16px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
+            padding: 14px 14px;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #020617;
+            color: var(--text);
+            font-size: 15px;
             outline: none;
+            transition: all .2s ease;
+        }
+
+        input::placeholder{
+            color:var(--muted);
+        }
+
+        input:focus{
+            border-color: var(--green);
+            box-shadow: 0 0 0 2px rgba(34,197,94,.2);
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: #22c55e;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--green), #4ade80);
             color: #020617;
-            font-weight: bold;
+            font-weight: 700;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 16px;
+            transition: all .2s ease;
         }
 
         button:hover {
-            background: #16a34a;
+            background: linear-gradient(135deg, var(--green-dark), var(--green));
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34,197,94,.35);
+        }
+
+        button:active{
+            transform: translateY(0);
+            box-shadow:none;
         }
 
         .error {
-            color: #f87171;
+            color: var(--error);
             text-align: center;
-            margin-top: 12px;
+            margin-top: 14px;
             min-height: 18px;
+            font-size: 13px;
+        }
+
+        @media(max-width:420px){
+            .login-box{
+                padding:28px 22px;
+                border-radius:14px;
+            }
         }
     </style>
 </head>
@@ -69,6 +128,7 @@
 
 <div class="login-box">
     <h2>GenFin</h2>
+    <div class="subtitle">Acesse seu painel financeiro</div>
 
     <input
         type="text"
@@ -96,7 +156,7 @@ function doLogin() {
 
     fetch("/api/login/", {
         method: "POST",
-        credentials: "same-origin", // 🔑 garante cookie de sessão
+        credentials: "same-origin",
         headers: {
             "Content-Type": "application/json"
         },

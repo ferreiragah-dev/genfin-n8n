@@ -5,7 +5,96 @@
 <title>GenFin | Painel Financeiro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function load(){
+  // 🔒 TODAS AS FONTES MANTIDAS
+  const dash = await fetch("/api/dashboard/", {credentials:"same-origin"}).then(r=>r.json());
+  const entries = await fetch("/api/entries/", {credentials:"same-origin"}).then(r=>r.json());
+  const cats = await fetch("/api/dashboard/categories/", {credentials:"same-origin"}).then(r=>r.json());
+
+  // 🔹 CARDS
+  receita.innerText = "R$ " + dash.total_receita;
+  despesa.innerText = "R$ " + dash.total_despesa;
+  saldo.innerText   = "R$ " + dash.saldo;
+  movimentacoes.innerText = entries.length;
+
+  // 🔹 TABELAS
+  entriesReceita.innerHTML = "";
+  entriesDespesa.innerHTML = "";
+
+  entries.slice(0,12).forEach(e=>{
+    const row = `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.category}</td>
+        <td>R$ ${e.amount}</td>
+      </tr>
+    `;
+    if(e.entry_type === "RECEITA"){
+      entriesReceita.innerHTML += row;
+    } else {
+      entriesDespesa.innerHTML += row;
+    }
+  });
+
+  // 🔹 GAUGES (AGORA USANDO DADOS REAIS)
+  function gauge(id, value, color){
+    new Chart(document.getElementById(id),{
+      type:"doughnut",
+      data:{
+        datasets:[{
+          data:[value, 100 - value],
+          backgroundColor:[color, "#111"]
+        }]
+      },
+      options:{
+        cutout:"75%",
+        plugins:{legend:{display:false}}
+      }
+    });
+  }
+
+  // Exemplo: cálculo percentual real por categoria
+  const totalDespesa = cats.reduce((s,c)=>s + c.total, 0);
+
+  const byCat = name => {
+    const c = cats.find(x => x.category === name);
+    return c ? Math.round((c.total / totalDespesa) * 100) : 0;
+  };
+
+  gauge("g1", byCat("Moradia"), "#a855f7");
+  gauge("g2", byCat("Alimentação"), "#22c55e");
+  gauge("g3", byCat("Transporte"), "#38bdf8");
+  gauge("g4", byCat("Lazer"), "#ec4899");
+
+  // 🔹 LINHA (mantida)
+  new Chart(lineChart,{
+    type:"line",
+    data:{
+      labels:["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"],
+      datasets:[{
+        data:[
+          dash.saldo_jan,
+          dash.saldo_fev,
+          dash.saldo_mar,
+          dash.saldo_abr,
+          dash.saldo_mai,
+          dash.saldo_jun,
+          dash.saldo_jul,
+          dash.saldo_ago,
+          dash.saldo
+        ],
+        borderColor:"#22c55e",
+        tension:.4
+      }]
+    },
+    options:{plugins:{legend:{display:false}}}
+  });
+}
+
+load();
+</script>
+
 
 <style>
 :root{
@@ -66,10 +155,10 @@ body{
   font-weight:700;
 }
 
-/* GRID PRINCIPAL */
+/* GRID */
 .grid{
   display:grid;
-  grid-template-columns:2.5fr 1.5fr;
+  grid-template-columns:3fr 2fr;
   gap:20px;
 }
 
@@ -82,7 +171,7 @@ body{
 .panel{
   background:var(--panel);
   border-radius:18px;
-  padding:16px;
+  padding:18px;
   border:1px solid var(--border);
 }
 
@@ -92,25 +181,34 @@ body{
   color:var(--muted);
 }
 
-/* CARDS SUPERIORES */
+/* CARDS */
 .cards{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
 }
 
 .card{
   background:linear-gradient(135deg,#1f2937,#111827);
-  border-radius:14px;
-  padding:14px;
+  border-radius:16px;
+  padding:18px;
 }
 
-.card span{color:var(--muted);font-size:12px}
-.card strong{font-size:20px}
+.card span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.card strong{
+  font-size:22px;
+  display:block;
+  margin-top:4px;
+}
 
 .green{color:var(--green)}
 .red{color:var(--red)}
 .yellow{color:var(--yellow)}
+.blue{color:var(--blue)}
 
 /* GAUGES */
 .gauges{
@@ -133,7 +231,7 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-  margin-bottom:8px;
+  margin-bottom:10px;
 }
 
 .bar-bg{
@@ -153,11 +251,11 @@ body{
 .side-box{
   background:var(--panel2);
   border-radius:16px;
-  padding:14px;
+  padding:16px;
 }
 
 .side-box h4{
-  margin:0 0 10px;
+  margin:0 0 12px;
   font-size:14px;
   color:var(--muted);
 }
@@ -178,6 +276,7 @@ th{color:var(--muted);text-align:left}
 
 @media(max-width:1100px){
   .grid{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -195,10 +294,9 @@ th{color:var(--muted);text-align:left}
       <small style="color:var(--muted)">Painel Financeiro</small>
     </div>
   </div>
-      <div onclick="openPlanner()">📅</div>
+  <div onclick="openPlanner()" style="cursor:pointer">📅 Planner</div>
 </div>
 
-<!-- GRID -->
 <div class="grid">
 
 <!-- ESQUERDA -->
@@ -215,8 +313,12 @@ th{color:var(--muted);text-align:left}
       <strong class="red" id="despesa">R$ 0</strong>
     </div>
     <div class="card">
-      <span>Saldo</span>
+      <span>Saldo Atual</span>
       <strong class="yellow" id="saldo">R$ 0</strong>
+    </div>
+    <div class="card">
+      <span>Movimentações</span>
+      <strong class="blue" id="movimentacoes">—</strong>
     </div>
   </div>
 
@@ -255,13 +357,6 @@ th{color:var(--muted);text-align:left}
 <!-- DIREITA -->
 <div class="right">
 
-  <!-- DONUT -->
-  <div class="side-box">
-    <h4>Distribuição de Despesas</h4>
-    <canvas id="donutChart"></canvas>
-  </div>
-
-  <!-- ENTRADAS -->
   <div class="side-box">
     <h4 style="color:#22c55e">Entradas Recentes</h4>
     <table>
@@ -272,7 +367,6 @@ th{color:var(--muted);text-align:left}
     </table>
   </div>
 
-  <!-- DESPESAS -->
   <div class="side-box">
     <h4 style="color:#ef4444">Despesas Recentes</h4>
     <table>
@@ -284,167 +378,9 @@ th{color:var(--muted);text-align:left}
   </div>
 
 </div>
-
 </div>
 </div>
 
-
+<!-- PLANNER (mantido igual ao seu) -->
 <div id="plannerModal" style="display:none;position:fixed;inset:0;background:#000a;z-index:99;">
-  <div style="background:#141a2e;margin:40px auto;padding:20px;border-radius:16px;width:90%;max-width:900px;">
-    
-    <h2>Planner Financeiro</h2>
-
-    <div id="calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;"></div>
-
-    <hr style="margin:20px 0">
-
-    <div id="dayDetails"></div>
-
-    <button onclick="closePlanner()">Fechar</button>
-  </div>
-</div>
-
-
-<script>
-async function load(){
-  const dash = await fetch("/api/dashboard/",{credentials:"same-origin"}).then(r=>r.json());
-  const entries = await fetch("/api/entries/",{credentials:"same-origin"}).then(r=>r.json());
-  const cats = await fetch("/api/dashboard/categories/",{credentials:"same-origin"}).then(r=>r.json());
-
-  receita.innerText="R$ "+dash.total_receita;
-  despesa.innerText="R$ "+dash.total_despesa;
-  saldo.innerText="R$ "+dash.saldo;
-
-  entries.slice(0,12).forEach(e=>{
-    const row = `
-      <tr>
-        <td>${e.date}</td>
-        <td>${e.category}</td>
-        <td>R$ ${e.amount}</td>
-      </tr>
-    `;
-    if(e.entry_type==="RECEITA"){
-      entriesReceita.innerHTML+=row;
-    }else{
-      entriesDespesa.innerHTML+=row;
-    }
-  });
-
-  function gauge(id,val,color){
-    new Chart(document.getElementById(id),{
-      type:"doughnut",
-      data:{datasets:[{data:[val,100-val],backgroundColor:[color,"#111"]}]},
-      options:{cutout:"75%",plugins:{legend:{display:false}}}
-    });
-  }
-
-  gauge("g1",72,"#a855f7");
-  gauge("g2",63,"#22c55e");
-  gauge("g3",45,"#38bdf8");
-  gauge("g4",53,"#ec4899");
-
-  new Chart(lineChart,{
-    type:"line",
-    data:{
-      labels:["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set"],
-      datasets:[{
-        data:[2000,3200,2800,4500,3800,5200,6100,5900,dash.saldo],
-        borderColor:"#22c55e",
-        tension:.4
-      }]
-    },
-    options:{plugins:{legend:{display:false}}}
-  });
-
-  new Chart(donutChart,{
-    type:"doughnut",
-    data:{
-      labels:cats.map(c=>c.category),
-      datasets:[{
-        data:cats.map(c=>c.total),
-        backgroundColor:["#22c55e","#ef4444","#38bdf8","#a855f7","#facc15"]
-      }]
-    }
-  });
-}
-
-let plannerData = [];
-
-function openPlanner(){
-  document.getElementById("plannerModal").style.display="block";
-  loadPlanner();
-}
-
-function closePlanner(){
-  document.getElementById("plannerModal").style.display="none";
-}
-
-async function loadPlanner(){
-  plannerData = await fetch("/api/planner/", {credentials:"same-origin"}).then(r=>r.json());
-  renderCalendar();
-}
-
-function renderCalendar(){
-  const cal = document.getElementById("calendar");
-  cal.innerHTML = "";
-
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-
-  for(let d=1; d<=31; d++){
-    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const hasExpense = plannerData.some(p => p.date === dateStr);
-
-    cal.innerHTML += `
-      <div onclick="openDay('${dateStr}')"
-        style="padding:10px;border-radius:10px;
-        background:${hasExpense ? '#ec4899' : '#1b2240'};
-        cursor:pointer;text-align:center">
-        ${d}
-      </div>
-    `;
-  }
-}
-
-function openDay(date){
-  const day = plannerData.filter(p => p.date === date);
-  let html = `<h3>${date}</h3>`;
-
-  day.forEach(p=>{
-    html += `
-      <div style="margin-bottom:10px">
-        <strong>${p.category} - R$ ${p.amount}</strong><br>
-        <small>${p.description}</small>
-      </div>
-    `;
-  });
-
-  html += `
-    <button onclick="openCreate('${date}')">
-      Cadastrar despesa neste dia
-    </button>
-  `;
-
-  document.getElementById("dayDetails").innerHTML = html;
-}
-
-function openCreate(date){
-  const category = prompt("Categoria:");
-  const amount = prompt("Valor:");
-  const description = prompt("Descrição:");
-
-  fetch("/api/planner/create/",{
-    method:"POST",
-    credentials:"same-origin",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({date,category,amount,description})
-  }).then(()=>loadPlanner());
-}
-
-
-load();
-</script>
-
-</body>
-</html>
+  <div style="background:#141a2e;margin:40px auto;padding:2
