@@ -167,11 +167,13 @@ async function load(){
   const entries = await fetch("/api/entries/", {credentials:"same-origin"}).then(r=>r.json());
   const cats = await fetch("/api/dashboard/categories/", {credentials:"same-origin"}).then(r=>r.json());
 
-  receita.innerText = "R$ " + dash.total_receita;
-  despesa.innerText = "R$ " + dash.total_despesa;
-  saldo.innerText   = "R$ " + dash.saldo;
-  movimentacoes.innerText = entries.length;
+  document.getElementById("receita").innerText = "R$ " + dash.total_receita;
+  document.getElementById("despesa").innerText = "R$ " + dash.total_despesa;
+  document.getElementById("saldo").innerText   = "R$ " + dash.saldo;
+  document.getElementById("movimentacoes").innerText = entries.length;
 
+  const entriesReceita = document.getElementById("entriesReceita");
+  const entriesDespesa = document.getElementById("entriesDespesa");
   entriesReceita.innerHTML = "";
   entriesDespesa.innerHTML = "";
 
@@ -203,18 +205,31 @@ async function load(){
   render("w", weekly, "chartWeekly");
   render("m", monthly, "chartMonthly");
 
-  // === PLUGIN TEXTO CENTRAL ===
+  // === PLUGIN TEXTO CENTRAL (% + R$) ===
   const centerTextPlugin = {
     id: 'centerText',
-    beforeDraw(chart, args, opts) {
-      const { ctx } = chart;
-      const value = chart.config.data.datasets[0].data[0] + "%";
+    beforeDraw(chart) {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      const pct = chart.config.data.datasets[0].data[0];
+      const val = chart.config.data._valor || 0;
+
+      const x = (chartArea.left + chartArea.right) / 2;
+      const y = (chartArea.top + chartArea.bottom) / 2;
+
       ctx.save();
-      ctx.font = "600 14px Inter";
-      ctx.fillStyle = "#e5e7eb";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(value, chart.width / 2, chart.height / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.font = '600 14px Inter';
+      ctx.fillStyle = '#e5e7eb';
+      ctx.fillText(pct + '%', x, y - 6);
+
+      ctx.font = '400 11px Inter';
+      ctx.fillStyle = '#9ca3af';
+      ctx.fillText('R$ ' + Number(val).toLocaleString('pt-BR'), x, y + 10);
+
+      ctx.restore();
     }
   };
 
@@ -224,17 +239,20 @@ async function load(){
   cats.slice(0,4).forEach((c, i)=>{
     const pct = Math.round((c.total / totalDespesa) * 100);
 
+    const chartData = {
+      labels:["Despesa","Restante"],
+      datasets:[{
+        data:[pct, 100-pct],
+        backgroundColor:["#ef4444","#1e293b"],
+        borderWidth:0
+      }],
+      _valor: c.total
+    };
+
     new Chart(document.getElementById("g"+(i+1)),{
       type:"doughnut",
       plugins:[centerTextPlugin],
-      data:{
-        labels:["Despesa","Restante"],
-        datasets:[{
-          data:[pct, 100-pct],
-          backgroundColor:["#ef4444","#1e293b"],
-          borderWidth:0
-        }]
-      },
+      data: chartData,
       options:{
         cutout:"70%",
         plugins:{legend:{display:false}, tooltip:{enabled:false}}
@@ -260,7 +278,7 @@ load();
         <small style="color:#94a3b8">Painel Financeiro</small>
       </div>
     </div>
-    <div onclick="openPlanner()" style="cursor:pointer;color:#94a3b8">📅 Planner</div>
+    <div style="cursor:pointer;color:#94a3b8">📅 Planner</div>
   </div>
 
   <div class="grid">
