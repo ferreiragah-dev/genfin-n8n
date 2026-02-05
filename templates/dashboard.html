@@ -82,6 +82,13 @@ body{
   letter-spacing:.08em;
   text-transform:uppercase;
 }
+.panel-compact{
+  padding: 12px;
+}
+
+.panel-compact canvas{
+  max-height: 140px;
+}
 
 /* CARDS PRINCIPAIS */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
@@ -202,6 +209,8 @@ async function load(){
   document.getElementById("burn_rate").innerText = "R$ " + burnRate.toFixed(2).replace(".", ",");
   document.getElementById("projecao_fim_mes").innerText = "R$ " + saldoProjetado.toFixed(2).replace(".", ",");
 
+  
+
   // ===============================
   // HEATMAP POR DIA DA SEMANA
   // ===============================
@@ -221,7 +230,17 @@ async function load(){
     },
     options:{ plugins:{ legend:{display:false} } }
   });
-
+  /* === TOP 5 === */
+  const top5 = entries.filter(e=>e.entry_type==="DESPESA").sort((a,b)=>b.amount-a.amount).slice(0,5);
+  const max = Math.max(...top5.map(e=>e.amount),1);
+  const topBox=document.getElementById("top5");
+  topBox.innerHTML="";
+  top5.forEach(e=>{
+    topBox.innerHTML+=`
+      <div class="bar-row">${e.category} (R$ ${e.amount})
+        <div class="bar-bg"><div class="bar-fill" style="width:${(e.amount/max)*100}%"></div></div>
+      </div>`;
+  });
   // ===============================
   // RESTANTE DO SEU CÓDIGO ORIGINAL
   // ===============================
@@ -291,6 +310,8 @@ async function load(){
       _valor: c.total
     };
 
+
+
     new Chart(document.getElementById("g"+(i+1)),{
       type:"doughnut",
       plugins:[centerTextPlugin],
@@ -303,6 +324,9 @@ async function load(){
 
     document.querySelectorAll(".gauge small")[i].innerText = c.category;
   });
+
+
+  
 }
 load();
 </script>
@@ -387,16 +411,16 @@ load();
         </div>
       </div>
 
-      <div class="panel">
-        <h3>Gastos por Dia da Semana</h3>
-        <canvas id="heatmapWeek"></canvas>
-      </div>
+<div class="panel panel-compact">
+  <h3>Gastos por Dia da Semana</h3>
+  <canvas id="heatmapWeek"></canvas>
+</div>
 
-      <div class="panel">
-        <h3>Receita x Despesa</h3>
-        <div class="bar-row">Receita<div class="bar-bg"><div class="bar-fill" style="width:70%"></div></div></div>
-        <div class="bar-row">Despesa<div class="bar-bg"><div class="bar-fill" style="width:45%"></div></div></div>
-      </div>
+<div class="panel">
+  <h3>Top 5 Maiores Gastos</h3>
+  <div id="top5"></div>
+</div>
+
 
     </div>
 
