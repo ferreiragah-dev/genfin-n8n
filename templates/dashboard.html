@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -67,7 +67,7 @@ body{
 .grid{display:grid;grid-template-columns:3fr 2fr;gap:20px;}
 .left,.right{display:grid;gap:20px;}
 
-/* PAINEL PADRÃO */
+/* PAINEL PADRÃƒO */
 .panel{
   background:linear-gradient(180deg,#070b18,#020617);
   border-radius:18px;
@@ -170,163 +170,171 @@ th{color:#9ca3af;text-align:left;}
 
 <script>
 async function load(){
-  const dash = await fetch("/api/dashboard/", {credentials:"same-origin"}).then(r=>r.json());
-  const entries = await fetch("/api/entries/", {credentials:"same-origin"}).then(r=>r.json());
-  const cats = await fetch("/api/dashboard/categories/", {credentials:"same-origin"}).then(r=>r.json());
-
-  document.getElementById("receita").innerText = "R$ " + dash.total_receita;
-  document.getElementById("despesa").innerText = "R$ " + dash.total_despesa;
-  document.getElementById("saldo").innerText   = "R$ " + dash.saldo;
-  document.getElementById("movimentacoes").innerText = entries.length;
-
-  const entriesReceita = document.getElementById("entriesReceita");
-  const entriesDespesa = document.getElementById("entriesDespesa");
-  entriesReceita.innerHTML = "";
-  entriesDespesa.innerHTML = "";
-
-  entries.slice(0,12).forEach(e=>{
-    const row = `<tr><td>${e.date}</td><td>${e.category}</td><td>R$ ${e.amount}</td></tr>`;
-    if(e.entry_type === "RECEITA") entriesReceita.innerHTML += row;
-    else entriesDespesa.innerHTML += row;
-  });
-
-  // ===============================
-  // NOVOS INDICADORES (SEM ALTERAR O RESTO)
-  // ===============================
-  const hoje = new Date();
-  const diaDoMes = hoje.getDate();
-  const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
-
-  const taxaPoupanca = dash.total_receita > 0
-    ? Math.round((dash.saldo / dash.total_receita) * 100)
-    : 0;
-
-  const burnRate = dash.total_despesa / Math.max(diaDoMes,1);
-  const despesaProjetada = (dash.total_despesa / Math.max(diaDoMes,1)) * diasNoMes;
-  const saldoProjetado = dash.total_receita - despesaProjetada;
-
-  document.getElementById("taxa_poupanca").innerText = taxaPoupanca + "%";
-  document.getElementById("burn_rate").innerText = "R$ " + burnRate.toFixed(2).replace(".", ",");
-  document.getElementById("projecao_fim_mes").innerText = "R$ " + saldoProjetado.toFixed(2).replace(".", ",");
-
-  
-
-  // ===============================
-  // HEATMAP POR DIA DA SEMANA
-  // ===============================
-  const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-  entries.forEach(e=>{
-    if(e.entry_type === "DESPESA"){
-      const d = new Date(e.date);
-      weekMap[d.getDay()] += Number(e.amount);
-    }
-  });
-
-  new Chart(document.getElementById("heatmapWeek"),{
-    type:"bar",
-    data:{
-      labels:["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"],
-      datasets:[{ data:Object.values(weekMap), backgroundColor:"#ef4444" }]
-    },
-    options:{ plugins:{ legend:{display:false} } }
-  });
-  /* === TOP 5 === */
-  const top5 = entries.filter(e=>e.entry_type==="DESPESA").sort((a,b)=>b.amount-a.amount).slice(0,5);
-  const max = Math.max(...top5.map(e=>e.amount),1);
-  const topBox=document.getElementById("top5");
-  topBox.innerHTML="";
-  top5.forEach(e=>{
-    topBox.innerHTML+=`
-      <div class="bar-row">${e.category} (R$ ${e.amount})
-        <div class="bar-bg"><div class="bar-fill" style="width:${(e.amount/max)*100}%"></div></div>
-      </div>`;
-  });
-  // ===============================
-  // RESTANTE DO SEU CÓDIGO ORIGINAL
-  // ===============================
-  const daily   = await fetch("/api/stats/daily/",   {credentials:"same-origin"}).then(r=>r.json());
-  const weekly  = await fetch("/api/stats/weekly/",  {credentials:"same-origin"}).then(r=>r.json());
-  const monthly = await fetch("/api/stats/monthly/", {credentials:"same-origin"}).then(r=>r.json());
-
-  function render(prefix, data, chartId){
-    document.getElementById(prefix+"_in").innerText = "R$ " + data.total_receita;
-    document.getElementById(prefix+"_out").innerText = "R$ " + data.total_despesa;
-    document.getElementById(prefix+"_mov").innerText = data.movimentacoes;
-    document.getElementById(prefix+"_in_p").innerText = data.percent_receita + "%";
-    document.getElementById(prefix+"_out_p").innerText = data.percent_despesa + "%";
-
-    new Chart(document.getElementById(chartId),{
-      type:"bar",
-      data:{ labels:["Entradas","Saídas"], datasets:[{ data:[data.total_receita, data.total_despesa], backgroundColor:["#22c55e","#ef4444"] }] },
-      options:{ plugins:{ legend:{display:false} } }
-    });
+  function parseBrDate(value){
+    const parts = String(value || "").split("/");
+    if(parts.length !== 3) return null;
+    const day = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const year = Number(parts[2]);
+    const date = new Date(year, month, day);
+    if(Number.isNaN(date.getTime())) return null;
+    return date;
   }
-
-  render("d", daily, "chartDaily");
-  render("w", weekly, "chartWeekly");
-  render("m", monthly, "chartMonthly");
-
-  // === PLUGIN TEXTO CENTRAL (% + R$) ===
-  const centerTextPlugin = {
-    id: 'centerText',
-    beforeDraw(chart) {
-      const { ctx, chartArea } = chart;
-      if (!chartArea) return;
-      const pct = chart.config.data.datasets[0].data[0];
-      const val = chart.config.data._valor || 0;
-
-      const x = (chartArea.left + chartArea.right) / 2;
-      const y = (chartArea.top + chartArea.bottom) / 2;
-
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      ctx.font = '600 14px Inter';
-      ctx.fillStyle = '#e5e7eb';
-      ctx.fillText(pct + '%', x, y - 6);
-
-      ctx.font = '400 11px Inter';
-      ctx.fillStyle = '#9ca3af';
-      ctx.fillText('R$ ' + Number(val).toLocaleString('pt-BR'), x, y + 10);
-
-      ctx.restore();
+  function formatCurrency(value){
+    return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  async function fetchJson(url){
+    const response = await fetch(url, {credentials:"same-origin"});
+    if(!response.ok){
+      throw new Error(`Falha em ${url}: ${response.status}`);
     }
-  };
-
-  // === CATEGORIAS (% DESPESA) ===
-  const totalDespesa = cats.reduce((sum,c)=>sum + c.total, 0);
-
-  cats.slice(0,4).forEach((c, i)=>{
-    const pct = Math.round((c.total / totalDespesa) * 100);
-
-    const chartData = {
-      labels:["Despesa","Restante"],
-      datasets:[{
-        data:[pct, 100-pct],
-        backgroundColor:["#ef4444","#1e293b"],
-        borderWidth:0
-      }],
-      _valor: c.total
-    };
-
-
-
-    new Chart(document.getElementById("g"+(i+1)),{
-      type:"doughnut",
-      plugins:[centerTextPlugin],
-      data: chartData,
-      options:{
-        cutout:"70%",
-        plugins:{legend:{display:false}, tooltip:{enabled:false}}
+    return response.json();
+  }
+  try{
+    const [dash, entries, cats, daily, weekly, monthly] = await Promise.all([
+      fetchJson("/api/dashboard/"),
+      fetchJson("/api/entries/"),
+      fetchJson("/api/dashboard/categories/"),
+      fetchJson("/api/stats/daily/"),
+      fetchJson("/api/stats/weekly/"),
+      fetchJson("/api/stats/monthly/")
+    ]);
+    document.getElementById("receita").innerText = formatCurrency(dash.total_receita);
+    document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
+    document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
+    document.getElementById("movimentacoes").innerText = entries.length;
+    const entriesReceita = document.getElementById("entriesReceita");
+    const entriesDespesa = document.getElementById("entriesDespesa");
+    entriesReceita.textContent = "";
+    entriesDespesa.textContent = "";
+    entries.slice(0,12).forEach(e=>{
+      const tr = document.createElement("tr");
+      const dateTd = document.createElement("td");
+      const categoryTd = document.createElement("td");
+      const amountTd = document.createElement("td");
+      dateTd.textContent = e.date;
+      categoryTd.textContent = e.category;
+      amountTd.textContent = formatCurrency(e.amount);
+      tr.appendChild(dateTd);
+      tr.appendChild(categoryTd);
+      tr.appendChild(amountTd);
+      if(e.entry_type === "RECEITA") entriesReceita.appendChild(tr);
+      else entriesDespesa.appendChild(tr);
+    });
+    const hoje = new Date();
+    const diaDoMes = hoje.getDate();
+    const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+    const taxaPoupanca = dash.total_receita > 0
+      ? Math.round((dash.saldo / dash.total_receita) * 100)
+      : 0;
+    const burnRate = dash.total_despesa / Math.max(diaDoMes,1);
+    const despesaProjetada = burnRate * diasNoMes;
+    const saldoProjetado = dash.total_receita - despesaProjetada;
+    document.getElementById("taxa_poupanca").innerText = taxaPoupanca + "%";
+    document.getElementById("burn_rate").innerText = formatCurrency(burnRate);
+    document.getElementById("projecao_fim_mes").innerText = formatCurrency(saldoProjetado);
+    const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+    entries.forEach(e=>{
+      if(e.entry_type === "DESPESA"){
+        const d = parseBrDate(e.date);
+        if(d) weekMap[d.getDay()] += Number(e.amount) || 0;
       }
     });
-
-    document.querySelectorAll(".gauge small")[i].innerText = c.category;
-  });
-
-
-  
+    new Chart(document.getElementById("heatmapWeek"),{
+      type:"bar",
+      data:{
+        labels:["Dom","Seg","Ter","Qua","Qui","Sex","Sab"],
+        datasets:[{ data:Object.values(weekMap), backgroundColor:"#ef4444" }]
+      },
+      options:{ plugins:{ legend:{display:false} } }
+    });
+    const top5 = entries
+      .filter(e=>e.entry_type==="DESPESA")
+      .sort((a,b)=>Number(b.amount)-Number(a.amount))
+      .slice(0,5);
+    const max = Math.max(...top5.map(e=>Number(e.amount) || 0),1);
+    const topBox = document.getElementById("top5");
+    topBox.textContent = "";
+    top5.forEach(e=>{
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      const label = document.createElement("span");
+      label.textContent = `${e.category} (${formatCurrency(e.amount)})`;
+      const barBg = document.createElement("div");
+      barBg.className = "bar-bg";
+      const barFill = document.createElement("div");
+      barFill.className = "bar-fill";
+      barFill.style.width = `${((Number(e.amount) || 0)/max)*100}%`;
+      barBg.appendChild(barFill);
+      row.appendChild(label);
+      row.appendChild(barBg);
+      topBox.appendChild(row);
+    });
+    function render(prefix, data, chartId){
+      document.getElementById(prefix+"_in").innerText = formatCurrency(data.total_receita);
+      document.getElementById(prefix+"_out").innerText = formatCurrency(data.total_despesa);
+      document.getElementById(prefix+"_mov").innerText = data.movimentacoes;
+      document.getElementById(prefix+"_in_p").innerText = data.percent_receita + "%";
+      document.getElementById(prefix+"_out_p").innerText = data.percent_despesa + "%";
+      new Chart(document.getElementById(chartId),{
+        type:"bar",
+        data:{ labels:["Entradas","Saidas"], datasets:[{ data:[data.total_receita, data.total_despesa], backgroundColor:["#22c55e","#ef4444"] }] },
+        options:{ plugins:{ legend:{display:false} } }
+      });
+    }
+    render("d", daily, "chartDaily");
+    render("w", weekly, "chartWeekly");
+    render("m", monthly, "chartMonthly");
+    const centerTextPlugin = {
+      id: "centerText",
+      beforeDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const pct = chart.config.data.datasets[0].data[0];
+        const val = chart.config.data._valor || 0;
+        const x = (chartArea.left + chartArea.right) / 2;
+        const y = (chartArea.top + chartArea.bottom) / 2;
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "600 14px Inter";
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillText(pct + "%", x, y - 6);
+        ctx.font = "400 11px Inter";
+        ctx.fillStyle = "#9ca3af";
+        ctx.fillText("R$ " + Number(val).toLocaleString("pt-BR"), x, y + 10);
+        ctx.restore();
+      }
+    };
+    const totalDespesa = cats.reduce((sum,c)=>sum + Number(c.total || 0), 0);
+    cats.slice(0,4).forEach((c, i)=>{
+      const pct = totalDespesa > 0
+        ? Math.round((Number(c.total || 0) / totalDespesa) * 100)
+        : 0;
+      const chartData = {
+        labels:["Despesa","Restante"],
+        datasets:[{
+          data:[pct, 100-pct],
+          backgroundColor:["#ef4444","#1e293b"],
+          borderWidth:0
+        }],
+        _valor: c.total
+      };
+      new Chart(document.getElementById("g"+(i+1)),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data: chartData,
+        options:{
+          cutout:"70%",
+          plugins:{legend:{display:false}, tooltip:{enabled:false}}
+        }
+      });
+      document.querySelectorAll(".gauge small")[i].innerText = c.category;
+    });
+  } catch (error){
+    console.error(error);
+    document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
+  }
 }
 load();
 </script>
@@ -344,7 +352,7 @@ load();
         <small style="color:#94a3b8">Painel Financeiro</small>
       </div>
     </div>
-    <div style="cursor:pointer;color:#94a3b8">📅 Planner</div>
+    <div style="cursor:pointer;color:#94a3b8">ðŸ“… Planner</div>
   </div>
 
   <div class="grid">
@@ -355,47 +363,47 @@ load();
         <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0</strong></div>
         <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0</strong></div>
         <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0</strong></div>
-        <div class="card"><span>Movimentações</span><strong class="blue" id="movimentacoes">—</strong></div>
+        <div class="card"><span>MovimentaÃ§Ãµes</span><strong class="blue" id="movimentacoes">â€”</strong></div>
       </div>
 
       <!-- NOVOS CARDS -->
       <div class="cards">
-        <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
+        <div class="card"><span>Taxa de PoupanÃ§a</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
-        <div class="card"><span>Projeção Fim do Mês</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
-        <div class="card"><span>—</span><strong class="blue">—</strong></div>
+        <div class="card"><span>ProjeÃ§Ã£o Fim do MÃªs</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
+        <div class="card"><span>â€”</span><strong class="blue">â€”</strong></div>
       </div>
 
       <div class="panel">
-        <h3>Resumo de Movimentações</h3>
+        <h3>Resumo de MovimentaÃ§Ãµes</h3>
         <div class="stats">
           <div class="stat-card">
             <h4>Hoje</h4>
             <div class="metric">Entrou: <b id="d_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="d_out">R$ 0</b></div>
-            <div class="metric">Movimentações: <b id="d_mov">0</b></div>
+            <div class="metric">MovimentaÃ§Ãµes: <b id="d_mov">0</b></div>
             <div class="metric">Entrada %: <b id="d_in_p">0%</b></div>
-            <div class="metric">Saída %: <b id="d_out_p">0%</b></div>
+            <div class="metric">SaÃ­da %: <b id="d_out_p">0%</b></div>
             <canvas id="chartDaily"></canvas>
           </div>
 
           <div class="stat-card">
-            <h4>Últimos 7 dias</h4>
+            <h4>Ãšltimos 7 dias</h4>
             <div class="metric">Entrou: <b id="w_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="w_out">R$ 0</b></div>
-            <div class="metric">Movimentações: <b id="w_mov">0</b></div>
+            <div class="metric">MovimentaÃ§Ãµes: <b id="w_mov">0</b></div>
             <div class="metric">Entrada %: <b id="w_in_p">0%</b></div>
-            <div class="metric">Saída %: <b id="w_out_p">0%</b></div>
+            <div class="metric">SaÃ­da %: <b id="w_out_p">0%</b></div>
             <canvas id="chartWeekly"></canvas>
           </div>
 
           <div class="stat-card">
-            <h4>Últimos 30 dias</h4>
+            <h4>Ãšltimos 30 dias</h4>
             <div class="metric">Entrou: <b id="m_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="m_out">R$ 0</b></div>
-            <div class="metric">Movimentações: <b id="m_mov">0</b></div>
+            <div class="metric">MovimentaÃ§Ãµes: <b id="m_mov">0</b></div>
             <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
-            <div class="metric">Saída %: <b id="m_out_p">0%</b></div>
+            <div class="metric">SaÃ­da %: <b id="m_out_p">0%</b></div>
             <canvas id="chartMonthly"></canvas>
           </div>
         </div>
@@ -404,10 +412,10 @@ load();
       <div class="panel">
         <h3>Desempenho por Categoria (% da Despesa)</h3>
         <div class="gauges">
-          <div class="gauge"><canvas id="g1"></canvas><small>—</small></div>
-          <div class="gauge"><canvas id="g2"></canvas><small>—</small></div>
-          <div class="gauge"><canvas id="g3"></canvas><small>—</small></div>
-          <div class="gauge"><canvas id="g4"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g1"></canvas><small>â€”</small></div>
+          <div class="gauge"><canvas id="g2"></canvas><small>â€”</small></div>
+          <div class="gauge"><canvas id="g3"></canvas><small>â€”</small></div>
+          <div class="gauge"><canvas id="g4"></canvas><small>â€”</small></div>
         </div>
       </div>
 
@@ -448,3 +456,4 @@ load();
 </div>
 </body>
 </html>
+
