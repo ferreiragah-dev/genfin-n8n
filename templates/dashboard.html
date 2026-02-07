@@ -795,11 +795,7 @@ document.addEventListener("DOMContentLoaded", load);
         <div class="card"><span>Taxa de PoupanÃ§a</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
         <div class="card"><span>ProjeÃ§Ã£o Fim do MÃªs</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
-        <div class="card card-donut">
-          <span>Comprometimento Fixo</span>
-          <canvas id="fixedCommitmentChart"></canvas>
-          <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
-        </div>
+        <div class="card"><span>â€”</span><strong class="blue">â€”</strong></div>
       </div>
 
       <div class="panel">
@@ -843,7 +839,13 @@ document.addEventListener("DOMContentLoaded", load);
               <div class="insight-box" id="insightsBox"></div>
             </div>
           </div>
-          <div class="intel-right"></div>
+          <div class="intel-right">
+            <div class="mini-card card-donut">
+              <h5>Comprometimento Fixo</h5>
+              <canvas id="fixedCommitmentChart"></canvas>
+              <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
+            </div>
+          </div>
         </div>
       </div>
 
