@@ -125,12 +125,12 @@ body{
 }
 
 /* CARDS PRINCIPAIS */
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
 .cards-top{grid-template-columns:repeat(4,1fr);}
 .card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
-  padding:18px;
+  padding:14px;
   border:1px solid var(--border);
 }
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -141,7 +141,7 @@ body{
 .card-icon-btn:hover{filter:brightness(1.15)}
 .card-icon-btn.minus{border-color:rgba(239,68,68,.45);color:#fecaca}
 .card span{color:var(--muted);font-size:12px;}
-.card strong{font-size:22px;display:block;margin-top:6px;}
+.card strong{font-size:20px;display:block;margin-top:6px;}
 .green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
 .card-donut canvas{max-height:92px}
 .card-donut small{display:block;margin-top:6px;color:#94a3b8;font-size:11px}
@@ -207,12 +207,12 @@ body{
 .intel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
 .intel-left,.intel-right{display:grid;gap:12px}
 .intel-right{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
-.mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
 .mini-card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border:1px solid var(--border);
   border-radius:14px;
-  padding:12px;
+  padding:10px;
 }
 .mini-card h5{margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .mini-card strong{display:block;margin-top:6px;font-size:20px}
@@ -253,15 +253,15 @@ body{
 }
 .eff-item h6{margin:0;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .eff-item strong{display:block;margin-top:6px;font-size:18px;color:#e2e8f0}
-.eff-charts{display:grid;gap:12px}
+.eff-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
 .eff-card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border:1px solid var(--border);
   border-radius:12px;
-  padding:10px;
+  padding:9px;
 }
 .eff-card h6{margin:0 0 8px;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
-.eff-card canvas{max-height:180px}
+.eff-card canvas{max-height:140px}
 .risk-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
 .risk-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .risk-item{
@@ -272,7 +272,7 @@ body{
 }
 .risk-item h6{margin:0;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .risk-item strong{display:block;margin-top:6px;font-size:18px;color:#e2e8f0}
-.risk-charts{display:grid;gap:12px}
+.risk-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
 .traffic{
   display:flex;align-items:center;gap:10px;padding:8px 0;
 }
@@ -328,8 +328,10 @@ body{
   .intel-right{grid-template-columns:1fr}
   .eff-grid{grid-template-columns:1fr}
   .eff-metrics{grid-template-columns:1fr}
+  .eff-charts{grid-template-columns:1fr}
   .risk-grid{grid-template-columns:1fr}
   .risk-metrics{grid-template-columns:1fr}
+  .risk-charts{grid-template-columns:1fr}
 }
 </style>
 
