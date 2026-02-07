@@ -53,6 +53,25 @@ body{
   align-items:center;
   border:1px solid var(--border);
 }
+.header-actions{display:flex;align-items:center;gap:14px}
+.header-links{display:flex;gap:14px}
+.notif-wrap{position:relative}
+.notif-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
+}
+.notif-badge{
+  position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:10px;
+  background:#ef4444;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;
+}
+.notif-panel{
+  position:absolute;top:42px;right:0;width:320px;max-height:260px;overflow:auto;z-index:20;
+  background:linear-gradient(180deg,#0b1224,#020617);border:1px solid var(--border);border-radius:12px;padding:10px;display:none;
+}
+.notif-panel.open{display:block}
+.notif-item{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.notif-item:last-child{border-bottom:0}
+.notif-empty{font-size:12px;color:#94a3b8;padding:8px}
 
 .user{display:flex;align-items:center;gap:12px;}
 .avatar{
@@ -92,6 +111,7 @@ body{
 
 /* CARDS PRINCIPAIS */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.cards-top{grid-template-columns:repeat(5,1fr);}
 .card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
@@ -101,6 +121,8 @@ body{
 .card span{color:var(--muted);font-size:12px;}
 .card strong{font-size:22px;display:block;margin-top:6px;}
 .green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
+.card-donut canvas{max-height:92px}
+.card-donut small{display:block;margin-top:6px;color:#94a3b8;font-size:11px}
 
 /* RESUMO NEON DARK */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
@@ -151,6 +173,7 @@ body{
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
+  .cards-top{grid-template-columns:1fr 1fr}
 }
 </style>
 
@@ -165,6 +188,63 @@ async function load(){
     const date = new Date(year, month, day);
     if(Number.isNaN(date.getTime())) return null;
     return date;
+  }
+  function parseIsoDate(value){
+    const parts = String(value || "").split("-");
+    if(parts.length !== 3) return null;
+    const year = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    const date = new Date(year, month, day);
+    if(Number.isNaN(date.getTime())) return null;
+    return date;
+  }
+  function startOfDay(date){
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+  function daysUntil(date){
+    const ms = 24 * 60 * 60 * 1000;
+    return Math.round((startOfDay(date) - startOfDay(new Date())) / ms);
+  }
+  function nextOccurrence(baseDate, recurring){
+    const today = startOfDay(new Date());
+    if(!baseDate) return null;
+    if(!recurring){
+      return baseDate >= today ? baseDate : null;
+    }
+
+    const day = baseDate.getDate();
+    const buildDate = (year, month)=>{
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      return new Date(year, month, Math.min(day, lastDay));
+    };
+
+    let candidate = buildDate(today.getFullYear(), today.getMonth());
+    if(candidate < today){
+      candidate = buildDate(today.getFullYear(), today.getMonth() + 1);
+    }
+    return candidate;
+  }
+  function renderNotifications(items){
+    const badge = document.getElementById("notifBadge");
+    const list = document.getElementById("notifList");
+    const count = items.length;
+    badge.style.display = count > 0 ? "flex" : "none";
+    badge.textContent = String(count);
+    list.textContent = "";
+    if(count === 0){
+      const empty = document.createElement("div");
+      empty.className = "notif-empty";
+      empty.textContent = "Sem vencimentos para os proximos 3 dias.";
+      list.appendChild(empty);
+      return;
+    }
+    items.forEach((item)=>{
+      const div = document.createElement("div");
+      div.className = "notif-item";
+      div.textContent = `${item.tipo}: ${item.categoria} (${formatCurrency(item.valor)}) em ${item.data} (${item.falta} dia(s))`;
+      list.appendChild(div);
+    });
   }
   function formatCurrency(value){
     return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -259,6 +339,7 @@ async function load(){
         const { ctx, chartArea } = chart;
         if (!chartArea) return;
         const pct = chart.config.data.datasets[0].data[0];
+        const pctLabel = chart.config.data._pctLabel || (pct + "%");
         const val = chart.config.data._valor || 0;
         const x = (chartArea.left + chartArea.right) / 2;
         const y = (chartArea.top + chartArea.bottom) / 2;
@@ -267,7 +348,7 @@ async function load(){
         ctx.textBaseline = "middle";
         ctx.font = "600 14px Inter";
         ctx.fillStyle = "#e5e7eb";
-        ctx.fillText(pct + "%", x, y - 6);
+        ctx.fillText(pctLabel, x, y - 6);
         ctx.font = "400 11px Inter";
         ctx.fillStyle = "#9ca3af";
         ctx.fillText("R$ " + Number(val).toLocaleString("pt-BR"), x, y + 10);
@@ -301,10 +382,16 @@ async function load(){
     });
 
     let fixedExpenses = [];
+    let fixedIncomes = [];
     try{
       fixedExpenses = await fetchJson("/api/planner/");
     } catch (plannerError){
       console.error("Falha ao carregar despesas fixas:", plannerError);
+    }
+    try{
+      fixedIncomes = await fetchJson("/api/fixed-incomes/");
+    } catch (incomeError){
+      console.error("Falha ao carregar entradas fixas:", incomeError);
     }
 
     const fixedByCategory = {};
@@ -342,12 +429,81 @@ async function load(){
       });
       document.querySelectorAll(".fixed-gauge small")[i].innerText = item.category;
     });
+
+    const recurringFixedExpenseTotal = fixedExpenses
+      .filter((item)=>item.is_recurring)
+      .reduce((sum, item)=>sum + Number(item.amount || 0), 0);
+    const recurringFixedIncomeTotal = fixedIncomes
+      .filter((item)=>item.is_recurring)
+      .reduce((sum, item)=>sum + Number(item.amount || 0), 0);
+    const commitmentPctRaw = recurringFixedIncomeTotal > 0
+      ? (recurringFixedExpenseTotal / recurringFixedIncomeTotal) * 100
+      : 0;
+    const commitmentPctChart = Math.max(0, Math.min(100, Math.round(commitmentPctRaw)));
+
+    new Chart(document.getElementById("fixedCommitmentChart"),{
+      type:"doughnut",
+      plugins:[centerTextPlugin],
+      data:{
+        labels:["Comprometido","Livre"],
+        datasets:[{
+          data:[commitmentPctChart, 100 - commitmentPctChart],
+          backgroundColor:["#ef4444","#1e293b"],
+          borderWidth:0
+        }],
+        _valor: recurringFixedExpenseTotal,
+        _pctLabel: `${Math.round(commitmentPctRaw)}%`
+      },
+      options:{
+        cutout:"70%",
+        plugins:{legend:{display:false}, tooltip:{enabled:false}}
+      }
+    });
+    document.getElementById("fixedCommitmentHint").innerText =
+      `${formatCurrency(recurringFixedExpenseTotal)} de ${formatCurrency(recurringFixedIncomeTotal)}`;
+
+    const upcoming = [];
+    const pushUpcoming = (items, tipo)=>{
+      items.forEach((item)=>{
+        const base = parseIsoDate(item.date);
+        const due = nextOccurrence(base, Boolean(item.is_recurring));
+        if(!due) return;
+        const falta = daysUntil(due);
+        if(falta < 0 || falta > 3) return;
+        const dd = String(due.getDate()).padStart(2, "0");
+        const mm = String(due.getMonth() + 1).padStart(2, "0");
+        const yyyy = due.getFullYear();
+        upcoming.push({
+          tipo,
+          categoria: item.category || "Sem categoria",
+          valor: Number(item.amount || 0),
+          data: `${dd}/${mm}/${yyyy}`,
+          falta
+        });
+      });
+    };
+    pushUpcoming(fixedExpenses, "Despesa");
+    pushUpcoming(fixedIncomes, "Entrada");
+    upcoming.sort((a,b)=>a.falta - b.falta);
+    renderNotifications(upcoming);
+
+    const notifBtn = document.getElementById("notifBtn");
+    const notifPanel = document.getElementById("notifPanel");
+    notifBtn.addEventListener("click", (event)=>{
+      event.stopPropagation();
+      notifPanel.classList.toggle("open");
+    });
+    document.addEventListener("click", (event)=>{
+      if(!notifPanel.contains(event.target) && !notifBtn.contains(event.target)){
+        notifPanel.classList.remove("open");
+      }
+    });
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
   }
 }
-load();
+document.addEventListener("DOMContentLoaded", load);
 </script>
 </head>
 
@@ -363,9 +519,18 @@ load();
         <small style="color:#94a3b8">Painel Financeiro</small>
       </div>
     </div>
-    <div style="display:flex;gap:14px">
-      <a href="/fixed-expenses/" style="color:#94a3b8;text-decoration:none">Despesas Fixas</a>
-      <a href="/fixed-incomes/" style="color:#94a3b8;text-decoration:none">Entradas Fixas</a>
+    <div class="header-actions">
+      <div class="header-links">
+        <a href="/fixed-expenses/" style="color:#94a3b8;text-decoration:none">Despesas Fixas</a>
+        <a href="/fixed-incomes/" style="color:#94a3b8;text-decoration:none">Entradas Fixas</a>
+      </div>
+      <div class="notif-wrap">
+        <button id="notifBtn" class="notif-btn" type="button">🔔</button>
+        <div id="notifBadge" class="notif-badge" style="display:none">0</div>
+        <div id="notifPanel" class="notif-panel">
+          <div id="notifList"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -373,13 +538,18 @@ load();
 
     <div class="left">
 
-      <div class="cards">
+      <div class="cards cards-top">
         <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0</strong></div>
         <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0</strong></div>
         <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0</strong></div>
         <a class="card" href="/transactions/" style="text-decoration:none;color:inherit;cursor:pointer">
           <span>Movimentacoes</span><strong class="blue" id="movimentacoes">--</strong>
         </a>
+        <div class="card card-donut">
+          <span>Comprometimento Fixo</span>
+          <canvas id="fixedCommitmentChart"></canvas>
+          <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
+        </div>
       </div>
 
       <!-- NOVOS CARDS -->
