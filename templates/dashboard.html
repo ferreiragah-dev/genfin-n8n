@@ -459,16 +459,52 @@ async function load(){
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
     function initPanelToggles(){
-      document.querySelectorAll(".panel-toggle").forEach((btn)=>{
+      document.querySelectorAll(".panel").forEach((panel, index)=>{
+        let header = panel.querySelector(":scope > .panel-head");
+        if(!header){
+          header = panel.querySelector(":scope > .section-head");
+        }
+        if(!header){
+          const h3 = panel.querySelector(":scope > h3");
+          if(h3){
+            header = document.createElement("div");
+            header.className = "panel-head";
+            panel.insertBefore(header, h3);
+            header.appendChild(h3);
+          }
+        }
+        if(!header) return;
+
+        let body = panel.querySelector(":scope > .panel-body");
+        if(!body){
+          body = document.createElement("div");
+          body.className = "panel-body";
+          const children = Array.from(panel.children).filter((child)=>child !== header);
+          children.forEach((child)=>body.appendChild(child));
+          panel.appendChild(body);
+        }
+        if(!body.id){
+          body.id = `panel-body-auto-${index}`;
+        }
+
+        let btn = header.querySelector(".panel-toggle");
+        if(!btn){
+          btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "panel-toggle";
+          btn.title = "Recolher/Expandir";
+          btn.textContent = "▾";
+          header.appendChild(btn);
+        }
+        btn.dataset.target = body.id;
         if(btn.dataset.bound) return;
         btn.dataset.bound = "1";
         btn.addEventListener("click", ()=>{
           const targetId = btn.dataset.target;
-          const body = targetId ? document.getElementById(targetId) : null;
-          const panel = btn.closest(".panel");
-          if(!body || !panel) return;
+          const targetBody = targetId ? document.getElementById(targetId) : null;
+          if(!targetBody) return;
           const collapsed = panel.classList.toggle("collapsed");
-          body.hidden = collapsed;
+          targetBody.hidden = collapsed;
           btn.setAttribute("aria-expanded", String(!collapsed));
           btn.textContent = collapsed ? "▸" : "▾";
         });
