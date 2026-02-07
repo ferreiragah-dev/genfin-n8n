@@ -403,7 +403,9 @@ body.theme-light .notif-btn,
 body.theme-light .card-icon-btn,
 body.theme-light .visibility-btn,
 body.theme-light .theme-switch,
-body.theme-light .modal-close{
+body.theme-light .modal-close,
+body.theme-light .panel-toggle,
+body.theme-light .theme-btn{
   background:linear-gradient(180deg,#ffffff,#f8fbff);
   color:#0f172a;
 }
@@ -435,6 +437,13 @@ body.theme-light .field textarea{
   background:#f8fbff;
   color:#0f172a;
 }
+body.theme-light .header-links a{color:#334155 !important}
+body.theme-light .user small{color:#475569 !important}
+body.theme-light #selectedMonthLabel{color:#475569 !important}
+body.theme-light .bar-bg{background:#dbe7ff}
+body.theme-light .badge{color:#1e293b;background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.25)}
+body.theme-light .badge.warn{color:#7f1d1d;background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.32)}
+body.theme-light .notif-item{color:#1e293b}
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
@@ -595,6 +604,11 @@ async function load(){
         document.body.classList.toggle("theme-light", isLight);
         dayBtn.classList.toggle("active", isLight);
         nightBtn.classList.toggle("active", !isLight);
+        if(window.Chart && Chart.instances){
+          Object.values(Chart.instances).forEach((chart)=>{
+            try{ chart.update(); } catch (_error){ /* ignore */ }
+          });
+        }
       };
 
       const saved = localStorage.getItem("genfin_theme_mode");
@@ -863,14 +877,20 @@ async function load(){
         const val = chart.config.data._valor || 0;
         const x = (chartArea.left + chartArea.right) / 2;
         const y = (chartArea.top + chartArea.bottom) / 2;
+        const styles = getComputedStyle(document.body);
+        const mainTextColor = (styles.getPropertyValue("--text") || "#e5e7eb").trim();
+        const subTextColor = (styles.getPropertyValue("--muted") || "#9ca3af").trim();
         ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = "600 14px Inter";
-        ctx.fillStyle = "#e5e7eb";
+        ctx.font = "700 14px Inter";
+        ctx.fillStyle = mainTextColor;
+        ctx.strokeStyle = document.body.classList.contains("theme-light") ? "rgba(255,255,255,.9)" : "rgba(2,6,23,.85)";
+        ctx.lineWidth = 2;
+        ctx.strokeText(pctLabel, x, y - 6);
         ctx.fillText(pctLabel, x, y - 6);
         ctx.font = "400 11px Inter";
-        ctx.fillStyle = "#9ca3af";
+        ctx.fillStyle = subTextColor;
         ctx.fillText("R$ " + Number(val).toLocaleString("pt-BR"), x, y + 10);
         ctx.restore();
       }
