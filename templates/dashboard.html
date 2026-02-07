@@ -185,6 +185,7 @@ body{
 .period-btn.active{background:#38bdf8;color:#04111d}
 .intel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
 .intel-left,.intel-right{display:grid;gap:12px}
+.intel-right{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
 .mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .mini-card{
   background:linear-gradient(180deg,#0b1224,#020617);
@@ -194,6 +195,8 @@ body{
 }
 .mini-card h5{margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .mini-card strong{display:block;margin-top:6px;font-size:20px}
+.mini-card.card-donut canvas{max-height:110px}
+.mini-card.card-donut small{display:block;margin-top:6px;color:#94a3b8;font-size:11px}
 .trend{font-size:12px;margin-top:4px}
 .trend.up{color:#22c55e}
 .trend.down{color:#ef4444}
@@ -224,6 +227,7 @@ body{
   .cards{grid-template-columns:1fr 1fr}
   .mini-cards{grid-template-columns:1fr}
   .intel-grid{grid-template-columns:1fr}
+  .intel-right{grid-template-columns:1fr}
 }
 </style>
 
@@ -477,31 +481,6 @@ async function load(){
     const recurringFixedIncomeTotal = fixedIncomes
       .filter((item)=>item.is_recurring)
       .reduce((sum, item)=>sum + Number(item.amount || 0), 0);
-    const commitmentPctRaw = recurringFixedIncomeTotal > 0
-      ? (recurringFixedExpenseTotal / recurringFixedIncomeTotal) * 100
-      : 0;
-    const commitmentPctChart = Math.max(0, Math.min(100, Math.round(commitmentPctRaw)));
-
-    new Chart(document.getElementById("fixedCommitmentChart"),{
-      type:"doughnut",
-      plugins:[centerTextPlugin],
-      data:{
-        labels:["Comprometido","Livre"],
-        datasets:[{
-          data:[commitmentPctChart, 100 - commitmentPctChart],
-          backgroundColor:["#ef4444","#1e293b"],
-          borderWidth:0
-        }],
-        _valor: recurringFixedExpenseTotal,
-        _pctLabel: `${Math.round(commitmentPctRaw)}%`
-      },
-      options:{
-        cutout:"70%",
-        plugins:{legend:{display:false}, tooltip:{enabled:false}}
-      }
-    });
-    document.getElementById("fixedCommitmentHint").innerText =
-      `${formatCurrency(recurringFixedExpenseTotal)} de ${formatCurrency(recurringFixedIncomeTotal)}`;
 
     const entriesParsed = entries.map((item)=>({
       ...item,
@@ -595,6 +574,34 @@ async function load(){
         topBox.textContent = "Sem dados no periodo selecionado.";
       }
     }
+    const miniDonutCharts = {};
+    function renderMiniDonut(canvasId, pctRaw, value, color, pctLabel, hintId, hintText){
+      const pct = clampPercent(pctRaw);
+      if(miniDonutCharts[canvasId]){
+        miniDonutCharts[canvasId].destroy();
+      }
+      miniDonutCharts[canvasId] = new Chart(document.getElementById(canvasId),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Valor","Restante"],
+          datasets:[{
+            data:[pct, 100 - pct],
+            backgroundColor:[color,"#1e293b"],
+            borderWidth:0
+          }],
+          _valor: value,
+          _pctLabel: pctLabel || `${pct}%`
+        },
+        options:{
+          cutout:"70%",
+          plugins:{legend:{display:false}, tooltip:{enabled:false}}
+        }
+      });
+      if(hintId){
+        document.getElementById(hintId).innerText = hintText;
+      }
+    }
     let upcomingBase = [];
     function applyPeriodFilter(period){
       document.querySelectorAll(".period-btn").forEach((btn)=>{
@@ -665,6 +672,60 @@ async function load(){
       }
 
       renderTop5(expenseEntries);
+
+      const commitmentPctRaw = recurringFixedIncomeTotal > 0
+        ? (recurringFixedExpenseTotal / recurringFixedIncomeTotal) * 100
+        : 0;
+      renderMiniDonut(
+        "fixedCommitmentChart",
+        commitmentPctRaw,
+        recurringFixedExpenseTotal,
+        "#ef4444",
+        `${Math.round(commitmentPctRaw)}%`,
+        "fixedCommitmentHint",
+        `${formatCurrency(recurringFixedExpenseTotal)} de ${formatCurrency(recurringFixedIncomeTotal)}`
+      );
+
+      const coveragePctRaw = recurringFixedExpenseTotal > 0
+        ? (recurringFixedIncomeTotal / recurringFixedExpenseTotal) * 100
+        : 0;
+      renderMiniDonut(
+        "fixedCoverageChart",
+        coveragePctRaw,
+        recurringFixedIncomeTotal,
+        "#22c55e",
+        `${Math.round(coveragePctRaw)}%`,
+        "fixedCoverageHint",
+        `Entradas fixas cobrem ${formatCurrency(recurringFixedExpenseTotal)}`
+      );
+
+      const fixedWeightPctRaw = despesaPeriodo > 0
+        ? (recurringFixedExpenseTotal / despesaPeriodo) * 100
+        : 0;
+      renderMiniDonut(
+        "fixedWeightChart",
+        fixedWeightPctRaw,
+        recurringFixedExpenseTotal,
+        "#38bdf8",
+        `${Math.round(fixedWeightPctRaw)}%`,
+        "fixedWeightHint",
+        `Peso nas saidas do periodo: ${formatCurrency(despesaPeriodo)}`
+      );
+
+      const reserveMonths = recurringFixedExpenseTotal > 0
+        ? Number(dash.saldo || 0) / recurringFixedExpenseTotal
+        : 0;
+      const reservePctRaw = recurringFixedExpenseTotal > 0 ? (reserveMonths / 6) * 100 : 0;
+      renderMiniDonut(
+        "fixedReserveChart",
+        reservePctRaw,
+        Number(dash.saldo || 0),
+        "#eab308",
+        `${reserveMonths.toFixed(1)}m`,
+        "fixedReserveHint",
+        "Meta sugerida: 6 meses de despesas fixas"
+      );
+
       const largestRecurring = recurringLargest();
       const insightBox = document.getElementById("insightsBox");
       insightBox.textContent = "";
@@ -844,6 +905,21 @@ document.addEventListener("DOMContentLoaded", load);
               <h5>Comprometimento Fixo</h5>
               <canvas id="fixedCommitmentChart"></canvas>
               <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
+            </div>
+            <div class="mini-card card-donut">
+              <h5>Cobertura de Fixas</h5>
+              <canvas id="fixedCoverageChart"></canvas>
+              <small id="fixedCoverageHint">Entradas fixas cobrem R$ 0,00</small>
+            </div>
+            <div class="mini-card card-donut">
+              <h5>Peso nas Saidas</h5>
+              <canvas id="fixedWeightChart"></canvas>
+              <small id="fixedWeightHint">Peso nas saidas do periodo: R$ 0,00</small>
+            </div>
+            <div class="mini-card card-donut">
+              <h5>Reserva para Fixas</h5>
+              <canvas id="fixedReserveChart"></canvas>
+              <small id="fixedReserveHint">Meta sugerida: 6 meses de despesas fixas</small>
             </div>
           </div>
         </div>
