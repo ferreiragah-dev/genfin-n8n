@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>GenFin | Despesas Fixas</title>
+<title>GenFin | Entradas Fixas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -77,15 +77,15 @@ function setMessage(text, isError){
 
 function resetForm(){
   editingId = null;
-  document.getElementById("title_form").textContent = "Adicionar Despesa Fixa";
-  document.getElementById("expenseForm").reset();
+  document.getElementById("title_form").textContent = "Adicionar Entrada Fixa";
+  document.getElementById("incomeForm").reset();
   document.getElementById("is_recurring").checked = false;
   document.getElementById("cancelEdit").style.display = "none";
 }
 
 function fillForm(item){
   editingId = item.id;
-  document.getElementById("title_form").textContent = "Editar Despesa Fixa";
+  document.getElementById("title_form").textContent = "Editar Entrada Fixa";
   document.getElementById("date").value = item.date;
   document.getElementById("category").value = item.category;
   document.getElementById("description").value = item.description || "";
@@ -94,12 +94,12 @@ function fillForm(item){
   document.getElementById("cancelEdit").style.display = "inline-block";
 }
 
-async function loadExpenses(){
-  const response = await fetch("/api/planner/", {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar despesas fixas");
+async function loadIncomes(){
+  const response = await fetch("/api/fixed-incomes/", {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar entradas fixas");
 
   const items = await response.json();
-  const tbody = document.getElementById("expenseRows");
+  const tbody = document.getElementById("incomeRows");
   tbody.textContent = "";
 
   items.forEach((item)=>{
@@ -114,6 +114,7 @@ async function loadExpenses(){
     const amountTd = document.createElement("td");
     amountTd.textContent = formatCurrency(item.amount);
     const recurringTd = document.createElement("td");
+
     const recurringToggle = document.createElement("input");
     recurringToggle.type = "checkbox";
     recurringToggle.checked = Boolean(item.is_recurring);
@@ -121,7 +122,7 @@ async function loadExpenses(){
     recurringToggle.addEventListener("change", async ()=>{
       const previous = item.is_recurring;
       item.is_recurring = recurringToggle.checked;
-      const response = await fetch(`/api/planner/${item.id}/`, {
+      const response = await fetch(`/api/fixed-incomes/${item.id}/`, {
         method:"PUT",
         credentials:"same-origin",
         headers:{
@@ -136,6 +137,7 @@ async function loadExpenses(){
           is_recurring: item.is_recurring,
         }),
       });
+
       if(!response.ok){
         item.is_recurring = previous;
         recurringToggle.checked = Boolean(previous);
@@ -145,9 +147,9 @@ async function loadExpenses(){
       }
       setMessage("Recorrencia atualizada.", false);
     });
+
     recurringTd.appendChild(recurringToggle);
     const actionsTd = document.createElement("td");
-
     const actions = document.createElement("div");
     actions.className = "row-actions";
 
@@ -160,22 +162,20 @@ async function loadExpenses(){
     deleteBtn.className = "btn-danger";
     deleteBtn.textContent = "Remover";
     deleteBtn.addEventListener("click", async ()=>{
-      if(!confirm("Remover esta despesa fixa?")) return;
-      const del = await fetch(`/api/planner/${item.id}/`, {
+      if(!confirm("Remover esta entrada fixa?")) return;
+      const del = await fetch(`/api/fixed-incomes/${item.id}/`, {
         method:"DELETE",
         credentials:"same-origin",
-        headers:{
-          "X-CSRFToken": getCsrfToken(),
-        },
+        headers:{"X-CSRFToken": getCsrfToken()},
       });
       if(!del.ok){
         const msg = await parseError(del, "Nao foi possivel remover.");
         setMessage(msg, true);
         return;
       }
-      setMessage("Despesa fixa removida.", false);
+      setMessage("Entrada fixa removida.", false);
       if(editingId === item.id) resetForm();
-      await loadExpenses();
+      await loadIncomes();
     });
 
     actions.appendChild(editBtn);
@@ -203,7 +203,7 @@ async function submitForm(event){
     is_recurring: document.getElementById("is_recurring").checked,
   };
 
-  const url = editingId ? `/api/planner/${editingId}/` : "/api/planner/create/";
+  const url = editingId ? `/api/fixed-incomes/${editingId}/` : "/api/fixed-incomes/create/";
   const method = editingId ? "PUT" : "POST";
 
   const response = await fetch(url, {
@@ -217,25 +217,25 @@ async function submitForm(event){
   });
 
   if(!response.ok){
-    const msg = await parseError(response, "Erro ao salvar despesa fixa.");
+    const msg = await parseError(response, "Erro ao salvar entrada fixa.");
     setMessage(msg, true);
     return;
   }
 
-  setMessage(editingId ? "Despesa fixa atualizada." : "Despesa fixa criada.", false);
+  setMessage(editingId ? "Entrada fixa atualizada." : "Entrada fixa criada.", false);
   resetForm();
-  await loadExpenses();
+  await loadIncomes();
 }
 
 async function init(){
-  document.getElementById("expenseForm").addEventListener("submit", submitForm);
+  document.getElementById("incomeForm").addEventListener("submit", submitForm);
   document.getElementById("cancelEdit").addEventListener("click", resetForm);
 
   try{
-    await loadExpenses();
+    await loadIncomes();
   } catch (error){
     console.error(error);
-    setMessage("Erro ao carregar despesas fixas.", true);
+    setMessage("Erro ao carregar entradas fixas.", true);
   }
 }
 
@@ -245,18 +245,18 @@ document.addEventListener("DOMContentLoaded", init);
 <body>
 <div class="container">
   <div class="header">
-    <strong>Despesas Fixas</strong>
+    <strong>Entradas Fixas</strong>
     <div class="links">
       <a href="/dashboard/">Dashboard</a>
       <a href="/transactions/">Movimentacoes</a>
-      <a href="/fixed-incomes/">Entradas Fixas</a>
+      <a href="/fixed-expenses/">Despesas Fixas</a>
     </div>
   </div>
 
   <div class="grid">
     <div class="panel">
-      <h3 id="title_form">Adicionar Despesa Fixa</h3>
-      <form id="expenseForm">
+      <h3 id="title_form">Adicionar Entrada Fixa</h3>
+      <form id="incomeForm">
         <label for="date">Data</label>
         <input id="date" type="date" required>
 
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", init);
     </div>
 
     <div class="panel">
-      <h3>Lista de Despesas Fixas</h3>
+      <h3>Lista de Entradas Fixas</h3>
       <table>
         <thead>
           <tr>
@@ -295,7 +295,7 @@ document.addEventListener("DOMContentLoaded", init);
             <th>Acoes</th>
           </tr>
         </thead>
-        <tbody id="expenseRows"></tbody>
+        <tbody id="incomeRows"></tbody>
       </table>
     </div>
   </div>

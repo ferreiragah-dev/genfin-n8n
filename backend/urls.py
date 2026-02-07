@@ -8,6 +8,7 @@ from django.urls import include, path
 from accounts.views import (
     dashboard_page,
     fixed_expenses_page,
+    fixed_incomes_page,
     login_page,
     transactions_page,
 )
@@ -19,4 +20,5 @@ urlpatterns = [
     path("dashboard/", dashboard_page),
     path("transactions/", transactions_page),
     path("fixed-expenses/", fixed_expenses_page),
+    path("fixed-incomes/", fixed_incomes_page),
 ]

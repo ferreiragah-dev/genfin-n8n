@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FinancialEntry, PlannedExpense, UserAccount
+from .models import FinancialEntry, PlannedExpense, PlannedIncome, UserAccount
 
 
 def get_logged_user(request):
@@ -207,6 +207,13 @@ def fixed_expenses_page(request):
     return render(request, "fixed_expenses.html")
 
 
+@ensure_csrf_cookie
+def fixed_incomes_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "fixed_incomes.html")
+
+
 class FinancialEntryListView(APIView):
     def get(self, request):
         user = get_logged_user(request)
@@ -274,6 +281,29 @@ class PlannerListView(APIView):
         )
 
 
+class PlannedIncomeListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.planned_incomes.all().order_by("date")
+
+        return Response(
+            [
+                {
+                    "id": p.id,
+                    "date": p.date.strftime("%Y-%m-%d"),
+                    "category": p.category,
+                    "description": p.description,
+                    "amount": p.amount,
+                    "is_recurring": p.is_recurring,
+                }
+                for p in data
+            ]
+        )
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class PlannerCreateView(APIView):
     def post(self, request):
@@ -303,6 +333,41 @@ class PlannerCreateView(APIView):
         return Response(
             {
                 "message": "Despesa fixa criada",
+                "id": planned.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PlannedIncomeCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        date = request.data.get("date")
+        category = request.data.get("category")
+        amount = request.data.get("amount")
+
+        if not date or not category or amount in (None, ""):
+            return Response(
+                {"error": "date, category e amount sao obrigatorios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        planned = PlannedIncome.objects.create(
+            user=user,
+            date=date,
+            category=category,
+            description=request.data.get("description", ""),
+            amount=amount,
+            is_recurring=parse_bool(request.data.get("is_recurring", False)),
+        )
+
+        return Response(
+            {
+                "message": "Entrada fixa criada",
                 "id": planned.id,
             },
             status=status.HTTP_201_CREATED,
@@ -353,6 +418,57 @@ class PlannerDetailView(APIView):
         except PlannedExpense.DoesNotExist:
             return Response(
                 {"error": "Despesa fixa nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        planned.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PlannedIncomeDetailView(APIView):
+    def put(self, request, income_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            planned = user.planned_incomes.get(id=income_id)
+        except PlannedIncome.DoesNotExist:
+            return Response(
+                {"error": "Entrada fixa nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        date = request.data.get("date")
+        category = request.data.get("category")
+        amount = request.data.get("amount")
+
+        if not date or not category or amount in (None, ""):
+            return Response(
+                {"error": "date, category e amount sao obrigatorios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        planned.date = date
+        planned.category = category
+        planned.description = request.data.get("description", "")
+        planned.amount = amount
+        planned.is_recurring = parse_bool(request.data.get("is_recurring", False))
+        planned.save()
+
+        return Response({"message": "Entrada fixa atualizada"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, income_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            planned = user.planned_incomes.get(id=income_id)
+        except PlannedIncome.DoesNotExist:
+            return Response(
+                {"error": "Entrada fixa nao encontrada"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
