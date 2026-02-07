@@ -119,6 +119,13 @@ body{
   padding:18px;
   border:1px solid var(--border);
 }
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-icon-btn{
+  width:28px;height:28px;border-radius:9px;border:1px solid rgba(56,189,248,.35);
+  background:#0b1224;color:#cbd5e1;font-size:16px;line-height:1;cursor:pointer;
+}
+.card-icon-btn:hover{filter:brightness(1.15)}
+.card-icon-btn.minus{border-color:rgba(239,68,68,.45);color:#fecaca}
 .card span{color:var(--muted);font-size:12px;}
 .card strong{font-size:22px;display:block;margin-top:6px;}
 .green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
@@ -222,6 +229,42 @@ body{
 }
 .insight-box p{margin:0 0 8px}
 .insight-box p:last-child{margin:0}
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(2,6,23,.75);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:80;padding:16px;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  width:min(520px,96vw);
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:0 20px 50px rgba(2,6,23,.45);
+  overflow:hidden;
+}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.18);
+}
+.modal-head h4{margin:0;color:#e2e8f0;font-size:15px}
+.modal-close{
+  width:30px;height:30px;border-radius:9px;border:1px solid rgba(148,163,184,.25);
+  background:#0b1224;color:#cbd5e1;cursor:pointer;
+}
+.modal-body{padding:16px;display:grid;gap:12px}
+.field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:6px}
+.field input,.field textarea{
+  width:100%;border-radius:10px;border:1px solid rgba(56,189,248,.22);
+  background:#0b1224;color:#e5e7eb;padding:10px;font:inherit;
+}
+.field textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.modal-btn{
+  border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;
+}
+.modal-btn.primary{background:#38bdf8;color:#04111d}
+.modal-btn.secondary{background:#1e293b;color:#cbd5e1}
+.modal-message{font-size:12px;min-height:16px;color:#22c55e}
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
@@ -316,6 +359,11 @@ async function load(){
   function formatCurrency(value){
     return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
   }
+  function toBrDate(isoDate){
+    const parts = String(isoDate || "").split("-");
+    if(parts.length !== 3) return "";
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
   async function fetchJson(url){
     const response = await fetch(url, {credentials:"same-origin"});
     if(!response.ok){
@@ -336,6 +384,99 @@ async function load(){
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
+
+    function setLaunchMessage(text, isError){
+      const msg = document.getElementById("launchMessage");
+      msg.textContent = text;
+      msg.style.color = isError ? "#ef4444" : "#22c55e";
+    }
+    function openLaunchModal(type){
+      const overlay = document.getElementById("launchOverlay");
+      const form = document.getElementById("launchForm");
+      const title = document.getElementById("launchTitle");
+      const typeInput = document.getElementById("launchType");
+      const todayIso = new Date().toISOString().slice(0,10);
+      typeInput.value = type;
+      title.textContent = type === "RECEITA" ? "Nova Receita" : "Nova Despesa";
+      form.reset();
+      document.getElementById("launchDate").value = todayIso;
+      setLaunchMessage("", false);
+      overlay.classList.add("open");
+    }
+    function closeLaunchModal(){
+      document.getElementById("launchOverlay").classList.remove("open");
+    }
+
+    const launchIncomeBtn = document.getElementById("addIncomeBtn");
+    const launchExpenseBtn = document.getElementById("addExpenseBtn");
+    const launchOverlay = document.getElementById("launchOverlay");
+    const launchClose = document.getElementById("launchClose");
+    const launchCancel = document.getElementById("launchCancel");
+    const launchForm = document.getElementById("launchForm");
+
+    if(!launchIncomeBtn.dataset.bound){
+      launchIncomeBtn.dataset.bound = "1";
+      launchExpenseBtn.dataset.bound = "1";
+      launchClose.dataset.bound = "1";
+      launchCancel.dataset.bound = "1";
+      launchForm.dataset.bound = "1";
+
+      launchIncomeBtn.addEventListener("click", ()=>openLaunchModal("RECEITA"));
+      launchExpenseBtn.addEventListener("click", ()=>openLaunchModal("DESPESA"));
+      launchClose.addEventListener("click", closeLaunchModal);
+      launchCancel.addEventListener("click", closeLaunchModal);
+      launchOverlay.addEventListener("click", (event)=>{
+        if(event.target === launchOverlay) closeLaunchModal();
+      });
+
+      launchForm.addEventListener("submit", async (event)=>{
+        event.preventDefault();
+        const type = document.getElementById("launchType").value;
+        const category = document.getElementById("launchCategory").value.trim();
+        const amount = document.getElementById("launchAmount").value;
+        const dateIso = document.getElementById("launchDate").value;
+        const phone = dash.phone_number;
+
+        if(!phone){
+          setLaunchMessage("Sessao invalida. Faca login novamente.", true);
+          return;
+        }
+        if(!category || !amount || !dateIso){
+          setLaunchMessage("Preencha categoria, valor e data.", true);
+          return;
+        }
+
+        const payload = {
+          phone_number: phone,
+          categoria: category,
+          data: toBrDate(dateIso),
+        };
+        if(type === "RECEITA") payload.receita = amount;
+        else payload.despesa = amount;
+
+        const response = await fetch("/api/financial-entry/", {
+          method:"POST",
+          credentials:"same-origin",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(payload),
+        });
+
+        if(!response.ok){
+          let msg = "Nao foi possivel salvar o lancamento.";
+          try{
+            const data = await response.json();
+            msg = data.error || msg;
+          } catch (_error){
+            // keep default message
+          }
+          setLaunchMessage(msg, true);
+          return;
+        }
+
+        setLaunchMessage("Lancamento salvo com sucesso.", false);
+        setTimeout(()=>window.location.reload(), 450);
+      });
+    }
     const hoje = new Date();
     const diaDoMes = hoje.getDate();
     const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
@@ -844,8 +985,20 @@ document.addEventListener("DOMContentLoaded", load);
     <div class="left">
 
       <div class="cards cards-top">
-        <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0</strong></div>
-        <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0</strong></div>
+        <div class="card">
+          <div class="card-head">
+            <span>Receitas</span>
+            <button type="button" id="addIncomeBtn" class="card-icon-btn" title="Nova receita">+</button>
+          </div>
+          <strong class="green" id="receita">R$ 0</strong>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span>Despesas</span>
+            <button type="button" id="addExpenseBtn" class="card-icon-btn minus" title="Nova despesa">-</button>
+          </div>
+          <strong class="red" id="despesa">R$ 0</strong>
+        </div>
         <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0</strong></div>
         <a class="card" href="/transactions/" style="text-decoration:none;color:inherit;cursor:pointer">
           <span>Movimentacoes</span><strong class="blue" id="movimentacoes">--</strong>
@@ -994,6 +1147,38 @@ document.addEventListener("DOMContentLoaded", load);
 
     </div>
 
+  </div>
+</div>
+<div id="launchOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="launchTitle">
+    <div class="modal-head">
+      <h4 id="launchTitle">Novo Lançamento</h4>
+      <button id="launchClose" type="button" class="modal-close">×</button>
+    </div>
+    <form id="launchForm" class="modal-body">
+      <input id="launchType" type="hidden" value="RECEITA">
+      <div class="field">
+        <label for="launchCategory">Categoria</label>
+        <input id="launchCategory" type="text" maxlength="80" required>
+      </div>
+      <div class="field">
+        <label for="launchAmount">Valor</label>
+        <input id="launchAmount" type="number" min="0.01" step="0.01" required>
+      </div>
+      <div class="field">
+        <label for="launchDate">Data</label>
+        <input id="launchDate" type="date" required>
+      </div>
+      <div class="field">
+        <label for="launchDescription">Observação (opcional)</label>
+        <textarea id="launchDescription" placeholder="Ex.: Mercado mensal, freelance, etc."></textarea>
+      </div>
+      <div id="launchMessage" class="modal-message"></div>
+      <div class="modal-actions">
+        <button id="launchCancel" type="button" class="modal-btn secondary">Cancelar</button>
+        <button type="submit" class="modal-btn primary">Salvar</button>
+      </div>
+    </form>
   </div>
 </div>
 </body>
