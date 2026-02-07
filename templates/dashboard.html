@@ -177,14 +177,13 @@ async function load(){
     return response.json();
   }
   try{
-    const [dash, entries, cats, daily, weekly, monthly, fixedExpenses] = await Promise.all([
+    const [dash, entries, cats, daily, weekly, monthly] = await Promise.all([
       fetchJson("/api/dashboard/"),
       fetchJson("/api/entries/"),
       fetchJson("/api/dashboard/categories/"),
       fetchJson("/api/stats/daily/"),
       fetchJson("/api/stats/weekly/"),
-      fetchJson("/api/stats/monthly/"),
-      fetchJson("/api/planner/")
+      fetchJson("/api/stats/monthly/")
     ]);
     document.getElementById("receita").innerText = formatCurrency(dash.total_receita);
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
@@ -300,6 +299,13 @@ async function load(){
       });
       document.querySelectorAll(".gauge small")[i].innerText = c.category;
     });
+
+    let fixedExpenses = [];
+    try{
+      fixedExpenses = await fetchJson("/api/planner/");
+    } catch (plannerError){
+      console.error("Falha ao carregar despesas fixas:", plannerError);
+    }
 
     const fixedByCategory = {};
     fixedExpenses.filter((item)=>item.is_recurring).forEach((item)=>{
