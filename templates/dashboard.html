@@ -193,6 +193,16 @@ body{
 .bar-bg{flex:1;height:8px;background:#020617;border-radius:10px;overflow:hidden;}
 .bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#db2777);}
 .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.panel-head h3{margin:0}
+.panel-body{margin-top:12px}
+.panel-toggle{
+  width:30px;height:30px;border-radius:9px;border:1px solid var(--border);
+  background:#0b1224;color:#cbd5e1;cursor:pointer;font-size:14px;line-height:1;
+}
+.panel-toggle:hover{filter:brightness(1.12)}
+.panel.collapsed .panel-body{display:none}
+.panel.collapsed .panel-toggle{transform:rotate(-90deg)}
 .period-filters{display:flex;gap:8px}
 .period-btn{
   border:1px solid var(--border);
@@ -448,6 +458,23 @@ async function load(){
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
+    function initPanelToggles(){
+      document.querySelectorAll(".panel-toggle").forEach((btn)=>{
+        if(btn.dataset.bound) return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", ()=>{
+          const targetId = btn.dataset.target;
+          const body = targetId ? document.getElementById(targetId) : null;
+          const panel = btn.closest(".panel");
+          if(!body || !panel) return;
+          const collapsed = panel.classList.toggle("collapsed");
+          body.hidden = collapsed;
+          btn.setAttribute("aria-expanded", String(!collapsed));
+          btn.textContent = collapsed ? "▸" : "▾";
+        });
+      });
+    }
+    initPanelToggles();
 
     function setLaunchMessage(text, isError){
       const msg = document.getElementById("launchMessage");
@@ -1603,9 +1630,13 @@ document.addEventListener("DOMContentLoaded", load);
         </div>
       </div>
 
-      <div class="panel">
-        <h3>Eficiência Financeira</h3>
-        <div class="eff-grid">
+      <div class="panel" id="panel-eficiencia">
+        <div class="panel-head">
+          <h3>Eficiência Financeira</h3>
+          <button type="button" class="panel-toggle" data-target="body-eficiencia" aria-expanded="true" title="Recolher/Expandir">▾</button>
+        </div>
+        <div class="panel-body" id="body-eficiencia">
+          <div class="eff-grid">
           <div class="eff-metrics">
             <div class="eff-item">
               <h6>Índice de Eficiência (IEF)</h6>
@@ -1646,12 +1677,17 @@ document.addEventListener("DOMContentLoaded", load);
               <canvas id="previsibilidadeGaugeChart"></canvas>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h3>Segurança Financeira</h3>
-        <div class="risk-grid">
+      <div class="panel" id="panel-seguranca">
+        <div class="panel-head">
+          <h3>Segurança Financeira</h3>
+          <button type="button" class="panel-toggle" data-target="body-seguranca" aria-expanded="true" title="Recolher/Expandir">▾</button>
+        </div>
+        <div class="panel-body" id="body-seguranca">
+          <div class="risk-grid">
           <div class="risk-metrics">
             <div class="risk-item">
               <h6>Índice de Resiliência (IRF)</h6>
@@ -1696,12 +1732,17 @@ document.addEventListener("DOMContentLoaded", load);
               <canvas id="waterfallChart"></canvas>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h3>Risco Financeiro Pessoal</h3>
-        <div class="risk-grid">
+      <div class="panel" id="panel-risco">
+        <div class="panel-head">
+          <h3>Risco Financeiro Pessoal</h3>
+          <button type="button" class="panel-toggle" data-target="body-risco" aria-expanded="true" title="Recolher/Expandir">▾</button>
+        </div>
+        <div class="panel-body" id="body-risco">
+          <div class="risk-grid">
           <div class="risk-metrics">
             <div class="risk-item">
               <h6>Risco de Estouro Financeiro</h6>
@@ -1741,12 +1782,17 @@ document.addEventListener("DOMContentLoaded", load);
               <canvas id="stressLineChart"></canvas>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h3>Resumo de Movimentações</h3>
-        <div class="stats">
+      <div class="panel" id="panel-resumo-mov">
+        <div class="panel-head">
+          <h3>Resumo de Movimentações</h3>
+          <button type="button" class="panel-toggle" data-target="body-resumo-mov" aria-expanded="true" title="Recolher/Expandir">▾</button>
+        </div>
+        <div class="panel-body" id="body-resumo-mov">
+          <div class="stats">
           <div class="stat-card">
             <h4>Hoje</h4>
             <div class="metric">Entrou: <b id="d_in">R$ 0</b></div>
@@ -1775,6 +1821,7 @@ document.addEventListener("DOMContentLoaded", load);
             <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
             <div class="metric">Saída %: <b id="m_out_p">0%</b></div>
             <canvas id="chartMonthly"></canvas>
+          </div>
           </div>
         </div>
       </div>
