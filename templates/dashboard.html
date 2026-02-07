@@ -87,7 +87,7 @@ body{
 .grid{display:grid;grid-template-columns:1fr;gap:20px;}
 .left{display:grid;gap:20px;}
 
-/* PAINEL PADRÃƒO */
+/* PAINEL PADRÃO */
 .panel{
   background:linear-gradient(180deg,#070b18,#020617);
   border-radius:18px;
@@ -854,10 +854,10 @@ document.addEventListener("DOMContentLoaded", load);
 
       <!-- NOVOS CARDS -->
       <div class="cards">
-        <div class="card"><span>Taxa de PoupanÃ§a</span><strong class="green" id="taxa_poupanca">0%</strong></div>
+        <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
-        <div class="card"><span>ProjeÃ§Ã£o Fim do MÃªs</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
-        <div class="card"><span>â€”</span><strong class="blue">â€”</strong></div>
+        <div class="card"><span>Projeção Fim do Mês</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
+        <div class="card"><span>—</span><strong class="blue">—</strong></div>
       </div>
 
       <div class="panel">
@@ -927,35 +927,35 @@ document.addEventListener("DOMContentLoaded", load);
       </div>
 
       <div class="panel">
-        <h3>Resumo de MovimentaÃ§Ãµes</h3>
+        <h3>Resumo de Movimentações</h3>
         <div class="stats">
           <div class="stat-card">
             <h4>Hoje</h4>
             <div class="metric">Entrou: <b id="d_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="d_out">R$ 0</b></div>
-            <div class="metric">MovimentaÃ§Ãµes: <b id="d_mov">0</b></div>
+            <div class="metric">Movimentações: <b id="d_mov">0</b></div>
             <div class="metric">Entrada %: <b id="d_in_p">0%</b></div>
-            <div class="metric">SaÃ­da %: <b id="d_out_p">0%</b></div>
+            <div class="metric">Saída %: <b id="d_out_p">0%</b></div>
             <canvas id="chartDaily"></canvas>
           </div>
 
           <div class="stat-card">
-            <h4>Ãšltimos 7 dias</h4>
+            <h4>Últimos 7 dias</h4>
             <div class="metric">Entrou: <b id="w_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="w_out">R$ 0</b></div>
-            <div class="metric">MovimentaÃ§Ãµes: <b id="w_mov">0</b></div>
+            <div class="metric">Movimentações: <b id="w_mov">0</b></div>
             <div class="metric">Entrada %: <b id="w_in_p">0%</b></div>
-            <div class="metric">SaÃ­da %: <b id="w_out_p">0%</b></div>
+            <div class="metric">Saída %: <b id="w_out_p">0%</b></div>
             <canvas id="chartWeekly"></canvas>
           </div>
 
           <div class="stat-card">
-            <h4>Ãšltimos 30 dias</h4>
+            <h4>Últimos 30 dias</h4>
             <div class="metric">Entrou: <b id="m_in">R$ 0</b></div>
             <div class="metric">Saiu: <b id="m_out">R$ 0</b></div>
-            <div class="metric">MovimentaÃ§Ãµes: <b id="m_mov">0</b></div>
+            <div class="metric">Movimentações: <b id="m_mov">0</b></div>
             <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
-            <div class="metric">SaÃ­da %: <b id="m_out_p">0%</b></div>
+            <div class="metric">Saída %: <b id="m_out_p">0%</b></div>
             <canvas id="chartMonthly"></canvas>
           </div>
         </div>
@@ -964,20 +964,20 @@ document.addEventListener("DOMContentLoaded", load);
       <div class="panel">
         <h3>Desempenho por Categoria (% da Despesa)</h3>
         <div class="gauges">
-          <div class="gauge"><canvas id="g1"></canvas><small>â€”</small></div>
-          <div class="gauge"><canvas id="g2"></canvas><small>â€”</small></div>
-          <div class="gauge"><canvas id="g3"></canvas><small>â€”</small></div>
-          <div class="gauge"><canvas id="g4"></canvas><small>â€”</small></div>
+          <div class="gauge"><canvas id="g1"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g2"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g3"></canvas><small>—</small></div>
+          <div class="gauge"><canvas id="g4"></canvas><small>—</small></div>
         </div>
       </div>
 
       <div class="panel">
         <h3>Desempenho por Despesas Fixas (% do Planejado)</h3>
         <div class="gauges">
-          <div class="gauge fixed-gauge"><canvas id="fg1"></canvas><small>â€”</small></div>
-          <div class="gauge fixed-gauge"><canvas id="fg2"></canvas><small>â€”</small></div>
-          <div class="gauge fixed-gauge"><canvas id="fg3"></canvas><small>â€”</small></div>
-          <div class="gauge fixed-gauge"><canvas id="fg4"></canvas><small>â€”</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg1"></canvas><small>—</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg2"></canvas><small>—</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg3"></canvas><small>—</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg4"></canvas><small>—</small></div>
         </div>
       </div>
 
