@@ -55,6 +55,11 @@ body{
 }
 .header-actions{display:flex;align-items:center;gap:14px}
 .header-links{display:flex;gap:14px}
+.visibility-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
+}
+.visibility-btn.active{border-color:rgba(234,179,8,.55);color:#fde68a}
 .notif-wrap{position:relative}
 .notif-btn{
   width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
@@ -330,6 +335,24 @@ body{
 .modal-btn.primary{background:#38bdf8;color:#04111d}
 .modal-btn.secondary{background:#1e293b;color:#cbd5e1}
 .modal-message{font-size:12px;min-height:16px;color:#22c55e}
+body.values-hidden .card strong,
+body.values-hidden .mini-card strong,
+body.values-hidden .mini-card small,
+body.values-hidden .eff-item strong,
+body.values-hidden .risk-item strong,
+body.values-hidden .metric b,
+body.values-hidden .trend,
+body.values-hidden .bar-row span,
+body.values-hidden .insight-box,
+body.values-hidden .notif-item,
+body.values-hidden .gauge small,
+body.values-hidden .fixed-gauge small{
+  filter:blur(6px);
+  user-select:none;
+}
+body.values-hidden canvas{
+  filter:blur(6px);
+}
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
@@ -458,6 +481,29 @@ async function load(){
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
+    function initVisibilityToggle(){
+      const btn = document.getElementById("visibilityToggleBtn");
+      if(!btn || btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+
+      const applyState = (hidden)=>{
+        document.body.classList.toggle("values-hidden", hidden);
+        btn.classList.toggle("active", hidden);
+        btn.textContent = hidden ? "🙈" : "👁";
+        btn.title = hidden ? "Mostrar valores" : "Ocultar valores";
+        btn.setAttribute("aria-label", btn.title);
+      };
+
+      const saved = localStorage.getItem("genfin_values_hidden") === "1";
+      applyState(saved);
+
+      btn.addEventListener("click", ()=>{
+        const hidden = !document.body.classList.contains("values-hidden");
+        localStorage.setItem("genfin_values_hidden", hidden ? "1" : "0");
+        applyState(hidden);
+      });
+    }
+    initVisibilityToggle();
     function initPanelToggles(){
       document.querySelectorAll(".panel").forEach((panel, index)=>{
         let header = panel.querySelector(":scope > .panel-head");
@@ -1544,8 +1590,9 @@ document.addEventListener("DOMContentLoaded", load);
         <small style="color:#94a3b8">Painel Financeiro</small>
       </div>
     </div>
-    <div class="header-actions">
+      <div class="header-actions">
       <div class="header-links">
+        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
         <a href="/fixed-expenses/" style="color:#94a3b8;text-decoration:none">Despesas Fixas</a>
         <a href="/fixed-incomes/" style="color:#94a3b8;text-decoration:none">Entradas Fixas</a>
         <a href="/reserves/" style="color:#94a3b8;text-decoration:none">Reservas</a>
