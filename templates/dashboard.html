@@ -219,13 +219,6 @@ body{
 }
 .insight-box p{margin:0 0 8px}
 .insight-box p:last-child{margin:0}
-.distribution-wrap{
-  background:linear-gradient(180deg,#0b1224,#020617);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-}
-.distribution-wrap canvas{max-height:220px}
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
@@ -526,7 +519,6 @@ async function load(){
       amountNumber: Number(item.amount || 0),
     }));
     const monthsToCheck = 6;
-    let distributionChart = null;
 
     function getPeriodRange(period){
       const today = startOfDay(new Date());
@@ -603,29 +595,6 @@ async function load(){
         topBox.textContent = "Sem dados no periodo selecionado.";
       }
     }
-    function renderDistribution(expenseEntries){
-      const data = buildCategoryDistribution(expenseEntries).slice(0,6);
-      const labels = data.map((d)=>d[0]);
-      const values = data.map((d)=>d[1]);
-      if(distributionChart){
-        distributionChart.destroy();
-      }
-      distributionChart = new Chart(document.getElementById("categoryDistributionChart"),{
-        type:"doughnut",
-        data:{
-          labels: labels.length ? labels : ["Sem dados"],
-          datasets:[{
-            data: values.length ? values : [1],
-            backgroundColor:["#38bdf8","#22c55e","#eab308","#ef4444","#7c3aed","#14b8a6"],
-            borderWidth:0
-          }]
-        },
-        options:{
-          cutout:"60%",
-          plugins:{legend:{position:"bottom", labels:{color:"#9ca3af"}}}
-        }
-      });
-    }
     let upcomingBase = [];
     function applyPeriodFilter(period){
       document.querySelectorAll(".period-btn").forEach((btn)=>{
@@ -696,15 +665,13 @@ async function load(){
       }
 
       renderTop5(expenseEntries);
-      renderDistribution(expenseEntries);
-
       const largestRecurring = recurringLargest();
       const insightBox = document.getElementById("insightsBox");
       insightBox.textContent = "";
       const lines = [];
       if(largestRecurring){
         const save10 = largestRecurring.amountNumber * 0.1;
-        lines.push(`Seu maior gasto recorrente e ${largestRecurring.category} (${formatCurrency(largestRecurring.amountNumber)}). Reduzir 10% gera economia de ${formatCurrency(save10)}/mes.`);
+        lines.push(`Seu maior gasto recorrente é ${largestRecurring.category} (${formatCurrency(largestRecurring.amountNumber)}). Reduzir 10% gera economia de ${formatCurrency(save10)}/mes.`);
       }
       lines.push(`No periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
       if(runwayDays > 0){
@@ -876,12 +843,7 @@ document.addEventListener("DOMContentLoaded", load);
               <div class="insight-box" id="insightsBox"></div>
             </div>
           </div>
-          <div class="intel-right">
-            <div class="distribution-wrap">
-              <h3>Distribuicao de Gastos por Categoria</h3>
-              <canvas id="categoryDistributionChart"></canvas>
-            </div>
-          </div>
+          <div class="intel-right"></div>
         </div>
       </div>
 
@@ -957,4 +919,3 @@ document.addEventListener("DOMContentLoaded", load);
 </div>
 </body>
 </html>
-
