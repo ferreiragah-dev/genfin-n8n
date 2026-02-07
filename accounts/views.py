@@ -2,6 +2,7 @@
 
 from django.db.models import Sum
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -180,22 +181,26 @@ class DashboardView(APIView):
         )
 
 
+@ensure_csrf_cookie
 def login_page(request):
     return render(request, "login.html")
 
 
+@ensure_csrf_cookie
 def dashboard_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "dashboard.html")
 
 
+@ensure_csrf_cookie
 def transactions_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "transactions.html")
 
 
+@ensure_csrf_cookie
 def fixed_expenses_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")

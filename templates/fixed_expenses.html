@@ -52,6 +52,23 @@ function formatCurrency(value){
   return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+function getCsrfToken(){
+  const token = document.cookie
+    .split("; ")
+    .find((row)=>row.startsWith("csrftoken="));
+  return token ? decodeURIComponent(token.split("=")[1]) : "";
+}
+
+async function parseError(response, fallback){
+  try{
+    const data = await response.json();
+    if(data && data.error) return data.error;
+  } catch (_error){
+    // ignore parse errors and use fallback below
+  }
+  return fallback;
+}
+
 function setMessage(text, isError){
   const el = document.getElementById("message");
   el.textContent = text;
@@ -107,7 +124,10 @@ async function loadExpenses(){
       const response = await fetch(`/api/planner/${item.id}/`, {
         method:"PUT",
         credentials:"same-origin",
-        headers:{"Content-Type":"application/json"},
+        headers:{
+          "Content-Type":"application/json",
+          "X-CSRFToken": getCsrfToken(),
+        },
         body: JSON.stringify({
           date: item.date,
           category: item.category,
@@ -119,7 +139,8 @@ async function loadExpenses(){
       if(!response.ok){
         item.is_recurring = previous;
         recurringToggle.checked = Boolean(previous);
-        setMessage("Nao foi possivel atualizar recorrencia.", true);
+        const msg = await parseError(response, "Nao foi possivel atualizar recorrencia.");
+        setMessage(msg, true);
         return;
       }
       setMessage("Recorrencia atualizada.", false);
@@ -140,9 +161,16 @@ async function loadExpenses(){
     deleteBtn.textContent = "Remover";
     deleteBtn.addEventListener("click", async ()=>{
       if(!confirm("Remover esta despesa fixa?")) return;
-      const del = await fetch(`/api/planner/${item.id}/`, {method:"DELETE", credentials:"same-origin"});
+      const del = await fetch(`/api/planner/${item.id}/`, {
+        method:"DELETE",
+        credentials:"same-origin",
+        headers:{
+          "X-CSRFToken": getCsrfToken(),
+        },
+      });
       if(!del.ok){
-        setMessage("Nao foi possivel remover.", true);
+        const msg = await parseError(del, "Nao foi possivel remover.");
+        setMessage(msg, true);
         return;
       }
       setMessage("Despesa fixa removida.", false);
@@ -181,12 +209,16 @@ async function submitForm(event){
   const response = await fetch(url, {
     method,
     credentials:"same-origin",
-    headers:{"Content-Type":"application/json"},
+    headers:{
+      "Content-Type":"application/json",
+      "X-CSRFToken": getCsrfToken(),
+    },
     body: JSON.stringify(payload),
   });
 
   if(!response.ok){
-    setMessage("Erro ao salvar despesa fixa.", true);
+    const msg = await parseError(response, "Erro ao salvar despesa fixa.");
+    setMessage(msg, true);
     return;
   }
 
