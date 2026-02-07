@@ -274,6 +274,7 @@ class PlannerListView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class PlannerCreateView(APIView):
     def post(self, request):
         user = get_logged_user(request)
@@ -308,6 +309,7 @@ class PlannerCreateView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class PlannerDetailView(APIView):
     def put(self, request, expense_id):
         user = get_logged_user(request)
