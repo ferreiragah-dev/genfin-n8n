@@ -111,7 +111,7 @@ body{
 
 /* CARDS PRINCIPAIS */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-.cards-top{grid-template-columns:repeat(5,1fr);}
+.cards-top{grid-template-columns:repeat(4,1fr);}
 .card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
@@ -173,7 +173,6 @@ body{
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
-  .cards-top{grid-template-columns:1fr 1fr}
 }
 </style>
 
@@ -545,11 +544,6 @@ document.addEventListener("DOMContentLoaded", load);
         <a class="card" href="/transactions/" style="text-decoration:none;color:inherit;cursor:pointer">
           <span>Movimentacoes</span><strong class="blue" id="movimentacoes">--</strong>
         </a>
-        <div class="card card-donut">
-          <span>Comprometimento Fixo</span>
-          <canvas id="fixedCommitmentChart"></canvas>
-          <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
-        </div>
       </div>
 
       <!-- NOVOS CARDS -->
@@ -557,7 +551,11 @@ document.addEventListener("DOMContentLoaded", load);
         <div class="card"><span>Taxa de PoupanÃ§a</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
         <div class="card"><span>ProjeÃ§Ã£o Fim do MÃªs</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
-        <div class="card"><span>â€”</span><strong class="blue">â€”</strong></div>
+        <div class="card card-donut">
+          <span>Comprometimento Fixo</span>
+          <canvas id="fixedCommitmentChart"></canvas>
+          <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
+        </div>
       </div>
 
       <div class="panel">
