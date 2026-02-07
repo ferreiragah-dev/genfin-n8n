@@ -73,6 +73,20 @@ body{
 .notif-item:last-child{border-bottom:0}
 .notif-empty{font-size:12px;color:#94a3b8;padding:8px}
 .notif-item.smart{border-left:2px solid #38bdf8;padding-left:10px}
+.month-bar{
+  display:flex;gap:8px;overflow:auto;padding-bottom:4px;
+}
+.month-chip{
+  border:1px solid var(--border);
+  background:#0b1224;
+  color:#cbd5e1;
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:12px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.month-chip.active{background:#38bdf8;color:#04111d}
 
 .user{display:flex;align-items:center;gap:12px;}
 .avatar{
@@ -372,13 +386,10 @@ async function load(){
     return response.json();
   }
   try{
-    const [dash, entries, cats, daily, weekly, monthly] = await Promise.all([
+    const [dash, entries, cats] = await Promise.all([
       fetchJson("/api/dashboard/"),
       fetchJson("/api/entries/?limit=500"),
-      fetchJson("/api/dashboard/categories/"),
-      fetchJson("/api/stats/daily/"),
-      fetchJson("/api/stats/weekly/"),
-      fetchJson("/api/stats/monthly/")
+      fetchJson("/api/dashboard/categories/")
     ]);
     document.getElementById("receita").innerText = formatCurrency(dash.total_receita);
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
@@ -477,48 +488,61 @@ async function load(){
         setTimeout(()=>window.location.reload(), 450);
       });
     }
-    const hoje = new Date();
-    const diaDoMes = hoje.getDate();
-    const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
-    const taxaPoupanca = dash.total_receita > 0
-      ? Math.round((dash.saldo / dash.total_receita) * 100)
-      : 0;
-    const burnRate = dash.total_despesa / Math.max(diaDoMes,1);
-    const despesaProjetada = burnRate * diasNoMes;
-    const saldoProjetado = dash.total_receita - despesaProjetada;
-    document.getElementById("taxa_poupanca").innerText = taxaPoupanca + "%";
-    document.getElementById("burn_rate").innerText = formatCurrency(burnRate);
-    document.getElementById("projecao_fim_mes").innerText = formatCurrency(saldoProjetado);
-    const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-    entries.forEach(e=>{
-      if(e.entry_type === "DESPESA"){
-        const d = parseBrDate(e.date);
-        if(d) weekMap[d.getDay()] += Number(e.amount) || 0;
-      }
-    });
-    new Chart(document.getElementById("heatmapWeek"),{
-      type:"bar",
-      data:{
-        labels:["Dom","Seg","Ter","Qua","Qui","Sex","Sab"],
-        datasets:[{ data:Object.values(weekMap), backgroundColor:"#ef4444" }]
-      },
-      options:{ plugins:{ legend:{display:false} } }
-    });
-    function render(prefix, data, chartId){
-      document.getElementById(prefix+"_in").innerText = formatCurrency(data.total_receita);
-      document.getElementById(prefix+"_out").innerText = formatCurrency(data.total_despesa);
-      document.getElementById(prefix+"_mov").innerText = data.movimentacoes;
-      document.getElementById(prefix+"_in_p").innerText = data.percent_receita + "%";
-      document.getElementById(prefix+"_out_p").innerText = data.percent_despesa + "%";
-      new Chart(document.getElementById(chartId),{
+    const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+    const entriesParsed = entries.map((item)=>({
+      ...item,
+      parsedDate: parseBrDate(item.date),
+      amountNumber: Number(item.amount || 0),
+    }));
+    const selectedYear = new Date().getFullYear();
+    let selectedMonth = new Date().getMonth();
+    let selectedMonthEntries = [];
+    let selectedMonthEnd = startOfDay(new Date());
+
+    const chartRegistry = {};
+    function setBarChart(id, values){
+      if(chartRegistry[id]) chartRegistry[id].destroy();
+      chartRegistry[id] = new Chart(document.getElementById(id),{
         type:"bar",
-        data:{ labels:["Entradas","Saidas"], datasets:[{ data:[data.total_receita, data.total_despesa], backgroundColor:["#22c55e","#ef4444"] }] },
+        data:{ labels:["Entradas","Saídas"], datasets:[{ data:values, backgroundColor:["#22c55e","#ef4444"] }] },
         options:{ plugins:{ legend:{display:false} } }
       });
     }
-    render("d", daily, "chartDaily");
-    render("w", weekly, "chartWeekly");
-    render("m", monthly, "chartMonthly");
+    function setHeatmap(values){
+      if(chartRegistry.heatmapWeek) chartRegistry.heatmapWeek.destroy();
+      chartRegistry.heatmapWeek = new Chart(document.getElementById("heatmapWeek"),{
+        type:"bar",
+        data:{
+          labels:["Dom","Seg","Ter","Qua","Qui","Sex","Sab"],
+          datasets:[{ data:values, backgroundColor:"#ef4444" }]
+        },
+        options:{ plugins:{ legend:{display:false} } }
+      });
+    }
+    function sumByType(list, type){
+      return list.filter((e)=>e.entry_type === type).reduce((s,e)=>s + e.amountNumber, 0);
+    }
+    function statObj(list){
+      const total_receita = sumByType(list, "RECEITA");
+      const total_despesa = sumByType(list, "DESPESA");
+      const movimentacoes = list.length;
+      const total = total_receita + total_despesa || 1;
+      return {
+        total_receita,
+        total_despesa,
+        movimentacoes,
+        percent_receita: Math.round((total_receita/total)*100),
+        percent_despesa: Math.round((total_despesa/total)*100),
+      };
+    }
+    function writeStats(prefix, stats, chartId){
+      document.getElementById(prefix+"_in").innerText = formatCurrency(stats.total_receita);
+      document.getElementById(prefix+"_out").innerText = formatCurrency(stats.total_despesa);
+      document.getElementById(prefix+"_mov").innerText = stats.movimentacoes;
+      document.getElementById(prefix+"_in_p").innerText = stats.percent_receita + "%";
+      document.getElementById(prefix+"_out_p").innerText = stats.percent_despesa + "%";
+      setBarChart(chartId, [stats.total_receita, stats.total_despesa]);
+    }
     const centerTextPlugin = {
       id: "centerText",
       beforeDraw(chart) {
@@ -541,31 +565,37 @@ async function load(){
         ctx.restore();
       }
     };
-    const totalDespesa = cats.reduce((sum,c)=>sum + Number(c.total || 0), 0);
-    cats.slice(0,4).forEach((c, i)=>{
-      const pct = totalDespesa > 0
-        ? Math.round((Number(c.total || 0) / totalDespesa) * 100)
-        : 0;
-      const chartData = {
-        labels:["Despesa","Restante"],
-        datasets:[{
-          data:[pct, 100-pct],
-          backgroundColor:["#ef4444","#1e293b"],
-          borderWidth:0
-        }],
-        _valor: c.total
-      };
-      new Chart(document.getElementById("g"+(i+1)),{
-        type:"doughnut",
-        plugins:[centerTextPlugin],
-        data: chartData,
-        options:{
-          cutout:"70%",
-          plugins:{legend:{display:false}, tooltip:{enabled:false}}
-        }
+    function renderCategoryGauges(expenseEntries){
+      const expenseByCategory = {};
+      expenseEntries.forEach((e)=>{
+        const key = e.category || "Sem categoria";
+        expenseByCategory[key] = (expenseByCategory[key] || 0) + e.amountNumber;
       });
-      document.querySelectorAll(".gauge small")[i].innerText = c.category;
-    });
+      const rows = Object.entries(expenseByCategory)
+        .map(([category,total])=>({category,total}))
+        .sort((a,b)=>b.total-a.total)
+        .slice(0,4);
+      const total = rows.reduce((s,r)=>s + r.total, 0);
+      for(let i=0;i<4;i++){
+        const row = rows[i];
+        const pct = row && total > 0 ? Math.round((row.total/total)*100) : 0;
+        const value = row ? row.total : 0;
+        const label = row ? row.category : "—";
+        const chartId = "g"+(i+1);
+        if(chartRegistry[chartId]) chartRegistry[chartId].destroy();
+        chartRegistry[chartId] = new Chart(document.getElementById(chartId),{
+          type:"doughnut",
+          plugins:[centerTextPlugin],
+          data:{
+            labels:["Despesa","Restante"],
+            datasets:[{data:[pct,100-pct],backgroundColor:["#ef4444","#1e293b"],borderWidth:0}],
+            _valor: value
+          },
+          options:{cutout:"70%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+        });
+        document.querySelectorAll(".gauge small")[i].innerText = label;
+      }
+    }
 
     let fixedExpenses = [];
     let fixedIncomes = [];
@@ -623,11 +653,6 @@ async function load(){
       .filter((item)=>item.is_recurring)
       .reduce((sum, item)=>sum + Number(item.amount || 0), 0);
 
-    const entriesParsed = entries.map((item)=>({
-      ...item,
-      parsedDate: parseBrDate(item.date),
-      amountNumber: Number(item.amount || 0),
-    }));
     const fixedExpensesParsed = fixedExpenses.map((item)=>({
       ...item,
       parsedDate: parseIsoDate(item.date),
@@ -640,8 +665,8 @@ async function load(){
     }));
     const monthsToCheck = 6;
 
-    function getPeriodRange(period){
-      const today = startOfDay(new Date());
+    function getPeriodRange(period, anchorDate){
+      const today = startOfDay(anchorDate || new Date());
       if(period === "week"){
         return {start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6), days:7};
       }
@@ -749,11 +774,11 @@ async function load(){
         btn.classList.toggle("active", btn.dataset.period === period);
       });
 
-      const today = startOfDay(new Date());
-      const range = getPeriodRange(period);
-      const periodEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, range.start, today));
+      const today = selectedMonthEnd;
+      const range = getPeriodRange(period, today);
+      const periodEntries = selectedMonthEntries.filter((e)=>inRange(e.parsedDate, range.start, today));
       const previous = getPreviousRange(range);
-      const prevEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, previous.start, previous.end));
+      const prevEntries = selectedMonthEntries.filter((e)=>inRange(e.parsedDate, previous.start, previous.end));
 
       const receitaPeriodo = sumByType(periodEntries, "RECEITA");
       const despesaPeriodo = sumByType(periodEntries, "DESPESA");
@@ -942,7 +967,77 @@ async function load(){
     document.querySelectorAll(".period-btn").forEach((btn)=>{
       btn.addEventListener("click", ()=>applyPeriodFilter(btn.dataset.period));
     });
-    applyPeriodFilter("month");
+
+    function renderTopSectionByMonth(monthIndex){
+      selectedMonth = monthIndex;
+      document.querySelectorAll(".month-chip").forEach((chip)=>{
+        chip.classList.toggle("active", Number(chip.dataset.month) === monthIndex);
+      });
+      document.getElementById("selectedMonthLabel").innerText = `Ano ${selectedYear}`;
+
+      selectedMonthEntries = entriesParsed.filter((e)=>{
+        if(!e.parsedDate) return false;
+        return e.parsedDate.getFullYear() === selectedYear && e.parsedDate.getMonth() === monthIndex;
+      });
+
+      const receitaMes = sumByType(selectedMonthEntries, "RECEITA");
+      const despesaMes = sumByType(selectedMonthEntries, "DESPESA");
+      const saldoMes = receitaMes - despesaMes;
+      document.getElementById("receita").innerText = formatCurrency(receitaMes);
+      document.getElementById("despesa").innerText = formatCurrency(despesaMes);
+      document.getElementById("saldo").innerText = formatCurrency(saldoMes);
+      document.getElementById("movimentacoes").innerText = selectedMonthEntries.length;
+
+      const now = new Date();
+      const isCurrentMonth = monthIndex === now.getMonth() && selectedYear === now.getFullYear();
+      const monthStart = new Date(selectedYear, monthIndex, 1);
+      const monthEnd = new Date(selectedYear, monthIndex + 1, 0);
+      selectedMonthEnd = isCurrentMonth ? startOfDay(now) : startOfDay(monthEnd);
+      const dayBase = isCurrentMonth ? now.getDate() : monthEnd.getDate();
+      const taxaPoupanca = receitaMes > 0 ? Math.round((saldoMes / receitaMes) * 100) : 0;
+      const burnRate = despesaMes / Math.max(dayBase,1);
+      const despesaProjetada = burnRate * monthEnd.getDate();
+      const saldoProjetado = receitaMes - despesaProjetada;
+      document.getElementById("taxa_poupanca").innerText = taxaPoupanca + "%";
+      document.getElementById("burn_rate").innerText = formatCurrency(burnRate);
+      document.getElementById("projecao_fim_mes").innerText = formatCurrency(saldoProjetado);
+
+      const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+      selectedMonthEntries.forEach((e)=>{
+        if(e.entry_type === "DESPESA" && e.parsedDate){
+          weekMap[e.parsedDate.getDay()] += e.amountNumber;
+        }
+      });
+      setHeatmap(Object.values(weekMap));
+
+      const monthStats = statObj(selectedMonthEntries);
+      const last7Start = new Date(selectedMonthEnd.getFullYear(), selectedMonthEnd.getMonth(), selectedMonthEnd.getDate() - 6);
+      const last7Entries = selectedMonthEntries.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
+      const last7Stats = statObj(last7Entries);
+      const prevMonthStart = new Date(selectedYear, monthIndex - 1, 1);
+      const prevMonthEnd = new Date(selectedYear, monthIndex, 0);
+      const prevMonthEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, prevMonthStart, prevMonthEnd));
+      const prevMonthStats = statObj(prevMonthEntries);
+      writeStats("d", monthStats, "chartDaily");
+      writeStats("w", last7Stats, "chartWeekly");
+      writeStats("m", prevMonthStats, "chartMonthly");
+
+      renderCategoryGauges(selectedMonthEntries.filter((e)=>e.entry_type === "DESPESA"));
+      applyPeriodFilter("month");
+    }
+
+    const monthBar = document.getElementById("monthFilterBar");
+    monthBar.textContent = "";
+    monthNames.forEach((name, idx)=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "month-chip";
+      btn.dataset.month = String(idx);
+      btn.textContent = name;
+      btn.addEventListener("click", ()=>renderTopSectionByMonth(idx));
+      monthBar.appendChild(btn);
+    });
+    renderTopSectionByMonth(selectedMonth);
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
@@ -983,6 +1078,13 @@ document.addEventListener("DOMContentLoaded", load);
   <div class="grid">
 
     <div class="left">
+      <div class="panel" style="padding:12px 14px">
+        <div class="section-head">
+          <h3 style="margin:0">Filtro por Mês</h3>
+          <small id="selectedMonthLabel" style="color:#94a3b8"></small>
+        </div>
+        <div id="monthFilterBar" class="month-bar"></div>
+      </div>
 
       <div class="cards cards-top">
         <div class="card">
