@@ -72,6 +72,7 @@ body{
 .notif-item{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
 .notif-item:last-child{border-bottom:0}
 .notif-empty{font-size:12px;color:#94a3b8;padding:8px}
+.notif-item.smart{border-left:2px solid #38bdf8;padding-left:10px}
 
 .user{display:flex;align-items:center;gap:12px;}
 .avatar{
@@ -170,9 +171,66 @@ body{
 .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;color:#9ca3af;}
 .bar-bg{flex:1;height:8px;background:#020617;border-radius:10px;overflow:hidden;}
 .bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#db2777);}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.period-filters{display:flex;gap:8px}
+.period-btn{
+  border:1px solid var(--border);
+  background:#0b1224;
+  color:#cbd5e1;
+  border-radius:10px;
+  padding:6px 10px;
+  font-size:12px;
+  cursor:pointer;
+}
+.period-btn.active{background:#38bdf8;color:#04111d}
+.intel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.intel-left,.intel-right{display:grid;gap:12px}
+.mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mini-card{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+}
+.mini-card h5{margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.mini-card strong{display:block;margin-top:6px;font-size:20px}
+.trend{font-size:12px;margin-top:4px}
+.trend.up{color:#22c55e}
+.trend.down{color:#ef4444}
+.trend.flat{color:#eab308}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{
+  border-radius:999px;
+  border:1px solid rgba(56,189,248,.25);
+  padding:6px 10px;
+  font-size:12px;
+  color:#cbd5e1;
+  background:rgba(56,189,248,.08);
+}
+.badge.warn{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.12)}
+.insight-box{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+  font-size:13px;
+  color:#cbd5e1;
+  line-height:1.4;
+}
+.insight-box p{margin:0 0 8px}
+.insight-box p:last-child{margin:0}
+.distribution-wrap{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+}
+.distribution-wrap canvas{max-height:220px}
 
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
+  .mini-cards{grid-template-columns:1fr}
+  .intel-grid{grid-template-columns:1fr}
 }
 </style>
 
@@ -240,10 +298,23 @@ async function load(){
     }
     items.forEach((item)=>{
       const div = document.createElement("div");
-      div.className = "notif-item";
-      div.textContent = `${item.tipo}: ${item.categoria} (${formatCurrency(item.valor)}) em ${item.data} (${item.falta} dia(s))`;
+      div.className = item.smart ? "notif-item smart" : "notif-item";
+      div.textContent = item.text || `${item.tipo}: ${item.categoria} (${formatCurrency(item.valor)}) em ${item.data} (${item.falta} dia(s))`;
       list.appendChild(div);
     });
+  }
+  function trendClass(value){
+    if(value > 0) return "up";
+    if(value < 0) return "down";
+    return "flat";
+  }
+  function trendSymbol(value){
+    if(value > 0) return "↑";
+    if(value < 0) return "↓";
+    return "→";
+  }
+  function clampPercent(value){
+    return Math.max(0, Math.min(100, Math.round(value)));
   }
   function formatCurrency(value){
     return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -258,7 +329,7 @@ async function load(){
   try{
     const [dash, entries, cats, daily, weekly, monthly] = await Promise.all([
       fetchJson("/api/dashboard/"),
-      fetchJson("/api/entries/"),
+      fetchJson("/api/entries/?limit=500"),
       fetchJson("/api/dashboard/categories/"),
       fetchJson("/api/stats/daily/"),
       fetchJson("/api/stats/weekly/"),
@@ -294,28 +365,6 @@ async function load(){
         datasets:[{ data:Object.values(weekMap), backgroundColor:"#ef4444" }]
       },
       options:{ plugins:{ legend:{display:false} } }
-    });
-    const top5 = entries
-      .filter(e=>e.entry_type==="DESPESA")
-      .sort((a,b)=>Number(b.amount)-Number(a.amount))
-      .slice(0,5);
-    const max = Math.max(...top5.map(e=>Number(e.amount) || 0),1);
-    const topBox = document.getElementById("top5");
-    topBox.textContent = "";
-    top5.forEach(e=>{
-      const row = document.createElement("div");
-      row.className = "bar-row";
-      const label = document.createElement("span");
-      label.textContent = `${e.category} (${formatCurrency(e.amount)})`;
-      const barBg = document.createElement("div");
-      barBg.className = "bar-bg";
-      const barFill = document.createElement("div");
-      barFill.className = "bar-fill";
-      barFill.style.width = `${((Number(e.amount) || 0)/max)*100}%`;
-      barBg.appendChild(barFill);
-      row.appendChild(label);
-      row.appendChild(barBg);
-      topBox.appendChild(row);
     });
     function render(prefix, data, chartId){
       document.getElementById(prefix+"_in").innerText = formatCurrency(data.total_receita);
@@ -461,6 +510,229 @@ async function load(){
     document.getElementById("fixedCommitmentHint").innerText =
       `${formatCurrency(recurringFixedExpenseTotal)} de ${formatCurrency(recurringFixedIncomeTotal)}`;
 
+    const entriesParsed = entries.map((item)=>({
+      ...item,
+      parsedDate: parseBrDate(item.date),
+      amountNumber: Number(item.amount || 0),
+    }));
+    const fixedExpensesParsed = fixedExpenses.map((item)=>({
+      ...item,
+      parsedDate: parseIsoDate(item.date),
+      amountNumber: Number(item.amount || 0),
+    }));
+    const fixedIncomesParsed = fixedIncomes.map((item)=>({
+      ...item,
+      parsedDate: parseIsoDate(item.date),
+      amountNumber: Number(item.amount || 0),
+    }));
+    const monthsToCheck = 6;
+    let distributionChart = null;
+
+    function getPeriodRange(period){
+      const today = startOfDay(new Date());
+      if(period === "week"){
+        return {start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6), days:7};
+      }
+      if(period === "year"){
+        return {start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 364), days:365};
+      }
+      return {start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29), days:30};
+    }
+    function getPreviousRange(range){
+      const endPrev = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate() - 1);
+      const startPrev = new Date(endPrev.getFullYear(), endPrev.getMonth(), endPrev.getDate() - (range.days - 1));
+      return {start: startPrev, end: endPrev};
+    }
+    function inRange(date, start, end){
+      if(!date) return false;
+      const d = startOfDay(date);
+      return d >= startOfDay(start) && d <= startOfDay(end);
+    }
+    function sumByType(list, type){
+      return list.filter((e)=>e.entry_type === type).reduce((s,e)=>s + e.amountNumber, 0);
+    }
+    function buildCategoryDistribution(expenseEntries){
+      const map = {};
+      expenseEntries.forEach((e)=>{
+        const key = e.category || "Sem categoria";
+        map[key] = (map[key] || 0) + e.amountNumber;
+      });
+      return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+    }
+    function recurringLargest(){
+      const items = fixedExpensesParsed.filter((e)=>e.is_recurring);
+      if(items.length === 0) return null;
+      return items.reduce((max, item)=>item.amountNumber > max.amountNumber ? item : max, items[0]);
+    }
+    function streakMonthsSaving(){
+      const today = new Date();
+      let streak = 0;
+      for(let i=0;i<monthsToCheck;i++){
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+        const monthEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, start, end));
+        const receita = sumByType(monthEntries, "RECEITA");
+        const despesa = sumByType(monthEntries, "DESPESA");
+        if(receita > despesa) streak += 1;
+        else break;
+      }
+      return streak;
+    }
+    function renderTop5(expenseEntries){
+      const top5 = [...expenseEntries].sort((a,b)=>b.amountNumber-a.amountNumber).slice(0,5);
+      const max = Math.max(...top5.map((e)=>e.amountNumber),1);
+      const topBox = document.getElementById("top5");
+      topBox.textContent = "";
+      top5.forEach((e)=>{
+        const row = document.createElement("div");
+        row.className = "bar-row";
+        const label = document.createElement("span");
+        label.textContent = `${e.category} (${formatCurrency(e.amountNumber)})`;
+        const barBg = document.createElement("div");
+        barBg.className = "bar-bg";
+        const barFill = document.createElement("div");
+        barFill.className = "bar-fill";
+        barFill.style.width = `${(e.amountNumber/max)*100}%`;
+        barBg.appendChild(barFill);
+        row.appendChild(label);
+        row.appendChild(barBg);
+        topBox.appendChild(row);
+      });
+      if(top5.length === 0){
+        topBox.textContent = "Sem dados no periodo selecionado.";
+      }
+    }
+    function renderDistribution(expenseEntries){
+      const data = buildCategoryDistribution(expenseEntries).slice(0,6);
+      const labels = data.map((d)=>d[0]);
+      const values = data.map((d)=>d[1]);
+      if(distributionChart){
+        distributionChart.destroy();
+      }
+      distributionChart = new Chart(document.getElementById("categoryDistributionChart"),{
+        type:"doughnut",
+        data:{
+          labels: labels.length ? labels : ["Sem dados"],
+          datasets:[{
+            data: values.length ? values : [1],
+            backgroundColor:["#38bdf8","#22c55e","#eab308","#ef4444","#7c3aed","#14b8a6"],
+            borderWidth:0
+          }]
+        },
+        options:{
+          cutout:"60%",
+          plugins:{legend:{position:"bottom", labels:{color:"#9ca3af"}}}
+        }
+      });
+    }
+    let upcomingBase = [];
+    function applyPeriodFilter(period){
+      document.querySelectorAll(".period-btn").forEach((btn)=>{
+        btn.classList.toggle("active", btn.dataset.period === period);
+      });
+
+      const today = startOfDay(new Date());
+      const range = getPeriodRange(period);
+      const periodEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, range.start, today));
+      const previous = getPreviousRange(range);
+      const prevEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, previous.start, previous.end));
+
+      const receitaPeriodo = sumByType(periodEntries, "RECEITA");
+      const despesaPeriodo = sumByType(periodEntries, "DESPESA");
+      const receitaAnterior = sumByType(prevEntries, "RECEITA");
+      const despesaAnterior = sumByType(prevEntries, "DESPESA");
+      const trendReceita = receitaPeriodo - receitaAnterior;
+      const trendDespesa = despesaPeriodo - despesaAnterior;
+
+      const expenseEntries = periodEntries.filter((e)=>e.entry_type === "DESPESA");
+      const dailyBurn = despesaPeriodo / Math.max(range.days, 1);
+      const runwayDays = dailyBurn > 0 ? Math.floor(Number(dash.saldo || 0) / dailyBurn) : 0;
+
+      document.getElementById("runwayValue").innerText = runwayDays > 0 ? `${runwayDays} dias` : "0 dias";
+      document.getElementById("runwaySub").innerText = `Burn medio: ${formatCurrency(dailyBurn)}/dia`;
+
+      const receitaTrendEl = document.getElementById("trendReceita");
+      receitaTrendEl.className = `trend ${trendClass(trendReceita)}`;
+      receitaTrendEl.innerText = `${trendSymbol(trendReceita)} ${formatCurrency(Math.abs(trendReceita))} vs periodo anterior`;
+
+      const despesaTrendEl = document.getElementById("trendDespesa");
+      despesaTrendEl.className = `trend ${trendClass(-trendDespesa)}`;
+      despesaTrendEl.innerText = `${trendSymbol(-trendDespesa)} ${formatCurrency(Math.abs(trendDespesa))} vs periodo anterior`;
+
+      const saldoTrendEl = document.getElementById("trendSaldo");
+      const saldoPeriodo = receitaPeriodo - despesaPeriodo;
+      const saldoAnterior = receitaAnterior - despesaAnterior;
+      const deltaSaldo = saldoPeriodo - saldoAnterior;
+      saldoTrendEl.className = `trend ${trendClass(deltaSaldo)}`;
+      saldoTrendEl.innerText = `${trendSymbol(deltaSaldo)} ${formatCurrency(Math.abs(deltaSaldo))} vs periodo anterior`;
+
+      const streak = streakMonthsSaving();
+      const distribution = buildCategoryDistribution(expenseEntries);
+      const leisure = distribution.find((d)=>["lazer","entretenimento","restaurante","delivery"].includes(String(d[0]).toLowerCase()));
+      const leisureValue = leisure ? leisure[1] : 0;
+      const budgetBase = Math.max(receitaPeriodo, 1);
+      const overLeisure = leisureValue > budgetBase * 0.2;
+
+      const badgeBox = document.getElementById("badgesBox");
+      badgeBox.textContent = "";
+      if(streak >= 3){
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = `${streak} meses consecutivos economizando`;
+        badgeBox.appendChild(badge);
+      }
+      if(overLeisure){
+        const badge = document.createElement("span");
+        badge.className = "badge warn";
+        badge.textContent = "Orcamento estourado em lazer";
+        badgeBox.appendChild(badge);
+      }
+      if(!badgeBox.childElementCount){
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "Sem alertas criticos no periodo";
+        badgeBox.appendChild(badge);
+      }
+
+      renderTop5(expenseEntries);
+      renderDistribution(expenseEntries);
+
+      const largestRecurring = recurringLargest();
+      const insightBox = document.getElementById("insightsBox");
+      insightBox.textContent = "";
+      const lines = [];
+      if(largestRecurring){
+        const save10 = largestRecurring.amountNumber * 0.1;
+        lines.push(`Seu maior gasto recorrente e ${largestRecurring.category} (${formatCurrency(largestRecurring.amountNumber)}). Reduzir 10% gera economia de ${formatCurrency(save10)}/mes.`);
+      }
+      lines.push(`No periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
+      if(runwayDays > 0){
+        lines.push(`No ritmo atual, seu dinheiro dura aproximadamente ${runwayDays} dias.`);
+      }
+      lines.forEach((text)=>{
+        const p = document.createElement("p");
+        p.textContent = text;
+        insightBox.appendChild(p);
+      });
+
+      const smartNotifs = [];
+      if(overLeisure){
+        smartNotifs.push({tipo:"Insight", categoria:"Lazer", valor:leisureValue, data:"Agora", falta:0});
+      }
+      if(runwayDays > 0 && runwayDays <= 30){
+        smartNotifs.push({tipo:"Alerta", categoria:"Runway curto", valor:runwayDays, data:"Agora", falta:0, customText:`Runway em ${runwayDays} dias no ritmo atual.`});
+      }
+      renderNotifications([
+        ...upcomingBase,
+        ...smartNotifs.map((n)=>({
+          ...n,
+          smart: true,
+          text: n.customText || `${n.tipo}: ${n.categoria} (${formatCurrency(n.valor)})`,
+        })),
+      ]);
+    }
+
     const upcoming = [];
     const pushUpcoming = (items, tipo)=>{
       items.forEach((item)=>{
@@ -484,7 +756,7 @@ async function load(){
     pushUpcoming(fixedExpenses, "Despesa");
     pushUpcoming(fixedIncomes, "Entrada");
     upcoming.sort((a,b)=>a.falta - b.falta);
-    renderNotifications(upcoming);
+    upcomingBase = upcoming;
 
     const notifBtn = document.getElementById("notifBtn");
     const notifPanel = document.getElementById("notifPanel");
@@ -497,6 +769,11 @@ async function load(){
         notifPanel.classList.remove("open");
       }
     });
+
+    document.querySelectorAll(".period-btn").forEach((btn)=>{
+      btn.addEventListener("click", ()=>applyPeriodFilter(btn.dataset.period));
+    });
+    applyPeriodFilter("month");
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
@@ -555,6 +832,56 @@ document.addEventListener("DOMContentLoaded", load);
           <span>Comprometimento Fixo</span>
           <canvas id="fixedCommitmentChart"></canvas>
           <small id="fixedCommitmentHint">R$ 0,00 de R$ 0,00</small>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-head">
+          <h3>Inteligencia Financeira</h3>
+          <div class="period-filters">
+            <button class="period-btn" data-period="week" type="button">Semana</button>
+            <button class="period-btn active" data-period="month" type="button">Mes</button>
+            <button class="period-btn" data-period="year" type="button">Ano</button>
+          </div>
+        </div>
+        <div class="intel-grid">
+          <div class="intel-left">
+            <div class="mini-cards">
+              <div class="mini-card">
+                <h5>Runway Pessoal</h5>
+                <strong id="runwayValue">0 dias</strong>
+                <div class="trend flat" id="runwaySub">Burn medio: R$ 0,00/dia</div>
+              </div>
+              <div class="mini-card">
+                <h5>Tendencia Entradas</h5>
+                <strong id="trendInValue">Entradas</strong>
+                <div class="trend flat" id="trendReceita">→ R$ 0,00 vs periodo anterior</div>
+              </div>
+              <div class="mini-card">
+                <h5>Tendencia Saidas</h5>
+                <strong id="trendOutValue">Saidas</strong>
+                <div class="trend flat" id="trendDespesa">→ R$ 0,00 vs periodo anterior</div>
+              </div>
+            </div>
+            <div class="mini-card">
+              <h5>Tendencia Saldo</h5>
+              <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs periodo anterior</div>
+            </div>
+            <div>
+              <h3>Badges</h3>
+              <div class="badges" id="badgesBox"></div>
+            </div>
+            <div>
+              <h3>Insights Automaticos</h3>
+              <div class="insight-box" id="insightsBox"></div>
+            </div>
+          </div>
+          <div class="intel-right">
+            <div class="distribution-wrap">
+              <h3>Distribuicao de Gastos por Categoria</h3>
+              <canvas id="categoryDistributionChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
 
