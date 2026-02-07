@@ -243,6 +243,25 @@ body{
 }
 .insight-box p{margin:0 0 8px}
 .insight-box p:last-child{margin:0}
+.eff-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.eff-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.eff-item{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.eff-item h6{margin:0;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.eff-item strong{display:block;margin-top:6px;font-size:18px;color:#e2e8f0}
+.eff-charts{display:grid;gap:12px}
+.eff-card{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.eff-card h6{margin:0 0 8px;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.eff-card canvas{max-height:180px}
 .modal-overlay{
   position:fixed;inset:0;background:rgba(2,6,23,.75);backdrop-filter:blur(4px);
   display:none;align-items:center;justify-content:center;z-index:80;padding:16px;
@@ -285,6 +304,8 @@ body{
   .mini-cards{grid-template-columns:1fr}
   .intel-grid{grid-template-columns:1fr}
   .intel-right{grid-template-columns:1fr}
+  .eff-grid{grid-template-columns:1fr}
+  .eff-metrics{grid-template-columns:1fr}
 }
 </style>
 
@@ -537,6 +558,36 @@ async function load(){
     function sumByType(list, type){
       return list.filter((e)=>e.entry_type === type).reduce((s,e)=>s + e.amountNumber, 0);
     }
+    function stdDev(values){
+      if(!values.length) return 0;
+      const mean = values.reduce((a,b)=>a+b,0) / values.length;
+      const variance = values.reduce((acc,v)=>acc + Math.pow(v - mean, 2), 0) / values.length;
+      return Math.sqrt(variance);
+    }
+    function monthKey(year, month){
+      return `${year}-${String(month+1).padStart(2,"0")}`;
+    }
+    function buildMonthlySeries(entriesList, monthsBack){
+      const now = new Date();
+      const out = [];
+      for(let i=monthsBack-1;i>=0;i--){
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const start = new Date(y,m,1);
+        const end = new Date(y,m+1,0);
+        const monthEntries = entriesList.filter((e)=>inRange(e.parsedDate, start, end));
+        out.push({
+          key: monthKey(y,m),
+          label: monthNames[m],
+          year: y,
+          month: m,
+          receita: sumByType(monthEntries, "RECEITA"),
+          despesa: sumByType(monthEntries, "DESPESA"),
+        });
+      }
+      return out;
+    }
     function statObj(list){
       const total_receita = sumByType(list, "RECEITA");
       const total_despesa = sumByType(list, "DESPESA");
@@ -762,6 +813,7 @@ async function load(){
       }
     }
     const miniDonutCharts = {};
+    const effCharts = {};
     function renderMiniDonut(canvasId, pctRaw, value, color, pctLabel, hintId, hintText){
       const pct = clampPercent(pctRaw);
       if(miniDonutCharts[canvasId]){
@@ -933,6 +985,100 @@ async function load(){
         const p = document.createElement("p");
         p.textContent = text;
         insightBox.appendChild(p);
+      });
+
+      const monthlySeries = buildMonthlySeries(entriesParsed, 12);
+      const monthlyExpenses = monthlySeries.map((m)=>m.despesa);
+      const monthlyIncomes = monthlySeries.map((m)=>m.receita);
+      const avgMonthlyExpense = monthlyExpenses.reduce((a,b)=>a+b,0) / Math.max(monthlyExpenses.length,1);
+
+      const iEf = receitaPeriodo > 0
+        ? ((receitaPeriodo - recurringFixedExpenseTotal) / receitaPeriodo)
+        : 0;
+      const burnRateMensal = despesaPeriodo;
+      const runwayMeses = avgMonthlyExpense > 0 ? Number(dash.saldo || 0) / avgMonthlyExpense : 0;
+      const volatility = stdDev(monthlyExpenses);
+      const cv = avgMonthlyExpense > 0 ? (volatility / avgMonthlyExpense) : 0;
+      const deltaIncome = sumByType(selectedMonthAllEntries, "RECEITA") - sumByType(prevMonthAllEntries, "RECEITA");
+      const deltaExpense = sumByType(selectedMonthAllEntries, "DESPESA") - sumByType(prevMonthAllEntries, "DESPESA");
+      const incomeBase = Math.max(Math.abs(sumByType(prevMonthAllEntries, "RECEITA")), 1);
+      const expenseBase = Math.max(Math.abs(sumByType(prevMonthAllEntries, "DESPESA")), 1);
+      const incomePct = deltaIncome / incomeBase;
+      const expensePct = deltaExpense / expenseBase;
+      const elasticity = Math.abs(incomePct) > 0.0001 ? (expensePct / incomePct) : 0;
+      const variableExpense = Math.max(despesaPeriodo - recurringFixedExpenseTotal, 0);
+      const previsibilidade = (recurringFixedExpenseTotal + variableExpense) > 0
+        ? (recurringFixedExpenseTotal / (recurringFixedExpenseTotal + variableExpense))
+        : 0;
+
+      document.getElementById("iefValue").innerText = `${Math.round(iEf*100)}%`;
+      document.getElementById("burnMensalValue").innerText = formatCurrency(burnRateMensal);
+      document.getElementById("runwayMesesValue").innerText = `${runwayMeses.toFixed(1)} meses`;
+      document.getElementById("volatilidadeValue").innerText = formatCurrency(volatility);
+      document.getElementById("elasticidadeValue").innerText = elasticity.toFixed(2);
+      document.getElementById("previsibilidadeValue").innerText = `${Math.round(previsibilidade*100)}%`;
+
+      const healthRadar = {
+        ief: clampPercent(iEf * 100),
+        burnControl: clampPercent(100 - ((despesaPeriodo / Math.max(receitaPeriodo,1)) * 100)),
+        runway: clampPercent((runwayMeses / 6) * 100),
+        estabilidade: clampPercent(100 - (cv * 100)),
+        previsibilidade: clampPercent(previsibilidade * 100),
+      };
+      if(effCharts.healthRadar) effCharts.healthRadar.destroy();
+      effCharts.healthRadar = new Chart(document.getElementById("healthRadarChart"),{
+        type:"radar",
+        data:{
+          labels:["IEF","Controle Burn","Runway","Estabilidade","Previsibilidade"],
+          datasets:[{
+            label:"Saúde",
+            data:[healthRadar.ief, healthRadar.burnControl, healthRadar.runway, healthRadar.estabilidade, healthRadar.previsibilidade],
+            borderColor:"#38bdf8",
+            backgroundColor:"rgba(56,189,248,.18)",
+            pointBackgroundColor:"#38bdf8"
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{r:{beginAtZero:true,max:100,grid:{color:"rgba(148,163,184,.2)"},angleLines:{color:"rgba(148,163,184,.2)"},pointLabels:{color:"#94a3b8"},ticks:{display:false}}}
+        }
+      });
+
+      if(effCharts.volatilityLine) effCharts.volatilityLine.destroy();
+      effCharts.volatilityLine = new Chart(document.getElementById("volatilityLineChart"),{
+        type:"line",
+        data:{
+          labels: monthlySeries.map((m)=>`${m.label}/${String(m.year).slice(2)}`),
+          datasets:[{
+            data: monthlyExpenses,
+            borderColor:"#eab308",
+            backgroundColor:"rgba(234,179,8,.2)",
+            tension:.3,
+            fill:true
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:"#94a3b8"}},y:{ticks:{color:"#94a3b8"}}}
+        }
+      });
+
+      const previsibilidadePct = clampPercent(previsibilidade * 100);
+      if(effCharts.previsibilidadeGauge) effCharts.previsibilidadeGauge.destroy();
+      effCharts.previsibilidadeGauge = new Chart(document.getElementById("previsibilidadeGaugeChart"),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Recorrente","Variável"],
+          datasets:[{
+            data:[previsibilidadePct, 100 - previsibilidadePct],
+            backgroundColor:["#22c55e","#1e293b"],
+            borderWidth:0
+          }],
+          _valor: recurringFixedExpenseTotal,
+          _pctLabel: `${previsibilidadePct}%`
+        },
+        options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
       });
 
       const smartNotifs = [];
@@ -1201,6 +1347,52 @@ document.addEventListener("DOMContentLoaded", load);
               <h5>Reserva para Fixas</h5>
               <canvas id="fixedReserveChart"></canvas>
               <small id="fixedReserveHint">Meta sugerida: 6 meses de despesas fixas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Eficiência Financeira</h3>
+        <div class="eff-grid">
+          <div class="eff-metrics">
+            <div class="eff-item">
+              <h6>Índice de Eficiência (IEF)</h6>
+              <strong id="iefValue">0%</strong>
+            </div>
+            <div class="eff-item">
+              <h6>Burn Rate Mensal</h6>
+              <strong id="burnMensalValue">R$ 0,00</strong>
+            </div>
+            <div class="eff-item">
+              <h6>Runway Pessoal</h6>
+              <strong id="runwayMesesValue">0,0 meses</strong>
+            </div>
+            <div class="eff-item">
+              <h6>Volatilidade de Gastos</h6>
+              <strong id="volatilidadeValue">R$ 0,00</strong>
+            </div>
+            <div class="eff-item">
+              <h6>Elasticidade por Renda</h6>
+              <strong id="elasticidadeValue">0,00</strong>
+            </div>
+            <div class="eff-item">
+              <h6>Previsibilidade</h6>
+              <strong id="previsibilidadeValue">0%</strong>
+            </div>
+          </div>
+          <div class="eff-charts">
+            <div class="eff-card">
+              <h6>Radar de Saúde Financeira</h6>
+              <canvas id="healthRadarChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Volatilidade Mensal de Gastos</h6>
+              <canvas id="volatilityLineChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Gauge de Previsibilidade</h6>
+              <canvas id="previsibilidadeGaugeChart"></canvas>
             </div>
           </div>
         </div>
