@@ -21,8 +21,23 @@
 body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
 .container{padding:20px;display:grid;gap:20px}
 .header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header-right{display:flex;align-items:center;gap:10px}
 .links{display:flex;gap:14px}
 .links a{color:#94a3b8;text-decoration:none}
+.theme-switch{
+  display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px;
+  background:linear-gradient(180deg,#0b1224,#020617);
+}
+.theme-btn{
+  border:0;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;
+  background:transparent;color:#cbd5e1;
+}
+.theme-btn.active{background:#38bdf8;color:#04111d}
+.visibility-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
+}
+.visibility-btn.active{border-color:rgba(234,179,8,.55);color:#fde68a}
 .grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
 .panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
 h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
@@ -44,9 +59,85 @@ th{color:#9ca3af;text-align:left}
 @media(max-width:1000px){
   .grid{grid-template-columns:1fr}
 }
+body.values-hidden tbody td:nth-child(4),
+body.values-hidden .message{
+  filter:blur(6px);
+  user-select:none;
+}
+body.theme-light{
+  --bg:#f3f7ff;
+  --bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);
+  --border:rgba(30,64,175,.16);
+  --text:#0f172a;
+  --muted:#475569;
+  --blue:#2563eb;
+  --green:#16a34a;
+  --red:#dc2626;
+}
+body.theme-light .header,
+body.theme-light .panel,
+body.theme-light .theme-switch,
+body.theme-light .visibility-btn,
+body.theme-light input,
+body.theme-light textarea,
+body.theme-light .btn-secondary,
+body.theme-light .theme-btn{
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  color:#0f172a;
+}
+body.theme-light h3,
+body.theme-light label,
+body.theme-light th,
+body.theme-light .links a{color:#334155}
+body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
 </style>
 <script>
 let editingId = null;
+
+function initUiPrefs(){
+  const visibilityBtn = document.getElementById("visibilityToggleBtn");
+  const dayBtn = document.getElementById("themeDayBtn");
+  const nightBtn = document.getElementById("themeNightBtn");
+
+  const applyHidden = (hidden)=>{
+    document.body.classList.toggle("values-hidden", hidden);
+    if(visibilityBtn){
+      visibilityBtn.classList.toggle("active", hidden);
+      visibilityBtn.textContent = hidden ? "🙈" : "👁";
+      visibilityBtn.title = hidden ? "Mostrar valores" : "Ocultar valores";
+    }
+  };
+  const applyTheme = (mode)=>{
+    const isLight = mode === "light";
+    document.body.classList.toggle("theme-light", isLight);
+    if(dayBtn) dayBtn.classList.toggle("active", isLight);
+    if(nightBtn) nightBtn.classList.toggle("active", !isLight);
+  };
+
+  applyHidden(localStorage.getItem("genfin_values_hidden") === "1");
+  applyTheme(localStorage.getItem("genfin_theme_mode") === "light" ? "light" : "dark");
+
+  if(visibilityBtn && !visibilityBtn.dataset.bound){
+    visibilityBtn.dataset.bound = "1";
+    visibilityBtn.addEventListener("click", ()=>{
+      const hidden = !document.body.classList.contains("values-hidden");
+      localStorage.setItem("genfin_values_hidden", hidden ? "1" : "0");
+      applyHidden(hidden);
+    });
+  }
+  if(dayBtn && !dayBtn.dataset.bound){
+    dayBtn.dataset.bound = "1";
+    nightBtn.dataset.bound = "1";
+    dayBtn.addEventListener("click", ()=>{
+      localStorage.setItem("genfin_theme_mode", "light");
+      applyTheme("light");
+    });
+    nightBtn.addEventListener("click", ()=>{
+      localStorage.setItem("genfin_theme_mode", "dark");
+      applyTheme("dark");
+    });
+  }
+}
 
 function formatCurrency(value){
   return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -228,6 +319,7 @@ async function submitForm(event){
 }
 
 async function init(){
+  initUiPrefs();
   document.getElementById("expenseForm").addEventListener("submit", submitForm);
   document.getElementById("cancelEdit").addEventListener("click", resetForm);
 
@@ -246,11 +338,18 @@ document.addEventListener("DOMContentLoaded", init);
 <div class="container">
   <div class="header">
     <strong>Despesas Fixas</strong>
-    <div class="links">
-      <a href="/dashboard/">Dashboard</a>
-      <a href="/transactions/">Movimentacoes</a>
-      <a href="/fixed-incomes/">Entradas Fixas</a>
-      <a href="/reserves/">Reservas</a>
+    <div class="header-right">
+      <div class="theme-switch" aria-label="Alternar tema">
+        <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
+        <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
+      </div>
+      <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
+      <div class="links">
+        <a href="/dashboard/">Dashboard</a>
+        <a href="/transactions/">Movimentacoes</a>
+        <a href="/fixed-incomes/">Entradas Fixas</a>
+        <a href="/reserves/">Reservas</a>
+      </div>
     </div>
   </div>
 
