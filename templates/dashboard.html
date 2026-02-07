@@ -177,13 +177,14 @@ async function load(){
     return response.json();
   }
   try{
-    const [dash, entries, cats, daily, weekly, monthly] = await Promise.all([
+    const [dash, entries, cats, daily, weekly, monthly, fixedExpenses] = await Promise.all([
       fetchJson("/api/dashboard/"),
       fetchJson("/api/entries/"),
       fetchJson("/api/dashboard/categories/"),
       fetchJson("/api/stats/daily/"),
       fetchJson("/api/stats/weekly/"),
-      fetchJson("/api/stats/monthly/")
+      fetchJson("/api/stats/monthly/"),
+      fetchJson("/api/planner/")
     ]);
     document.getElementById("receita").innerText = formatCurrency(dash.total_receita);
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
@@ -299,6 +300,42 @@ async function load(){
       });
       document.querySelectorAll(".gauge small")[i].innerText = c.category;
     });
+
+    const fixedByCategory = {};
+    fixedExpenses.forEach((item)=>{
+      const category = item.category || "Sem categoria";
+      fixedByCategory[category] = (fixedByCategory[category] || 0) + Number(item.amount || 0);
+    });
+
+    const fixedTop = Object.entries(fixedByCategory)
+      .map(([category, total])=>({category, total}))
+      .sort((a,b)=>b.total - a.total)
+      .slice(0,4);
+
+    const totalFixed = fixedTop.reduce((sum, item)=>sum + item.total, 0);
+    fixedTop.forEach((item, i)=>{
+      const pct = totalFixed > 0 ? Math.round((item.total / totalFixed) * 100) : 0;
+      const chartData = {
+        labels:["Despesa Fixa","Restante"],
+        datasets:[{
+          data:[pct, 100-pct],
+          backgroundColor:["#38bdf8","#1e293b"],
+          borderWidth:0
+        }],
+        _valor: item.total
+      };
+
+      new Chart(document.getElementById("fg"+(i+1)),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data: chartData,
+        options:{
+          cutout:"70%",
+          plugins:{legend:{display:false}, tooltip:{enabled:false}}
+        }
+      });
+      document.querySelectorAll(".fixed-gauge small")[i].innerText = item.category;
+    });
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
@@ -386,6 +423,16 @@ load();
           <div class="gauge"><canvas id="g2"></canvas><small>â€”</small></div>
           <div class="gauge"><canvas id="g3"></canvas><small>â€”</small></div>
           <div class="gauge"><canvas id="g4"></canvas><small>â€”</small></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Desempenho por Despesas Fixas (% do Planejado)</h3>
+        <div class="gauges">
+          <div class="gauge fixed-gauge"><canvas id="fg1"></canvas><small>â€”</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg2"></canvas><small>â€”</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg3"></canvas><small>â€”</small></div>
+          <div class="gauge fixed-gauge"><canvas id="fg4"></canvas><small>â€”</small></div>
         </div>
       </div>
 
