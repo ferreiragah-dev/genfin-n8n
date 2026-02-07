@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Despesas Fixas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --panel:#0b1224;
+  --border:rgba(56,189,248,.15);
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --blue:#38bdf8;
+  --red:#ef4444;
+  --green:#22c55e;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.container{padding:20px;display:grid;gap:20px}
+.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.links{display:flex;gap:14px}
+.links a{color:#94a3b8;text-decoration:none}
+.grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
+h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+input,textarea{width:100%;background:#0b1224;color:var(--text);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;font:inherit}
+textarea{resize:vertical;min-height:72px}
+.actions{display:flex;gap:10px;margin-top:12px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--blue);color:#04111d}
+.btn-secondary{background:#1e293b;color:#cbd5e1}
+.btn-danger{background:var(--red);color:#fff}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;vertical-align:top}
+th{color:#9ca3af;text-align:left}
+.row-actions{display:flex;gap:8px}
+.message{font-size:12px;color:var(--green);margin-top:8px;min-height:16px}
+@media(max-width:1000px){
+  .grid{grid-template-columns:1fr}
+}
+</style>
+<script>
+let editingId = null;
+
+function formatCurrency(value){
+  return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function setMessage(text, isError){
+  const el = document.getElementById("message");
+  el.textContent = text;
+  el.style.color = isError ? "#ef4444" : "#22c55e";
+}
+
+function resetForm(){
+  editingId = null;
+  document.getElementById("title_form").textContent = "Adicionar Despesa Fixa";
+  document.getElementById("expenseForm").reset();
+  document.getElementById("cancelEdit").style.display = "none";
+}
+
+function fillForm(item){
+  editingId = item.id;
+  document.getElementById("title_form").textContent = "Editar Despesa Fixa";
+  document.getElementById("date").value = item.date;
+  document.getElementById("category").value = item.category;
+  document.getElementById("description").value = item.description || "";
+  document.getElementById("amount").value = item.amount;
+  document.getElementById("cancelEdit").style.display = "inline-block";
+}
+
+async function loadExpenses(){
+  const response = await fetch("/api/planner/", {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar despesas fixas");
+
+  const items = await response.json();
+  const tbody = document.getElementById("expenseRows");
+  tbody.textContent = "";
+
+  items.forEach((item)=>{
+    const tr = document.createElement("tr");
+
+    const dateTd = document.createElement("td");
+    dateTd.textContent = item.date;
+    const categoryTd = document.createElement("td");
+    categoryTd.textContent = item.category;
+    const descriptionTd = document.createElement("td");
+    descriptionTd.textContent = item.description || "-";
+    const amountTd = document.createElement("td");
+    amountTd.textContent = formatCurrency(item.amount);
+    const actionsTd = document.createElement("td");
+
+    const actions = document.createElement("div");
+    actions.className = "row-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn-secondary";
+    editBtn.textContent = "Editar";
+    editBtn.addEventListener("click", ()=>fillForm(item));
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn-danger";
+    deleteBtn.textContent = "Remover";
+    deleteBtn.addEventListener("click", async ()=>{
+      if(!confirm("Remover esta despesa fixa?")) return;
+      const del = await fetch(`/api/planner/${item.id}/`, {method:"DELETE", credentials:"same-origin"});
+      if(!del.ok){
+        setMessage("Nao foi possivel remover.", true);
+        return;
+      }
+      setMessage("Despesa fixa removida.", false);
+      if(editingId === item.id) resetForm();
+      await loadExpenses();
+    });
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    actionsTd.appendChild(actions);
+
+    tr.appendChild(dateTd);
+    tr.appendChild(categoryTd);
+    tr.appendChild(descriptionTd);
+    tr.appendChild(amountTd);
+    tr.appendChild(actionsTd);
+    tbody.appendChild(tr);
+  });
+}
+
+async function submitForm(event){
+  event.preventDefault();
+
+  const payload = {
+    date: document.getElementById("date").value,
+    category: document.getElementById("category").value,
+    description: document.getElementById("description").value,
+    amount: document.getElementById("amount").value,
+  };
+
+  const url = editingId ? `/api/planner/${editingId}/` : "/api/planner/create/";
+  const method = editingId ? "PUT" : "POST";
+
+  const response = await fetch(url, {
+    method,
+    credentials:"same-origin",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(payload),
+  });
+
+  if(!response.ok){
+    setMessage("Erro ao salvar despesa fixa.", true);
+    return;
+  }
+
+  setMessage(editingId ? "Despesa fixa atualizada." : "Despesa fixa criada.", false);
+  resetForm();
+  await loadExpenses();
+}
+
+async function init(){
+  document.getElementById("expenseForm").addEventListener("submit", submitForm);
+  document.getElementById("cancelEdit").addEventListener("click", resetForm);
+
+  try{
+    await loadExpenses();
+  } catch (error){
+    console.error(error);
+    setMessage("Erro ao carregar despesas fixas.", true);
+  }
+}
+
+init();
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <strong>Despesas Fixas</strong>
+    <div class="links">
+      <a href="/dashboard/">Dashboard</a>
+      <a href="/transactions/">Movimentacoes</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3 id="title_form">Adicionar Despesa Fixa</h3>
+      <form id="expenseForm">
+        <label for="date">Data</label>
+        <input id="date" type="date" required>
+
+        <label for="category">Categoria</label>
+        <input id="category" type="text" maxlength="50" required>
+
+        <label for="description">Descricao</label>
+        <textarea id="description"></textarea>
+
+        <label for="amount">Valor</label>
+        <input id="amount" type="number" min="0" step="0.01" required>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary">Salvar</button>
+          <button type="button" id="cancelEdit" class="btn-secondary" style="display:none">Cancelar</button>
+        </div>
+      </form>
+      <div id="message" class="message"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Lista de Despesas Fixas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Categoria</th>
+            <th>Descricao</th>
+            <th>Valor</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="expenseRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

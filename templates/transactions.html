@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Movimentacoes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --border:rgba(56,189,248,.15);
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --green:#22c55e;
+  --red:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.container{padding:20px;display:grid;gap:20px}
+.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.links{display:flex;gap:14px}
+.links a{color:#94a3b8;text-decoration:none}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{background:linear-gradient(180deg,#0b1224,#020617);border:1px solid var(--border);border-radius:16px;padding:16px}
+.card span{color:var(--muted);font-size:12px}
+.card strong{display:block;font-size:22px;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
+h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+th{color:#9ca3af;text-align:left}
+.green{color:var(--green)}
+.red{color:var(--red)}
+@media(max-width:900px){
+  .cards{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+<script>
+function formatCurrency(value){
+  return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function appendRow(tbody, entry){
+  const tr = document.createElement("tr");
+  const dateTd = document.createElement("td");
+  const categoryTd = document.createElement("td");
+  const amountTd = document.createElement("td");
+  dateTd.textContent = entry.date;
+  categoryTd.textContent = entry.category;
+  amountTd.textContent = formatCurrency(entry.amount);
+  tr.appendChild(dateTd);
+  tr.appendChild(categoryTd);
+  tr.appendChild(amountTd);
+  tbody.appendChild(tr);
+}
+
+async function load(){
+  try{
+    const response = await fetch("/api/entries/?limit=500", {credentials:"same-origin"});
+    if(!response.ok) throw new Error("Falha ao carregar movimentacoes");
+
+    const entries = await response.json();
+    const receitas = entries.filter((e)=>e.entry_type === "RECEITA");
+    const despesas = entries.filter((e)=>e.entry_type === "DESPESA");
+
+    const totalReceitas = receitas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
+    const totalDespesas = despesas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
+
+    document.getElementById("total_mov").textContent = String(entries.length);
+    document.getElementById("total_rec").textContent = formatCurrency(totalReceitas);
+    document.getElementById("total_des").textContent = formatCurrency(totalDespesas);
+
+    const receitasBody = document.getElementById("entriesReceita");
+    const despesasBody = document.getElementById("entriesDespesa");
+    receitasBody.textContent = "";
+    despesasBody.textContent = "";
+
+    receitas.forEach((entry)=>appendRow(receitasBody, entry));
+    despesas.forEach((entry)=>appendRow(despesasBody, entry));
+  } catch (error){
+    console.error(error);
+    document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
+    document.getElementById("entriesDespesa").innerHTML = '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
+  }
+}
+
+load();
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <strong>Movimentacoes</strong>
+    <div class="links">
+      <a href="/dashboard/">Dashboard</a>
+      <a href="/fixed-expenses/">Despesas Fixas</a>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><span>Total de Movimentacoes</span><strong id="total_mov">0</strong></div>
+    <div class="card"><span>Total de Entradas</span><strong class="green" id="total_rec">R$ 0,00</strong></div>
+    <div class="card"><span>Total de Saidas</span><strong class="red" id="total_des">R$ 0,00</strong></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Entradas</h3>
+      <table>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <tbody id="entriesReceita"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>Despesas</h3>
+      <table>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <tbody id="entriesDespesa"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
