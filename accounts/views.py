@@ -20,6 +20,14 @@ def get_logged_user(request):
     return UserAccount.objects.filter(phone_number=phone).first()
 
 
+def parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 class ValidatePhoneView(APIView):
     def post(self, request):
         phone_number = request.data.get("phone_number")
@@ -254,6 +262,7 @@ class PlannerListView(APIView):
                     "category": p.category,
                     "description": p.description,
                     "amount": p.amount,
+                    "is_recurring": p.is_recurring,
                 }
                 for p in data
             ]
@@ -282,6 +291,7 @@ class PlannerCreateView(APIView):
             category=category,
             description=request.data.get("description", ""),
             amount=amount,
+            is_recurring=parse_bool(request.data.get("is_recurring", False)),
         )
 
         return Response(
@@ -321,6 +331,7 @@ class PlannerDetailView(APIView):
         planned.category = category
         planned.description = request.data.get("description", "")
         planned.amount = amount
+        planned.is_recurring = parse_bool(request.data.get("is_recurring", False))
         planned.save()
 
         return Response({"message": "Despesa fixa atualizada"}, status=status.HTTP_200_OK)

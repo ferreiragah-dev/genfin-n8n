@@ -302,7 +302,7 @@ async function load(){
     });
 
     const fixedByCategory = {};
-    fixedExpenses.forEach((item)=>{
+    fixedExpenses.filter((item)=>item.is_recurring).forEach((item)=>{
       const category = item.category || "Sem categoria";
       fixedByCategory[category] = (fixedByCategory[category] || 0) + Number(item.amount || 0);
     });
