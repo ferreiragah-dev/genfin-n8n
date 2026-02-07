@@ -373,6 +373,12 @@ async function load(){
   function formatCurrency(value){
     return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
   }
+  function getCsrfToken(){
+    const token = document.cookie
+      .split("; ")
+      .find((row)=>row.startsWith("csrftoken="));
+    return token ? decodeURIComponent(token.split("=")[1]) : "";
+  }
   function toBrDate(isoDate){
     const parts = String(isoDate || "").split("-");
     if(parts.length !== 3) return "";
@@ -465,10 +471,19 @@ async function load(){
         if(type === "RECEITA") payload.receita = amount;
         else payload.despesa = amount;
 
+        const csrfToken = getCsrfToken();
+        if(!csrfToken){
+          setLaunchMessage("Token de segurança ausente. Recarregue a página e tente novamente.", true);
+          return;
+        }
+
         const response = await fetch("/api/financial-entry/", {
           method:"POST",
           credentials:"same-origin",
-          headers:{"Content-Type":"application/json"},
+          headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken": csrfToken,
+          },
           body: JSON.stringify(payload),
         });
 
