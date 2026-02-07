@@ -55,6 +55,26 @@ body{
 }
 .header-actions{display:flex;align-items:center;gap:14px}
 .header-links{display:flex;gap:14px}
+.theme-switch{
+  display:flex;align-items:center;gap:4px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:3px;
+  background:linear-gradient(180deg,#0b1224,#020617);
+}
+.theme-btn{
+  border:0;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  cursor:pointer;
+  background:transparent;
+  color:#cbd5e1;
+}
+.theme-btn.active{
+  background:#38bdf8;
+  color:#04111d;
+}
 .visibility-btn{
   width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
   background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
@@ -354,6 +374,68 @@ body.values-hidden canvas{
   filter:blur(6px);
 }
 
+body.theme-light{
+  --bg:#f3f7ff;
+  --bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);
+  --border:rgba(30,64,175,.16);
+  --text:#0f172a;
+  --muted:#475569;
+  --blue:#2563eb;
+  --green:#16a34a;
+  --red:#dc2626;
+  --yellow:#ca8a04;
+}
+body.theme-light .header{
+  background:linear-gradient(180deg,#ffffff,#f5f9ff);
+}
+body.theme-light .panel,
+body.theme-light .card,
+body.theme-light .stat-card,
+body.theme-light .mini-card,
+body.theme-light .eff-item,
+body.theme-light .eff-card,
+body.theme-light .gauge,
+body.theme-light .month-chip,
+body.theme-light .period-btn,
+body.theme-light .notif-panel,
+body.theme-light .modal,
+body.theme-light .notif-btn,
+body.theme-light .card-icon-btn,
+body.theme-light .visibility-btn,
+body.theme-light .theme-switch,
+body.theme-light .modal-close{
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  color:#0f172a;
+}
+body.theme-light .avatar{
+  background:linear-gradient(135deg,#e2ebff,#f8fbff);
+  color:#2563eb;
+}
+body.theme-light .panel h3,
+body.theme-light .mini-card h5,
+body.theme-light .eff-card h6,
+body.theme-light .eff-item h6,
+body.theme-light .risk-item h6,
+body.theme-light .stat-card h4,
+body.theme-light .metric,
+body.theme-light small,
+body.theme-light .trend.flat,
+body.theme-light .traffic-label{
+  color:#334155;
+}
+body.theme-light .month-chip.active,
+body.theme-light .period-btn.active,
+body.theme-light .theme-btn.active{
+  background:#2563eb;
+  color:#ffffff;
+}
+body.theme-light .insight-box,
+body.theme-light .field input,
+body.theme-light .field textarea{
+  background:#f8fbff;
+  color:#0f172a;
+}
+
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
   .mini-cards{grid-template-columns:1fr}
@@ -503,7 +585,34 @@ async function load(){
         applyState(hidden);
       });
     }
+    function initThemeToggle(){
+      const dayBtn = document.getElementById("themeDayBtn");
+      const nightBtn = document.getElementById("themeNightBtn");
+      if(!dayBtn || !nightBtn || dayBtn.dataset.bound) return;
+
+      const applyTheme = (mode)=>{
+        const isLight = mode === "light";
+        document.body.classList.toggle("theme-light", isLight);
+        dayBtn.classList.toggle("active", isLight);
+        nightBtn.classList.toggle("active", !isLight);
+      };
+
+      const saved = localStorage.getItem("genfin_theme_mode");
+      applyTheme(saved === "light" ? "light" : "dark");
+
+      dayBtn.dataset.bound = "1";
+      nightBtn.dataset.bound = "1";
+      dayBtn.addEventListener("click", ()=>{
+        localStorage.setItem("genfin_theme_mode", "light");
+        applyTheme("light");
+      });
+      nightBtn.addEventListener("click", ()=>{
+        localStorage.setItem("genfin_theme_mode", "dark");
+        applyTheme("dark");
+      });
+    }
     initVisibilityToggle();
+    initThemeToggle();
     function initPanelToggles(){
       document.querySelectorAll(".panel").forEach((panel, index)=>{
         let header = panel.querySelector(":scope > .panel-head");
@@ -1592,6 +1701,10 @@ document.addEventListener("DOMContentLoaded", load);
     </div>
       <div class="header-actions">
       <div class="header-links">
+        <div class="theme-switch" aria-label="Alternar tema">
+          <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
+        </div>
         <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
         <a href="/fixed-expenses/" style="color:#94a3b8;text-decoration:none">Despesas Fixas</a>
         <a href="/fixed-incomes/" style="color:#94a3b8;text-decoration:none">Entradas Fixas</a>
