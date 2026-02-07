@@ -262,6 +262,28 @@ body{
 }
 .eff-card h6{margin:0 0 8px;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .eff-card canvas{max-height:180px}
+.risk-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+.risk-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.risk-item{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.risk-item h6{margin:0;color:#94a3b8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.risk-item strong{display:block;margin-top:6px;font-size:18px;color:#e2e8f0}
+.risk-charts{display:grid;gap:12px}
+.traffic{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+}
+.traffic-dot{
+  width:14px;height:14px;border-radius:50%;
+  box-shadow:0 0 10px rgba(0,0,0,.35);
+}
+.traffic-dot.green{background:#22c55e}
+.traffic-dot.yellow{background:#eab308}
+.traffic-dot.red{background:#ef4444}
+.traffic-label{font-size:12px;color:#cbd5e1}
 .modal-overlay{
   position:fixed;inset:0;background:rgba(2,6,23,.75);backdrop-filter:blur(4px);
   display:none;align-items:center;justify-content:center;z-index:80;padding:16px;
@@ -306,6 +328,8 @@ body{
   .intel-right{grid-template-columns:1fr}
   .eff-grid{grid-template-columns:1fr}
   .eff-metrics{grid-template-columns:1fr}
+  .risk-grid{grid-template-columns:1fr}
+  .risk-metrics{grid-template-columns:1fr}
 }
 </style>
 
@@ -665,6 +689,7 @@ async function load(){
 
     let fixedExpenses = [];
     let fixedIncomes = [];
+    let reserves = [];
     try{
       fixedExpenses = await fetchJson("/api/planner/");
     } catch (plannerError){
@@ -674,6 +699,11 @@ async function load(){
       fixedIncomes = await fetchJson("/api/fixed-incomes/");
     } catch (incomeError){
       console.error("Falha ao carregar entradas fixas:", incomeError);
+    }
+    try{
+      reserves = await fetchJson("/api/reserves/");
+    } catch (reserveError){
+      console.error("Falha ao carregar reservas:", reserveError);
     }
 
     const fixedByCategory = {};
@@ -725,6 +755,11 @@ async function load(){
       amountNumber: Number(item.amount || 0),
     }));
     const fixedIncomesParsed = fixedIncomes.map((item)=>({
+      ...item,
+      parsedDate: parseIsoDate(item.date),
+      amountNumber: Number(item.amount || 0),
+    }));
+    const reservesParsed = reserves.map((item)=>({
       ...item,
       parsedDate: parseIsoDate(item.date),
       amountNumber: Number(item.amount || 0),
@@ -1081,6 +1116,220 @@ async function load(){
         options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
       });
 
+      const reserveAmount = reservesParsed.reduce((sum, item)=>sum + item.amountNumber, 0);
+      const essentialMonthly = recurringFixedExpenseTotal;
+      const selectedMonthIncome = sumByType(selectedMonthAllEntries, "RECEITA");
+      const selectedMonthExpense = sumByType(selectedMonthAllEntries, "DESPESA");
+      const selectedMonthVariable = Math.max(selectedMonthExpense - essentialMonthly, 0);
+      const next30Expenses = essentialMonthly + Math.max((selectedMonthExpense / Math.max(selectedBounds.end.getDate(), 1)) * 30 - essentialMonthly, 0);
+
+      const irf = essentialMonthly > 0 ? reserveAmount / essentialMonthly : 0;
+      const idealReserve = essentialMonthly * 6;
+      const emergencyCoverage = idealReserve > 0 ? (reserveAmount / idealReserve) * 100 : 0;
+      const liquidityExposure = Number(dash.saldo || 0) > 0 ? (next30Expenses / Number(dash.saldo || 1)) * 100 : 100;
+      const survivalCost = selectedMonthIncome > 0 ? (essentialMonthly / selectedMonthIncome) * 100 : 0;
+
+      document.getElementById("irfValue").innerText = irf.toFixed(2);
+      document.getElementById("emergencyCoverageValue").innerText = `${Math.round(emergencyCoverage)}%`;
+      document.getElementById("liquidityExposureValue").innerText = `${Math.round(liquidityExposure)}%`;
+      document.getElementById("survivalCostValue").innerText = `${Math.round(survivalCost)}%`;
+
+      const resiliencePct = clampPercent((irf / 6) * 100);
+      if(effCharts.resilienceGauge) effCharts.resilienceGauge.destroy();
+      effCharts.resilienceGauge = new Chart(document.getElementById("resilienceGaugeChart"),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Resiliência","Gap"],
+          datasets:[{
+            data:[resiliencePct, 100 - resiliencePct],
+            backgroundColor:["#22c55e","#1e293b"],
+            borderWidth:0
+          }],
+          _valor: reserveAmount,
+          _pctLabel: `${Math.round(irf * 10) / 10}m`
+        },
+        options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+      });
+
+      const securityRadarData = {
+        resiliencia: resiliencePct,
+        cobertura: clampPercent(emergencyCoverage),
+        liquidez: clampPercent(100 - liquidityExposure),
+        sobrevivencia: clampPercent(100 - survivalCost),
+        flex: clampPercent(100 - ((essentialMonthly / Math.max(selectedMonthExpense, 1)) * 100)),
+      };
+      if(effCharts.securityRadar) effCharts.securityRadar.destroy();
+      effCharts.securityRadar = new Chart(document.getElementById("securityRadarChart"),{
+        type:"radar",
+        data:{
+          labels:["Resiliência","Cobertura","Liquidez","Sobrevivência","Flexibilidade"],
+          datasets:[{
+            data:[
+              securityRadarData.resiliencia,
+              securityRadarData.cobertura,
+              securityRadarData.liquidez,
+              securityRadarData.sobrevivencia,
+              securityRadarData.flex
+            ],
+            borderColor:"#38bdf8",
+            backgroundColor:"rgba(56,189,248,.18)",
+            pointBackgroundColor:"#38bdf8"
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{r:{beginAtZero:true,max:100,grid:{color:"rgba(148,163,184,.2)"},angleLines:{color:"rgba(148,163,184,.2)"},pointLabels:{color:"#94a3b8"},ticks:{display:false}}}
+        }
+      });
+
+      const incomeByCategory = {};
+      fixedIncomesParsed.filter((item)=>item.is_recurring).forEach((item)=>{
+        const key = item.category || "Sem categoria";
+        incomeByCategory[key] = (incomeByCategory[key] || 0) + item.amountNumber;
+      });
+      const incomeRows = Object.entries(incomeByCategory).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      if(effCharts.incomeDependencyBar) effCharts.incomeDependencyBar.destroy();
+      effCharts.incomeDependencyBar = new Chart(document.getElementById("incomeDependencyBarChart"),{
+        type:"bar",
+        data:{
+          labels: incomeRows.length ? incomeRows.map((r)=>r[0]) : ["Sem dados"],
+          datasets:[{
+            data: incomeRows.length ? incomeRows.map((r)=>r[1]) : [0],
+            backgroundColor:"#38bdf8"
+          }]
+        },
+        options:{
+          indexAxis:"y",
+          plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:"#94a3b8"}},y:{ticks:{color:"#94a3b8"}}}
+        }
+      });
+
+      const fixedShare = clampPercent((essentialMonthly / Math.max(selectedMonthExpense, 1)) * 100);
+      if(effCharts.fixedVsVariableDonut) effCharts.fixedVsVariableDonut.destroy();
+      effCharts.fixedVsVariableDonut = new Chart(document.getElementById("fixedVsVariableDonutChart"),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Fixos","Variáveis"],
+          datasets:[{
+            data:[fixedShare, 100 - fixedShare],
+            backgroundColor:["#ef4444","#38bdf8"],
+            borderWidth:0
+          }],
+          _valor: selectedMonthExpense,
+          _pctLabel: `${fixedShare}%`
+        },
+        options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+      });
+
+      const flexibility = clampPercent(100 - fixedShare);
+      if(effCharts.flexibilityGauge) effCharts.flexibilityGauge.destroy();
+      effCharts.flexibilityGauge = new Chart(document.getElementById("flexibilityGaugeChart"),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Flexível","Comprometido"],
+          datasets:[{
+            data:[flexibility, 100 - flexibility],
+            backgroundColor:["#22c55e","#1e293b"],
+            borderWidth:0
+          }],
+          _valor: selectedMonthVariable,
+          _pctLabel: `${flexibility}%`
+        },
+        options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+      });
+
+      const sobra = selectedMonthIncome - essentialMonthly;
+      if(effCharts.waterfall) effCharts.waterfall.destroy();
+      effCharts.waterfall = new Chart(document.getElementById("waterfallChart"),{
+        type:"bar",
+        data:{
+          labels:["Receita","Essenciais","Sobra"],
+          datasets:[{
+            data:[selectedMonthIncome, -essentialMonthly, sobra],
+            backgroundColor:["#22c55e","#ef4444","#38bdf8"]
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:"#94a3b8"}},y:{ticks:{color:"#94a3b8"}}}
+        }
+      });
+
+      const avgIncome = monthlyIncomes.reduce((a,b)=>a+b,0) / Math.max(monthlyIncomes.length,1);
+      const avgExpense = monthlyExpenses.reduce((a,b)=>a+b,0) / Math.max(monthlyExpenses.length,1);
+      const overspendRisk = avgIncome > 0 ? (avgExpense / avgIncome) * 100 : 0;
+      const commitments = essentialMonthly;
+      const annualIncome = avgIncome * 12;
+      const insolvencyRisk = annualIncome > 0 ? (commitments * 12 / annualIncome) * 100 : 0;
+      const financialPressure = selectedMonthIncome > 0 ? (commitments / selectedMonthIncome) * 100 : 0;
+      const negativeMonths = monthlySeries.filter((m)=>m.receita - m.despesa < 0).length;
+      const negativeProb = monthlySeries.length ? (negativeMonths / monthlySeries.length) * 100 : 0;
+      const monthlyStress = selectedMonthIncome > 0 ? ((selectedMonthExpense - selectedMonthIncome) / selectedMonthIncome) * 100 : 0;
+
+      document.getElementById("overspendRiskValue").innerText = `${Math.round(overspendRisk)}%`;
+      document.getElementById("insolvencyRiskValue").innerText = `${Math.round(insolvencyRisk)}%`;
+      document.getElementById("financialPressureValue").innerText = `${Math.round(financialPressure)}%`;
+      document.getElementById("negativeBalanceProbValue").innerText = `${Math.round(negativeProb)}%`;
+      document.getElementById("monthlyStressValue").innerText = `${Math.round(monthlyStress)}%`;
+
+      const riskGaugePct = clampPercent((overspendRisk * 0.4) + (financialPressure * 0.3) + (negativeProb * 0.3));
+      if(effCharts.riskGauge) effCharts.riskGauge.destroy();
+      effCharts.riskGauge = new Chart(document.getElementById("riskGaugeChart"),{
+        type:"doughnut",
+        plugins:[centerTextPlugin],
+        data:{
+          labels:["Risco","Faixa segura"],
+          datasets:[{
+            data:[riskGaugePct, 100 - riskGaugePct],
+            backgroundColor:["#ef4444","#1e293b"],
+            borderWidth:0
+          }],
+          _valor: selectedMonthExpense,
+          _pctLabel: `${riskGaugePct}%`
+        },
+        options:{cutout:"72%",plugins:{legend:{display:false}, tooltip:{enabled:false}}}
+      });
+
+      const stressSeries = monthlySeries.map((m)=>{
+        if(m.receita <= 0) return 0;
+        return ((m.despesa - m.receita) / m.receita) * 100;
+      });
+      if(effCharts.stressLine) effCharts.stressLine.destroy();
+      effCharts.stressLine = new Chart(document.getElementById("stressLineChart"),{
+        type:"line",
+        data:{
+          labels: monthlySeries.map((m)=>`${m.label}/${String(m.year).slice(2)}`),
+          datasets:[{
+            data: stressSeries,
+            borderColor:"#ef4444",
+            backgroundColor:"rgba(239,68,68,.2)",
+            tension:.3,
+            fill:true
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:"#94a3b8"}},y:{ticks:{color:"#94a3b8"}}}
+        }
+      });
+
+      const trafficDot = document.getElementById("collapseTrafficDot");
+      const trafficLabel = document.getElementById("collapseTrafficLabel");
+      if(riskGaugePct >= 70){
+        trafficDot.className = "traffic-dot red";
+        trafficLabel.textContent = "Alto risco";
+      } else if(riskGaugePct >= 40){
+        trafficDot.className = "traffic-dot yellow";
+        trafficLabel.textContent = "Médio risco";
+      } else {
+        trafficDot.className = "traffic-dot green";
+        trafficLabel.textContent = "Baixo risco";
+      }
+
       const smartNotifs = [];
       if(overLeisure){
         smartNotifs.push({tipo:"Insight", categoria:"Lazer", valor:leisureValue, data:"Agora", falta:0});
@@ -1393,6 +1642,101 @@ document.addEventListener("DOMContentLoaded", load);
             <div class="eff-card">
               <h6>Gauge de Previsibilidade</h6>
               <canvas id="previsibilidadeGaugeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Segurança Financeira</h3>
+        <div class="risk-grid">
+          <div class="risk-metrics">
+            <div class="risk-item">
+              <h6>Índice de Resiliência (IRF)</h6>
+              <strong id="irfValue">0,00</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Cobertura de Emergência</h6>
+              <strong id="emergencyCoverageValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Exposição a Liquidez</h6>
+              <strong id="liquidityExposureValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Custo Mínimo de Sobrevivência</h6>
+              <strong id="survivalCostValue">0%</strong>
+            </div>
+          </div>
+          <div class="risk-charts">
+            <div class="eff-card">
+              <h6>Gauge de Resiliência</h6>
+              <canvas id="resilienceGaugeChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Radar de Segurança Financeira</h6>
+              <canvas id="securityRadarChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Dependência por Fonte de Renda</h6>
+              <canvas id="incomeDependencyBarChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Fixos vs Variáveis</h6>
+              <canvas id="fixedVsVariableDonutChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Gauge de Flexibilidade</h6>
+              <canvas id="flexibilityGaugeChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Waterfall: Receita → Essenciais → Sobra</h6>
+              <canvas id="waterfallChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Risco Financeiro Pessoal</h3>
+        <div class="risk-grid">
+          <div class="risk-metrics">
+            <div class="risk-item">
+              <h6>Risco de Estouro Financeiro</h6>
+              <strong id="overspendRiskValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Risco de Insolvência (heur.)</h6>
+              <strong id="insolvencyRiskValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Índice de Pressão Financeira</h6>
+              <strong id="financialPressureValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Prob. de Saldo Negativo</h6>
+              <strong id="negativeBalanceProbValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Stress Financeiro Mensal</h6>
+              <strong id="monthlyStressValue">0%</strong>
+            </div>
+            <div class="risk-item">
+              <h6>Semáforo de Colapso</h6>
+              <div class="traffic">
+                <div id="collapseTrafficDot" class="traffic-dot green"></div>
+                <div id="collapseTrafficLabel" class="traffic-label">Baixo risco</div>
+              </div>
+            </div>
+          </div>
+          <div class="risk-charts">
+            <div class="eff-card">
+              <h6>Gauge de Risco Financeiro</h6>
+              <canvas id="riskGaugeChart"></canvas>
+            </div>
+            <div class="eff-card">
+              <h6>Linha de Stress Financeiro</h6>
+              <canvas id="stressLineChart"></canvas>
             </div>
           </div>
         </div>
