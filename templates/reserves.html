@@ -23,6 +23,21 @@ body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color
 .header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
 .links{display:flex;gap:14px}
 .links a{color:#94a3b8;text-decoration:none}
+.month-wrap{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:12px}
+.month-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.month-head small{color:#94a3b8}
+.month-bar{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+.month-chip{
+  border:1px solid var(--border);
+  background:#0b1224;
+  color:#cbd5e1;
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:12px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.month-chip.active{background:#38bdf8;color:#04111d}
 .grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
 .panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
 h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
@@ -50,6 +65,12 @@ let editingId = null;
 
 function formatCurrency(value){
   return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function parseIsoDate(value){
+  const [y,m,d] = String(value || "").split("-");
+  if(!y || !m || !d) return null;
+  const date = new Date(Number(y), Number(m)-1, Number(d));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getCsrfToken(){
@@ -98,12 +119,25 @@ async function loadReserves(){
   const response = await fetch("/api/reserves/", {credentials:"same-origin"});
   if(!response.ok) throw new Error("Falha ao carregar reservas");
 
-  const items = await response.json();
+  const allItems = await response.json();
+  const items = allItems.map((item)=>({...item, parsedDate: parseIsoDate(item.date)}));
+  const year = new Date().getFullYear();
+  const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  let selectedMonth = new Date().getMonth();
   const tbody = document.getElementById("reserveRows");
-  tbody.textContent = "";
 
-  items.forEach((item)=>{
-    const tr = document.createElement("tr");
+  function renderMonth(month){
+    selectedMonth = month;
+    document.querySelectorAll(".month-chip").forEach((chip)=>{
+      chip.classList.toggle("active", Number(chip.dataset.month) === month);
+    });
+    document.getElementById("selectedMonthLabel").textContent = `Ano ${year}`;
+
+    const monthItems = items.filter((item)=>item.parsedDate && item.parsedDate.getFullYear() === year && item.parsedDate.getMonth() === month);
+    tbody.textContent = "";
+
+    monthItems.forEach((item)=>{
+      const tr = document.createElement("tr");
 
     const dateTd = document.createElement("td");
     dateTd.textContent = item.date;
@@ -188,8 +222,22 @@ async function loadReserves(){
     tr.appendChild(amountTd);
     tr.appendChild(recurringTd);
     tr.appendChild(actionsTd);
-    tbody.appendChild(tr);
+      tbody.appendChild(tr);
+    });
+  }
+
+  const bar = document.getElementById("monthFilterBar");
+  bar.textContent = "";
+  monthNames.forEach((name, idx)=>{
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "month-chip";
+    btn.dataset.month = String(idx);
+    btn.textContent = name;
+    btn.addEventListener("click", ()=>renderMonth(idx));
+    bar.appendChild(btn);
   });
+  renderMonth(selectedMonth);
 }
 
 async function submitForm(event){
@@ -252,6 +300,14 @@ document.addEventListener("DOMContentLoaded", init);
       <a href="/fixed-expenses/">Despesas Fixas</a>
       <a href="/fixed-incomes/">Entradas Fixas</a>
     </div>
+  </div>
+
+  <div class="month-wrap">
+    <div class="month-head">
+      <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Filtro por Mês</strong>
+      <small id="selectedMonthLabel"></small>
+    </div>
+    <div id="monthFilterBar" class="month-bar"></div>
   </div>
 
   <div class="grid">

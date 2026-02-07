@@ -700,6 +700,12 @@ async function load(){
       const d = startOfDay(date);
       return d >= startOfDay(start) && d <= startOfDay(end);
     }
+    function getMonthBounds(year, month){
+      return {
+        start: new Date(year, month, 1),
+        end: new Date(year, month + 1, 0),
+      };
+    }
     function sumByType(list, type){
       return list.filter((e)=>e.entry_type === type).reduce((s,e)=>s + e.amountNumber, 0);
     }
@@ -799,8 +805,12 @@ async function load(){
       const despesaPeriodo = sumByType(periodEntries, "DESPESA");
       const receitaAnterior = sumByType(prevEntries, "RECEITA");
       const despesaAnterior = sumByType(prevEntries, "DESPESA");
-      const trendReceita = receitaPeriodo - receitaAnterior;
-      const trendDespesa = despesaPeriodo - despesaAnterior;
+      const selectedBounds = getMonthBounds(selectedYear, selectedMonth);
+      const prevBounds = getMonthBounds(selectedYear, selectedMonth - 1);
+      const selectedMonthAllEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, selectedBounds.start, selectedBounds.end));
+      const prevMonthAllEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, prevBounds.start, prevBounds.end));
+      const trendReceita = sumByType(selectedMonthAllEntries, "RECEITA") - sumByType(prevMonthAllEntries, "RECEITA");
+      const trendDespesa = sumByType(selectedMonthAllEntries, "DESPESA") - sumByType(prevMonthAllEntries, "DESPESA");
 
       const expenseEntries = periodEntries.filter((e)=>e.entry_type === "DESPESA");
       const dailyBurn = despesaPeriodo / Math.max(range.days, 1);
@@ -811,18 +821,18 @@ async function load(){
 
       const receitaTrendEl = document.getElementById("trendReceita");
       receitaTrendEl.className = `trend ${trendClass(trendReceita)}`;
-      receitaTrendEl.innerText = `${trendSymbol(trendReceita)} ${formatCurrency(Math.abs(trendReceita))} vs periodo anterior`;
+      receitaTrendEl.innerText = `${trendSymbol(trendReceita)} ${formatCurrency(Math.abs(trendReceita))} vs mês passado`;
 
       const despesaTrendEl = document.getElementById("trendDespesa");
       despesaTrendEl.className = `trend ${trendClass(-trendDespesa)}`;
-      despesaTrendEl.innerText = `${trendSymbol(-trendDespesa)} ${formatCurrency(Math.abs(trendDespesa))} vs periodo anterior`;
+      despesaTrendEl.innerText = `${trendSymbol(-trendDespesa)} ${formatCurrency(Math.abs(trendDespesa))} vs mês passado`;
 
       const saldoTrendEl = document.getElementById("trendSaldo");
-      const saldoPeriodo = receitaPeriodo - despesaPeriodo;
-      const saldoAnterior = receitaAnterior - despesaAnterior;
+      const saldoPeriodo = sumByType(selectedMonthAllEntries, "RECEITA") - sumByType(selectedMonthAllEntries, "DESPESA");
+      const saldoAnterior = sumByType(prevMonthAllEntries, "RECEITA") - sumByType(prevMonthAllEntries, "DESPESA");
       const deltaSaldo = saldoPeriodo - saldoAnterior;
       saldoTrendEl.className = `trend ${trendClass(deltaSaldo)}`;
-      saldoTrendEl.innerText = `${trendSymbol(deltaSaldo)} ${formatCurrency(Math.abs(deltaSaldo))} vs periodo anterior`;
+      saldoTrendEl.innerText = `${trendSymbol(deltaSaldo)} ${formatCurrency(Math.abs(deltaSaldo))} vs mês passado`;
 
       const streak = streakMonthsSaving();
       const distribution = buildCategoryDistribution(expenseEntries);
@@ -1150,17 +1160,17 @@ document.addEventListener("DOMContentLoaded", load);
               <div class="mini-card">
                 <h5>Tendencia Entradas</h5>
                 <strong id="trendInValue">Entradas</strong>
-                <div class="trend flat" id="trendReceita">→ R$ 0,00 vs periodo anterior</div>
+                <div class="trend flat" id="trendReceita">→ R$ 0,00 vs mês passado</div>
               </div>
               <div class="mini-card">
                 <h5>Tendencia Saidas</h5>
                 <strong id="trendOutValue">Saidas</strong>
-                <div class="trend flat" id="trendDespesa">→ R$ 0,00 vs periodo anterior</div>
+                <div class="trend flat" id="trendDespesa">→ R$ 0,00 vs mês passado</div>
               </div>
             </div>
             <div class="mini-card">
               <h5>Tendencia Saldo</h5>
-              <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs periodo anterior</div>
+              <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
             </div>
             <div>
               <h3>Badges</h3>

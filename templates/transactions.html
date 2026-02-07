@@ -21,6 +21,21 @@ body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color
 .header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
 .links{display:flex;gap:14px}
 .links a{color:#94a3b8;text-decoration:none}
+.month-wrap{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:12px}
+.month-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.month-head small{color:#94a3b8}
+.month-bar{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+.month-chip{
+  border:1px solid var(--border);
+  background:#0b1224;
+  color:#cbd5e1;
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:12px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.month-chip.active{background:#38bdf8;color:#04111d}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .card{background:linear-gradient(180deg,#0b1224,#020617);border:1px solid var(--border);border-radius:16px;padding:16px}
 .card span{color:var(--muted);font-size:12px}
@@ -42,6 +57,12 @@ th{color:#9ca3af;text-align:left}
 function formatCurrency(value){
   return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+function parseBrDate(value){
+  const [d,m,y] = String(value || "").split("/");
+  if(!d || !m || !y) return null;
+  const date = new Date(Number(y), Number(m)-1, Number(d));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function appendRow(tbody, entry){
   const tr = document.createElement("tr");
@@ -62,24 +83,51 @@ async function load(){
     const response = await fetch("/api/entries/?limit=500", {credentials:"same-origin"});
     if(!response.ok) throw new Error("Falha ao carregar movimentacoes");
 
-    const entries = await response.json();
-    const receitas = entries.filter((e)=>e.entry_type === "RECEITA");
-    const despesas = entries.filter((e)=>e.entry_type === "DESPESA");
+    const allEntries = await response.json();
+    const entries = allEntries.map((e)=>({...e, parsedDate: parseBrDate(e.date)}));
+    const year = new Date().getFullYear();
+    const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+    let selectedMonth = new Date().getMonth();
 
-    const totalReceitas = receitas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
-    const totalDespesas = despesas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
+    function renderMonth(month){
+      selectedMonth = month;
+      document.querySelectorAll(".month-chip").forEach((chip)=>{
+        chip.classList.toggle("active", Number(chip.dataset.month) === month);
+      });
+      document.getElementById("selectedMonthLabel").textContent = `Ano ${year}`;
 
-    document.getElementById("total_mov").textContent = String(entries.length);
-    document.getElementById("total_rec").textContent = formatCurrency(totalReceitas);
-    document.getElementById("total_des").textContent = formatCurrency(totalDespesas);
+      const monthEntries = entries.filter((e)=>e.parsedDate && e.parsedDate.getFullYear() === year && e.parsedDate.getMonth() === month);
+      const receitas = monthEntries.filter((e)=>e.entry_type === "RECEITA");
+      const despesas = monthEntries.filter((e)=>e.entry_type === "DESPESA");
 
-    const receitasBody = document.getElementById("entriesReceita");
-    const despesasBody = document.getElementById("entriesDespesa");
-    receitasBody.textContent = "";
-    despesasBody.textContent = "";
+      const totalReceitas = receitas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
+      const totalDespesas = despesas.reduce((sum, e)=>sum + Number(e.amount || 0), 0);
 
-    receitas.forEach((entry)=>appendRow(receitasBody, entry));
-    despesas.forEach((entry)=>appendRow(despesasBody, entry));
+      document.getElementById("total_mov").textContent = String(monthEntries.length);
+      document.getElementById("total_rec").textContent = formatCurrency(totalReceitas);
+      document.getElementById("total_des").textContent = formatCurrency(totalDespesas);
+
+      const receitasBody = document.getElementById("entriesReceita");
+      const despesasBody = document.getElementById("entriesDespesa");
+      receitasBody.textContent = "";
+      despesasBody.textContent = "";
+
+      receitas.forEach((entry)=>appendRow(receitasBody, entry));
+      despesas.forEach((entry)=>appendRow(despesasBody, entry));
+    }
+
+    const bar = document.getElementById("monthFilterBar");
+    bar.textContent = "";
+    monthNames.forEach((name, idx)=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "month-chip";
+      btn.dataset.month = String(idx);
+      btn.textContent = name;
+      btn.addEventListener("click", ()=>renderMonth(idx));
+      bar.appendChild(btn);
+    });
+    renderMonth(selectedMonth);
   } catch (error){
     console.error(error);
     document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
@@ -100,6 +148,14 @@ load();
       <a href="/fixed-incomes/">Entradas Fixas</a>
       <a href="/reserves/">Reservas</a>
     </div>
+  </div>
+
+  <div class="month-wrap">
+    <div class="month-head">
+      <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Filtro por Mês</strong>
+      <small id="selectedMonthLabel"></small>
+    </div>
+    <div id="monthFilterBar" class="month-bar"></div>
   </div>
 
   <div class="cards">
