@@ -63,6 +63,12 @@ th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
 th{color:#9ca3af;text-align:left}
 .green{color:var(--green)}
 .red{color:var(--red)}
+.row-actions{display:flex;gap:6px}
+.icon-btn{
+  width:26px;height:26px;border-radius:8px;border:1px solid var(--border);
+  background:#0b1224;color:#cbd5e1;cursor:pointer;font-size:13px;line-height:1;
+}
+.icon-btn.danger{border-color:rgba(239,68,68,.45);color:#fecaca}
 @media(max-width:900px){
   .cards{grid-template-columns:1fr}
   .grid{grid-template-columns:1fr}
@@ -137,10 +143,39 @@ body.theme-light .card span{color:#334155}
 body.theme-light .month-head strong{color:#334155 !important}
 body.theme-light .month-chip.active,
 body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .icon-btn{
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  color:#0f172a;
+}
 </style>
 <script>
 function formatCurrency(value){
   return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function getCsrfToken(){
+  const token = document.cookie
+    .split("; ")
+    .find((row)=>row.startsWith("csrftoken="));
+  return token ? decodeURIComponent(token.split("=")[1]) : "";
+}
+function toIsoDate(brDate){
+  const [d,m,y] = String(brDate || "").split("/");
+  if(!d || !m || !y) return "";
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
+function toBrDate(isoDate){
+  const [y,m,d] = String(isoDate || "").split("-");
+  if(!y || !m || !d) return "";
+  return `${d}/${m}/${y}`;
+}
+async function parseError(response, fallback){
+  try{
+    const data = await response.json();
+    if(data && data.error) return data.error;
+  } catch (_error){
+    // ignore
+  }
+  return fallback;
 }
 function parseBrDate(value){
   const [d,m,y] = String(value || "").split("/");
@@ -149,17 +184,93 @@ function parseBrDate(value){
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function appendRow(tbody, entry){
+function appendRow(tbody, entry, onChanged){
   const tr = document.createElement("tr");
   const dateTd = document.createElement("td");
   const categoryTd = document.createElement("td");
   const amountTd = document.createElement("td");
+  const actionsTd = document.createElement("td");
+  const actions = document.createElement("div");
+  const editBtn = document.createElement("button");
+  const deleteBtn = document.createElement("button");
+
   dateTd.textContent = entry.date;
   categoryTd.textContent = entry.category;
   amountTd.textContent = formatCurrency(entry.amount);
+  actions.className = "row-actions";
+  editBtn.className = "icon-btn";
+  editBtn.type = "button";
+  editBtn.title = "Editar";
+  editBtn.textContent = "✏";
+  deleteBtn.className = "icon-btn danger";
+  deleteBtn.type = "button";
+  deleteBtn.title = "Apagar";
+  deleteBtn.textContent = "🗑";
+
+  editBtn.addEventListener("click", async ()=>{
+    const newDateIso = prompt("Data (YYYY-MM-DD):", toIsoDate(entry.date));
+    if(newDateIso === null) return;
+    const newCategory = prompt("Categoria:", entry.category);
+    if(newCategory === null) return;
+    const newAmount = prompt("Valor:", String(entry.amount));
+    if(newAmount === null) return;
+
+    const payload = {
+      date: toBrDate(newDateIso.trim()),
+      category: newCategory.trim(),
+      amount: Number(newAmount),
+      entry_type: entry.entry_type,
+    };
+    if(!payload.date || !payload.category || Number.isNaN(payload.amount)){
+      alert("Preencha data, categoria e valor validos.");
+      return;
+    }
+
+    const response = await fetch(`/api/entries/${entry.id}/`, {
+      method:"PUT",
+      credentials:"same-origin",
+      headers:{
+        "Content-Type":"application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel editar a movimentacao.");
+      alert(msg);
+      return;
+    }
+    entry.date = payload.date;
+    entry.category = payload.category;
+    entry.amount = payload.amount;
+    entry.parsedDate = parseBrDate(payload.date);
+    onChanged();
+  });
+
+  deleteBtn.addEventListener("click", async ()=>{
+    if(!confirm("Apagar esta movimentacao?")) return;
+    const response = await fetch(`/api/entries/${entry.id}/`, {
+      method:"DELETE",
+      credentials:"same-origin",
+      headers:{
+        "X-CSRFToken": getCsrfToken(),
+      },
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel apagar a movimentacao.");
+      alert(msg);
+      return;
+    }
+    onChanged(entry.id);
+  });
+
+  actions.appendChild(editBtn);
+  actions.appendChild(deleteBtn);
+  actionsTd.appendChild(actions);
   tr.appendChild(dateTd);
   tr.appendChild(categoryTd);
   tr.appendChild(amountTd);
+  tr.appendChild(actionsTd);
   tbody.appendChild(tr);
 }
 
@@ -242,8 +353,15 @@ async function load(){
       receitasBody.textContent = "";
       despesasBody.textContent = "";
 
-      receitas.forEach((entry)=>appendRow(receitasBody, entry));
-      despesas.forEach((entry)=>appendRow(despesasBody, entry));
+      const refresh = (removedId)=>{
+        if(removedId){
+          const idx = entries.findIndex((e)=>e.id === removedId);
+          if(idx >= 0) entries.splice(idx, 1);
+        }
+        renderMonth(selectedMonth);
+      };
+      receitas.forEach((entry)=>appendRow(receitasBody, entry, refresh));
+      despesas.forEach((entry)=>appendRow(despesasBody, entry, refresh));
     }
 
     const bar = document.getElementById("monthFilterBar");
@@ -260,8 +378,8 @@ async function load(){
     renderMonth(selectedMonth);
   } catch (error){
     console.error(error);
-    document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
-    document.getElementById("entriesDespesa").innerHTML = '<tr><td colspan="3">Erro ao carregar dados.</td></tr>';
+    document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="4">Erro ao carregar dados.</td></tr>';
+    document.getElementById("entriesDespesa").innerHTML = '<tr><td colspan="4">Erro ao carregar dados.</td></tr>';
   }
 }
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -307,7 +425,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     <div class="panel">
       <h3>Entradas</h3>
       <table>
-        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead>
         <tbody id="entriesReceita"></tbody>
       </table>
     </div>
@@ -315,7 +433,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     <div class="panel">
       <h3>Despesas</h3>
       <table>
-        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead>
         <tbody id="entriesDespesa"></tbody>
       </table>
     </div>
