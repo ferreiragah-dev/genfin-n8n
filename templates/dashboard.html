@@ -55,6 +55,7 @@ body{
 }
 .header-actions{display:flex;align-items:center;gap:14px}
 .header-links{display:flex;gap:14px}
+.logout-link{color:#fca5a5 !important;text-decoration:none}
 .theme-switch{
   display:flex;align-items:center;gap:4px;
   border:1px solid var(--border);
@@ -439,6 +440,7 @@ body.theme-light .field textarea{
   color:#0f172a;
 }
 body.theme-light .header-links a{color:#334155 !important}
+body.theme-light .header-links .logout-link{color:#dc2626 !important}
 body.theme-light .user small{color:#475569 !important}
 body.theme-light #selectedMonthLabel{color:#475569 !important}
 body.theme-light .bar-bg{background:#dbe7ff}
@@ -1776,6 +1778,7 @@ document.addEventListener("DOMContentLoaded", load);
         <a href="/fixed-expenses/" style="color:#94a3b8;text-decoration:none">Despesas Fixas</a>
         <a href="/fixed-incomes/" style="color:#94a3b8;text-decoration:none">Entradas Fixas</a>
         <a href="/reserves/" style="color:#94a3b8;text-decoration:none">Reservas</a>
+        <a href="/logout/" class="logout-link">Sair</a>
       </div>
       <div class="notif-wrap">
         <button id="notifBtn" class="notif-btn" type="button">🔔</button>

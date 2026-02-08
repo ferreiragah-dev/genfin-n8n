@@ -18,12 +18,14 @@ from .views import (
     PlannerCreateView,
     PlannerDetailView,
     PlannerListView,
+    RegisterView,
     ValidatePhoneView,
     WeeklyStatsView,
 )
 
 urlpatterns = [
     path("validate-phone/", ValidatePhoneView.as_view()),
+    path("register/", RegisterView.as_view()),
     path("financial-entry/", FinancialEntryCreateView.as_view()),
     path("login/", PhoneLoginView.as_view()),
     path("dashboard/", DashboardView.as_view()),

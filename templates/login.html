@@ -1,10 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>GenFin | Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <style>
         :root{
             --bg1:#020617;
@@ -17,166 +16,155 @@
             --green-dark:#16a34a;
             --error:#f87171;
         }
-
-        *{
-            box-sizing:border-box;
-        }
-
-        body {
+        *{box-sizing:border-box}
+        body{
             font-family: Inter, Arial, sans-serif;
-            background:
-                radial-gradient(circle at top, #1e1b4b, transparent 40%),
-                linear-gradient(180deg, var(--bg2), var(--bg1));
+            background: radial-gradient(circle at top, #1e1b4b, transparent 40%), linear-gradient(180deg, var(--bg2), var(--bg1));
             color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            min-height:100vh;
+            margin:0;
+            padding:14px;
         }
-
-        .login-box {
+        .login-box{
             background: linear-gradient(180deg, #020617, #020617cc);
-            padding: 36px 32px;
+            padding: 26px 24px;
             border-radius: 18px;
             width: 100%;
-            max-width: 380px;
+            max-width: 420px;
             border: 1px solid var(--border);
-            box-shadow:
-                0 20px 40px rgba(0,0,0,.6),
-                inset 0 1px 0 rgba(255,255,255,.04);
-            backdrop-filter: blur(6px);
+            box-shadow: 0 20px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04);
         }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 6px;
-            font-size: 28px;
-            letter-spacing: .5px;
+        h2{text-align:center;margin:0 0 6px;font-size:28px}
+        .subtitle{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px}
+        .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+        .tab-btn{border:1px solid var(--border);background:#0b1224;color:#cbd5e1;border-radius:10px;padding:10px;cursor:pointer}
+        .tab-btn.active{background:linear-gradient(135deg,var(--green),#4ade80);color:#031013;font-weight:700}
+        .pane{display:none}
+        .pane.active{display:block}
+        input{
+            width:100%;padding:12px 12px;margin-bottom:10px;border-radius:10px;border:1px solid var(--border);
+            background:#020617;color:var(--text);font-size:14px;outline:none;
         }
-
-        .subtitle{
-            text-align:center;
-            font-size:13px;
-            color:var(--muted);
-            margin-bottom:28px;
+        input:focus{border-color: var(--green);box-shadow:0 0 0 2px rgba(34,197,94,.2)}
+        button.action{
+            width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#4ade80);
+            color:#020617;font-weight:700;border:0;border-radius:12px;cursor:pointer;font-size:15px;
         }
-
-        input {
-            width: 100%;
-            padding: 14px 14px;
-            margin-bottom: 18px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: #020617;
-            color: var(--text);
-            font-size: 15px;
-            outline: none;
-            transition: all .2s ease;
-        }
-
-        input::placeholder{
-            color:var(--muted);
-        }
-
-        input:focus{
-            border-color: var(--green);
-            box-shadow: 0 0 0 2px rgba(34,197,94,.2);
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--green), #4ade80);
-            color: #020617;
-            font-weight: 700;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all .2s ease;
-        }
-
-        button:hover {
-            background: linear-gradient(135deg, var(--green-dark), var(--green));
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(34,197,94,.35);
-        }
-
-        button:active{
-            transform: translateY(0);
-            box-shadow:none;
-        }
-
-        .error {
-            color: var(--error);
-            text-align: center;
-            margin-top: 14px;
-            min-height: 18px;
-            font-size: 13px;
-        }
-
-        @media(max-width:420px){
-            .login-box{
-                padding:28px 22px;
-                border-radius:14px;
-            }
-        }
+        button.action:hover{background:linear-gradient(135deg,var(--green-dark),var(--green))}
+        .error{color:var(--error);text-align:center;margin-top:12px;min-height:18px;font-size:13px}
     </style>
 </head>
 <body>
-
 <div class="login-box">
     <h2>GenFin</h2>
     <div class="subtitle">Acesse seu painel financeiro</div>
 
-    <input
-        type="text"
-        id="phone"
-        placeholder="Número de telefone (ex: 5511913305093)"
-        autocomplete="off"
-    />
+    <div class="tabs">
+        <button id="tabLogin" class="tab-btn active" type="button">Entrar</button>
+        <button id="tabRegister" class="tab-btn" type="button">Criar conta</button>
+    </div>
 
-    <button type="button" onclick="doLogin()">Entrar</button>
+    <div id="paneLogin" class="pane active">
+        <input type="text" id="loginPhone" placeholder="Telefone (ex: 5511913305093)" autocomplete="off" />
+        <input type="password" id="loginPassword" placeholder="Senha" autocomplete="current-password" />
+        <button type="button" class="action" id="loginBtn">Entrar</button>
+    </div>
+
+    <div id="paneRegister" class="pane">
+        <input type="text" id="regFirstName" placeholder="Nome" autocomplete="given-name" />
+        <input type="text" id="regLastName" placeholder="Sobrenome" autocomplete="family-name" />
+        <input type="email" id="regEmail" placeholder="Email" autocomplete="email" />
+        <input type="text" id="regPhone" placeholder="Telefone" autocomplete="tel" />
+        <input type="password" id="regPassword" placeholder="Senha (min. 6)" autocomplete="new-password" />
+        <button type="button" class="action" id="registerBtn">Criar conta</button>
+    </div>
 
     <div class="error" id="error"></div>
 </div>
 
 <script>
-function doLogin() {
-    const phone = document.getElementById("phone").value.trim();
+function setTab(mode){
+    const isLogin = mode === "login";
+    document.getElementById("tabLogin").classList.toggle("active", isLogin);
+    document.getElementById("tabRegister").classList.toggle("active", !isLogin);
+    document.getElementById("paneLogin").classList.toggle("active", isLogin);
+    document.getElementById("paneRegister").classList.toggle("active", !isLogin);
+    document.getElementById("error").innerText = "";
+}
+
+async function doLogin() {
+    const phone = document.getElementById("loginPhone").value.trim();
+    const password = document.getElementById("loginPassword").value;
     const errorDiv = document.getElementById("error");
 
     errorDiv.innerText = "";
-
-    if (!phone) {
-        errorDiv.innerText = "Informe o número de telefone";
+    if (!phone || !password) {
+        errorDiv.innerText = "Informe telefone e senha";
         return;
     }
 
-    fetch("/api/login/", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            phone_number: phone
-        })
-    })
-    .then(async res => {
+    try{
+        const res = await fetch("/api/login/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({phone_number: phone, password})
+        });
+
         if (res.ok) {
             window.location.href = "/dashboard/";
-        } else {
-            const data = await res.json().catch(() => ({}));
-            errorDiv.innerText = data.error || "Erro ao logar";
+            return;
         }
-    })
-    .catch(() => {
+        const data = await res.json().catch(() => ({}));
+        errorDiv.innerText = data.error || "Erro ao logar";
+    } catch (_error){
         errorDiv.innerText = "Erro de conexão com o servidor";
-    });
+    }
 }
-</script>
 
+async function doRegister(){
+    const payload = {
+        first_name: document.getElementById("regFirstName").value.trim(),
+        last_name: document.getElementById("regLastName").value.trim(),
+        email: document.getElementById("regEmail").value.trim(),
+        phone_number: document.getElementById("regPhone").value.trim(),
+        password: document.getElementById("regPassword").value,
+    };
+    const errorDiv = document.getElementById("error");
+    errorDiv.innerText = "";
+
+    if(!payload.first_name || !payload.last_name || !payload.email || !payload.phone_number || !payload.password){
+        errorDiv.innerText = "Preencha todos os campos do cadastro";
+        return;
+    }
+
+    try{
+        const res = await fetch("/api/register/", {
+            method:"POST",
+            credentials:"same-origin",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(payload),
+        });
+
+        if(res.ok){
+            window.location.href = "/dashboard/";
+            return;
+        }
+        const data = await res.json().catch(() => ({}));
+        errorDiv.innerText = data.error || "Erro ao cadastrar";
+    } catch (_error){
+        errorDiv.innerText = "Erro de conexão com o servidor";
+    }
+}
+
+document.getElementById("tabLogin").addEventListener("click", ()=>setTab("login"));
+document.getElementById("tabRegister").addEventListener("click", ()=>setTab("register"));
+document.getElementById("loginBtn").addEventListener("click", doLogin);
+document.getElementById("registerBtn").addEventListener("click", doRegister);
+document.getElementById("loginPassword").addEventListener("keydown", (e)=>{ if(e.key === "Enter") doLogin(); });
+</script>
 </body>
 </html>

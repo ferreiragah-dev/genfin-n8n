@@ -10,6 +10,7 @@ from accounts.views import (
     fixed_expenses_page,
     fixed_incomes_page,
     login_page,
+    logout_page,
     reserves_page,
     transactions_page,
 )
@@ -19,6 +20,7 @@ urlpatterns = [
     path("api/", include("accounts.urls")),
     path("login/", login_page),
     path("dashboard/", dashboard_page),
+    path("logout/", logout_page),
     path("transactions/", transactions_page),
     path("fixed-expenses/", fixed_expenses_page),
     path("fixed-incomes/", fixed_incomes_page),

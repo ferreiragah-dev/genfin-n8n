@@ -1,5 +1,7 @@
 ﻿from datetime import datetime, timedelta
 
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Sum
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -53,6 +55,68 @@ class ValidatePhoneView(APIView):
         return Response(
             {"message": "User not found"},
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        first_name = str(request.data.get("first_name", "")).strip()
+        last_name = str(request.data.get("last_name", "")).strip()
+        email = str(request.data.get("email", "")).strip().lower()
+        phone_number = str(request.data.get("phone_number", "")).strip()
+        password = str(request.data.get("password", ""))
+
+        if not first_name or not last_name or not email or not phone_number or not password:
+            return Response(
+                {"error": "first_name, last_name, email, phone_number e password sao obrigatorios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(password) < 6:
+            return Response(
+                {"error": "Senha deve ter pelo menos 6 caracteres"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"error": "Email invalido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if UserAccount.objects.filter(phone_number=phone_number).exists():
+            return Response(
+                {"error": "Telefone ja cadastrado"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if UserAccount.objects.filter(email=email).exists():
+            return Response(
+                {"error": "Email ja cadastrado"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = UserAccount(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone_number=phone_number,
+            is_active=True,
+        )
+        user.set_password(password)
+        user.save()
+
+        request.session["user_phone"] = user.phone_number
+
+        return Response(
+            {"message": "Cadastro realizado com sucesso"},
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -128,10 +192,11 @@ class PhoneLoginView(APIView):
 
     def post(self, request):
         phone_number = request.data.get("phone_number")
+        password = request.data.get("password")
 
-        if not phone_number:
+        if not phone_number or not password:
             return Response(
-                {"error": "phone_number e obrigatorio"},
+                {"error": "phone_number e password sao obrigatorios"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -144,6 +209,12 @@ class PhoneLoginView(APIView):
             return Response(
                 {"error": "Usuario nao encontrado"},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Senha invalida"},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         request.session["user_phone"] = user.phone_number
@@ -219,6 +290,12 @@ def reserves_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "reserves.html")
+
+
+@ensure_csrf_cookie
+def logout_page(request):
+    request.session.flush()
+    return redirect("/login/")
 
 
 class FinancialEntryListView(APIView):
