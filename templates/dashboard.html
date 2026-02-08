@@ -909,7 +909,10 @@ async function load(){
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
             },
-            body: JSON.stringify({text: summary}),
+            body: JSON.stringify({
+              text: summary,
+              mode: localStorage.getItem("genfin_webhook_mode") === "dev" ? "dev" : "prod",
+            }),
           });
 
           if(!response.ok){
@@ -986,7 +989,28 @@ async function load(){
         applyTheme("dark");
       });
     }
+    function initWebhookModeSwitch(){
+      const devBtn = document.getElementById("webhookDevBtn");
+      const prodBtn = document.getElementById("webhookProdBtn");
+      if(!devBtn || !prodBtn || devBtn.dataset.bound) return;
+
+      const applyMode = (mode)=>{
+        const isDev = mode === "dev";
+        devBtn.classList.toggle("active", isDev);
+        prodBtn.classList.toggle("active", !isDev);
+        localStorage.setItem("genfin_webhook_mode", isDev ? "dev" : "prod");
+      };
+
+      const saved = localStorage.getItem("genfin_webhook_mode");
+      applyMode(saved === "dev" ? "dev" : "prod");
+
+      devBtn.dataset.bound = "1";
+      prodBtn.dataset.bound = "1";
+      devBtn.addEventListener("click", ()=>applyMode("dev"));
+      prodBtn.addEventListener("click", ()=>applyMode("prod"));
+    }
     initPdfExport();
+    initWebhookModeSwitch();
     initWhatsappSummary();
     initVisibilityToggle();
     initThemeToggle();
@@ -2095,6 +2119,10 @@ document.addEventListener("DOMContentLoaded", load);
         <div class="theme-switch" aria-label="Alternar tema">
           <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
           <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
+        </div>
+        <div class="theme-switch" aria-label="Modo webhook">
+          <button id="webhookDevBtn" class="theme-btn" type="button" title="Enviar para ambiente de teste">Dev</button>
+          <button id="webhookProdBtn" class="theme-btn active" type="button" title="Enviar para ambiente de produção">Prod</button>
         </div>
         <button id="sendWhatsBtn" class="icon-link whatsapp" type="button" title="Enviar resumo para WhatsApp" aria-label="Enviar resumo para WhatsApp">🟢</button>
         <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>

@@ -796,7 +796,11 @@ class WhatsAppSummaryWebhookView(APIView):
             "text": text,
         }
 
-        webhook_url = "https://n8n.lowcodeforward.com/webhook/genfinWpp"
+        mode = str(request.data.get("mode", "prod")).strip().lower()
+        if mode == "dev":
+            webhook_url = "https://n8n.lowcodeforward.com/webhook-test/genfinWpp"
+        else:
+            webhook_url = "https://n8n.lowcodeforward.com/webhook/genfinWpp"
         req = urllib_request.Request(
             webhook_url,
             data=json.dumps(outbound).encode("utf-8"),
@@ -814,6 +818,6 @@ class WhatsAppSummaryWebhookView(APIView):
             )
 
         return Response(
-            {"message": "Resumo enviado", "webhook_status": webhook_status},
+            {"message": "Resumo enviado", "webhook_status": webhook_status, "mode": mode},
             status=status.HTTP_200_OK,
         )
