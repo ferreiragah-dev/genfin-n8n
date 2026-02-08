@@ -69,6 +69,43 @@ th{color:#9ca3af;text-align:left}
   background:#0b1224;color:#cbd5e1;cursor:pointer;font-size:13px;line-height:1;
 }
 .icon-btn.danger{border-color:rgba(239,68,68,.45);color:#fecaca}
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(2,6,23,.75);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:90;padding:16px;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  width:min(520px,96vw);
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:0 20px 50px rgba(2,6,23,.45);
+  overflow:hidden;
+}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.18);
+}
+.modal-head h4{margin:0;color:#e2e8f0;font-size:15px}
+.modal-close{
+  width:30px;height:30px;border-radius:9px;border:1px solid rgba(148,163,184,.25);
+  background:#0b1224;color:#cbd5e1;cursor:pointer;
+}
+.modal-body{padding:16px;display:grid;gap:12px}
+.field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:6px}
+.field input{
+  width:100%;border-radius:10px;border:1px solid rgba(56,189,248,.22);
+  background:#0b1224;color:#e5e7eb;padding:10px;font:inherit;
+}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.modal-btn{
+  border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;
+}
+.modal-btn.primary{background:#38bdf8;color:#04111d}
+.modal-btn.secondary{background:#1e293b;color:#cbd5e1}
+.modal-btn.danger{background:#ef4444;color:#fff}
+.modal-message{font-size:12px;min-height:16px;color:#22c55e}
+.modal-text{font-size:13px;color:#cbd5e1;line-height:1.4}
 @media(max-width:900px){
   .cards{grid-template-columns:1fr}
   .grid{grid-template-columns:1fr}
@@ -147,6 +184,16 @@ body.theme-light .icon-btn{
   background:linear-gradient(180deg,#ffffff,#f8fbff);
   color:#0f172a;
 }
+body.theme-light .modal,
+body.theme-light .modal-close,
+body.theme-light .field input,
+body.theme-light .modal-btn.secondary{
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  color:#0f172a;
+}
+body.theme-light .modal-head h4,
+body.theme-light .field label,
+body.theme-light .modal-text{color:#334155}
 </style>
 <script>
 function formatCurrency(value){
@@ -177,11 +224,140 @@ async function parseError(response, fallback){
   }
   return fallback;
 }
+const entryModalState = {
+  entry: null,
+  onChanged: null,
+};
 function parseBrDate(value){
   const [d,m,y] = String(value || "").split("/");
   if(!d || !m || !y) return null;
   const date = new Date(Number(y), Number(m)-1, Number(d));
   return Number.isNaN(date.getTime()) ? null : date;
+}
+function setEditModalMessage(text, isError){
+  const el = document.getElementById("entryEditMessage");
+  el.textContent = text;
+  el.style.color = isError ? "#ef4444" : "#22c55e";
+}
+function openEditEntryModal(entry, onChanged){
+  entryModalState.entry = entry;
+  entryModalState.onChanged = onChanged;
+  document.getElementById("entryEditDate").value = toIsoDate(entry.date);
+  document.getElementById("entryEditCategory").value = entry.category;
+  document.getElementById("entryEditAmount").value = String(entry.amount);
+  setEditModalMessage("", false);
+  document.getElementById("entryEditOverlay").classList.add("open");
+}
+function closeEditEntryModal(){
+  document.getElementById("entryEditOverlay").classList.remove("open");
+  entryModalState.entry = null;
+  entryModalState.onChanged = null;
+}
+function openDeleteEntryModal(entry, onChanged){
+  entryModalState.entry = entry;
+  entryModalState.onChanged = onChanged;
+  const text = `Deseja apagar ${entry.category} em ${entry.date} (${formatCurrency(entry.amount)})?`;
+  document.getElementById("entryDeleteText").textContent = text;
+  document.getElementById("entryDeleteMessage").textContent = "";
+  document.getElementById("entryDeleteOverlay").classList.add("open");
+}
+function closeDeleteEntryModal(){
+  document.getElementById("entryDeleteOverlay").classList.remove("open");
+  entryModalState.entry = null;
+  entryModalState.onChanged = null;
+}
+function initEntryModals(){
+  const editOverlay = document.getElementById("entryEditOverlay");
+  const deleteOverlay = document.getElementById("entryDeleteOverlay");
+  const editForm = document.getElementById("entryEditForm");
+  const editClose = document.getElementById("entryEditClose");
+  const editCancel = document.getElementById("entryEditCancel");
+  const deleteClose = document.getElementById("entryDeleteClose");
+  const deleteCancel = document.getElementById("entryDeleteCancel");
+  const deleteConfirm = document.getElementById("entryDeleteConfirm");
+
+  if(!editOverlay || editOverlay.dataset.bound) return;
+  editOverlay.dataset.bound = "1";
+
+  editClose.addEventListener("click", closeEditEntryModal);
+  editCancel.addEventListener("click", closeEditEntryModal);
+  deleteClose.addEventListener("click", closeDeleteEntryModal);
+  deleteCancel.addEventListener("click", closeDeleteEntryModal);
+
+  editOverlay.addEventListener("click", (event)=>{
+    if(event.target === editOverlay) closeEditEntryModal();
+  });
+  deleteOverlay.addEventListener("click", (event)=>{
+    if(event.target === deleteOverlay) closeDeleteEntryModal();
+  });
+
+  editForm.addEventListener("submit", async (event)=>{
+    event.preventDefault();
+    const entry = entryModalState.entry;
+    if(!entry) return;
+
+    const dateIso = document.getElementById("entryEditDate").value.trim();
+    const category = document.getElementById("entryEditCategory").value.trim();
+    const amount = Number(document.getElementById("entryEditAmount").value);
+    const payload = {
+      date: toBrDate(dateIso),
+      category,
+      amount,
+      entry_type: entry.entry_type,
+    };
+    if(!payload.date || !payload.category || Number.isNaN(payload.amount)){
+      setEditModalMessage("Preencha data, categoria e valor validos.", true);
+      return;
+    }
+
+    const response = await fetch(`/api/entries/${entry.id}/`, {
+      method:"PUT",
+      credentials:"same-origin",
+      headers:{
+        "Content-Type":"application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel editar a movimentacao.");
+      setEditModalMessage(msg, true);
+      return;
+    }
+
+    entry.date = payload.date;
+    entry.category = payload.category;
+    entry.amount = payload.amount;
+    entry.parsedDate = parseBrDate(payload.date);
+    const fn = entryModalState.onChanged;
+    closeEditEntryModal();
+    if(typeof fn === "function") fn();
+  });
+
+  deleteConfirm.addEventListener("click", async ()=>{
+    const entry = entryModalState.entry;
+    if(!entry) return;
+
+    const response = await fetch(`/api/entries/${entry.id}/`, {
+      method:"DELETE",
+      credentials:"same-origin",
+      headers:{
+        "X-CSRFToken": getCsrfToken(),
+      },
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel apagar a movimentacao.");
+      const msgEl = document.getElementById("entryDeleteMessage");
+      msgEl.textContent = msg;
+      msgEl.style.color = "#ef4444";
+      return;
+    }
+
+    const fn = entryModalState.onChanged;
+    const deletedId = entry.id;
+    closeDeleteEntryModal();
+    if(typeof fn === "function") fn(deletedId);
+  });
 }
 
 function appendRow(tbody, entry, onChanged){
@@ -207,62 +383,8 @@ function appendRow(tbody, entry, onChanged){
   deleteBtn.title = "Apagar";
   deleteBtn.textContent = "🗑";
 
-  editBtn.addEventListener("click", async ()=>{
-    const newDateIso = prompt("Data (YYYY-MM-DD):", toIsoDate(entry.date));
-    if(newDateIso === null) return;
-    const newCategory = prompt("Categoria:", entry.category);
-    if(newCategory === null) return;
-    const newAmount = prompt("Valor:", String(entry.amount));
-    if(newAmount === null) return;
-
-    const payload = {
-      date: toBrDate(newDateIso.trim()),
-      category: newCategory.trim(),
-      amount: Number(newAmount),
-      entry_type: entry.entry_type,
-    };
-    if(!payload.date || !payload.category || Number.isNaN(payload.amount)){
-      alert("Preencha data, categoria e valor validos.");
-      return;
-    }
-
-    const response = await fetch(`/api/entries/${entry.id}/`, {
-      method:"PUT",
-      credentials:"same-origin",
-      headers:{
-        "Content-Type":"application/json",
-        "X-CSRFToken": getCsrfToken(),
-      },
-      body: JSON.stringify(payload),
-    });
-    if(!response.ok){
-      const msg = await parseError(response, "Nao foi possivel editar a movimentacao.");
-      alert(msg);
-      return;
-    }
-    entry.date = payload.date;
-    entry.category = payload.category;
-    entry.amount = payload.amount;
-    entry.parsedDate = parseBrDate(payload.date);
-    onChanged();
-  });
-
-  deleteBtn.addEventListener("click", async ()=>{
-    if(!confirm("Apagar esta movimentacao?")) return;
-    const response = await fetch(`/api/entries/${entry.id}/`, {
-      method:"DELETE",
-      credentials:"same-origin",
-      headers:{
-        "X-CSRFToken": getCsrfToken(),
-      },
-    });
-    if(!response.ok){
-      const msg = await parseError(response, "Nao foi possivel apagar a movimentacao.");
-      alert(msg);
-      return;
-    }
-    onChanged(entry.id);
-  });
+  editBtn.addEventListener("click", ()=>openEditEntryModal(entry, onChanged));
+  deleteBtn.addEventListener("click", ()=>openDeleteEntryModal(entry, onChanged));
 
   actions.appendChild(editBtn);
   actions.appendChild(deleteBtn);
@@ -384,6 +506,7 @@ async function load(){
 }
 document.addEventListener("DOMContentLoaded", ()=>{
   initUiPrefs();
+  initEntryModals();
   load();
 });
 </script>
@@ -436,6 +559,51 @@ document.addEventListener("DOMContentLoaded", ()=>{
         <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead>
         <tbody id="entriesDespesa"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<div id="entryEditOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="entryEditTitle">
+    <div class="modal-head">
+      <h4 id="entryEditTitle">Editar Movimentação</h4>
+      <button id="entryEditClose" type="button" class="modal-close">×</button>
+    </div>
+    <form id="entryEditForm" class="modal-body">
+      <div class="field">
+        <label for="entryEditDate">Data</label>
+        <input id="entryEditDate" type="date" required>
+      </div>
+      <div class="field">
+        <label for="entryEditCategory">Categoria</label>
+        <input id="entryEditCategory" type="text" maxlength="50" required>
+      </div>
+      <div class="field">
+        <label for="entryEditAmount">Valor</label>
+        <input id="entryEditAmount" type="number" min="0" step="0.01" required>
+      </div>
+      <div id="entryEditMessage" class="modal-message"></div>
+      <div class="modal-actions">
+        <button id="entryEditCancel" type="button" class="modal-btn secondary">Cancelar</button>
+        <button type="submit" class="modal-btn primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="entryDeleteOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="entryDeleteTitle">
+    <div class="modal-head">
+      <h4 id="entryDeleteTitle">Confirmar Exclusão</h4>
+      <button id="entryDeleteClose" type="button" class="modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="entryDeleteText" class="modal-text"></p>
+      <div id="entryDeleteMessage" class="modal-message"></div>
+      <div class="modal-actions">
+        <button id="entryDeleteCancel" type="button" class="modal-btn secondary">Cancelar</button>
+        <button id="entryDeleteConfirm" type="button" class="modal-btn danger">Apagar</button>
+      </div>
     </div>
   </div>
 </div>
