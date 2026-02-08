@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
@@ -690,7 +689,7 @@ async function load(){
       if(!btn || btn.dataset.bound) return;
       btn.dataset.bound = "1";
       btn.addEventListener("click", async ()=>{
-        if(!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF){
+        if(!window.jspdf || !window.jspdf.jsPDF){
           alert("Ferramenta de PDF indisponível no momento.");
           return;
         }
@@ -700,36 +699,154 @@ async function load(){
         btn.style.pointerEvents = "none";
 
         try{
-          const target = document.querySelector(".app-shell");
-          const canvas = await html2canvas(target, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: getComputedStyle(document.body).backgroundColor || "#05070d",
-            windowWidth: document.documentElement.scrollWidth,
-            windowHeight: document.documentElement.scrollHeight,
-          });
+          const [dashPdf, entriesPdf, catsPdf, dailyPdf, weeklyPdf, monthlyPdf, fixedExpensesPdf, fixedIncomesPdf, reservesPdf] = await Promise.all([
+            fetchJson("/api/dashboard/"),
+            fetchJson("/api/entries/?limit=500"),
+            fetchJson("/api/dashboard/categories/"),
+            fetchJson("/api/stats/daily/"),
+            fetchJson("/api/stats/weekly/"),
+            fetchJson("/api/stats/monthly/"),
+            fetchJson("/api/planner/").catch(()=>[]),
+            fetchJson("/api/fixed-incomes/").catch(()=>[]),
+            fetchJson("/api/reserves/").catch(()=>[]),
+          ]);
+
+          const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+          const selectedMonthPdf = Number(document.querySelector(".month-chip.active")?.dataset.month ?? new Date().getMonth());
+          const selectedYearPdf = new Date().getFullYear();
+
+          const entriesParsedPdf = entriesPdf.map((e)=>({
+            ...e,
+            amountNumber: Number(e.amount || 0),
+            parsedDate: parseBrDate(e.date),
+          }));
+          const monthEntriesPdf = entriesParsedPdf.filter((e)=>e.parsedDate && e.parsedDate.getFullYear() === selectedYearPdf && e.parsedDate.getMonth() === selectedMonthPdf);
+          const receitasMes = monthEntriesPdf.filter((e)=>e.entry_type === "RECEITA").reduce((s,e)=>s + e.amountNumber, 0);
+          const despesasMes = monthEntriesPdf.filter((e)=>e.entry_type === "DESPESA").reduce((s,e)=>s + e.amountNumber, 0);
+          const saldoMes = receitasMes - despesasMes;
+
+          const hojePdf = new Date();
+          const diaDoMesPdf = hojePdf.getDate();
+          const diasNoMesPdf = new Date(hojePdf.getFullYear(), hojePdf.getMonth()+1, 0).getDate();
+          const taxaPoupancaPdf = receitasMes > 0 ? Math.round((saldoMes / receitasMes) * 100) : 0;
+          const burnRatePdf = despesasMes / Math.max(diaDoMesPdf, 1);
+          const saldoProjetadoPdf = receitasMes - (burnRatePdf * diasNoMesPdf);
+
+          const topExpensesPdf = monthEntriesPdf
+            .filter((e)=>e.entry_type === "DESPESA")
+            .sort((a,b)=>b.amountNumber - a.amountNumber)
+            .slice(0,10);
+          const topCategoriesPdf = [...catsPdf].slice(0,8);
+
+          const recurringFixedExpenseTotalPdf = fixedExpensesPdf
+            .filter((i)=>i.is_recurring)
+            .reduce((s,i)=>s + Number(i.amount || 0), 0);
+          const recurringFixedIncomeTotalPdf = fixedIncomesPdf
+            .filter((i)=>i.is_recurring)
+            .reduce((s,i)=>s + Number(i.amount || 0), 0);
+          const commitmentPctRawPdf = recurringFixedIncomeTotalPdf > 0
+            ? (recurringFixedExpenseTotalPdf / recurringFixedIncomeTotalPdf) * 100
+            : 0;
 
           const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
           const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
-          const imgData = canvas.toDataURL("image/png");
-          const imgWidth = pageWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          let heightLeft = imgHeight;
-          let position = 0;
+          const margin = 10;
+          const maxY = 285;
+          let y = 12;
 
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+          const ensureSpace = (needed=6)=>{
+            if(y + needed > maxY){
+              pdf.addPage();
+              y = 12;
+            }
+          };
+          const line = (text, size=10, bold=false, color=[20,20,20])=>{
+            pdf.setFont("helvetica", bold ? "bold" : "normal");
+            pdf.setFontSize(size);
+            pdf.setTextColor(color[0], color[1], color[2]);
+            const wrapped = pdf.splitTextToSize(String(text), pageWidth - (margin * 2));
+            wrapped.forEach((w)=>{
+              ensureSpace(6);
+              pdf.text(w, margin, y);
+              y += 5;
+            });
+          };
+          const section = (title)=>{
+            ensureSpace(10);
+            y += 2;
+            line(title, 12, true, [30, 64, 175]);
+            y += 1;
+          };
 
-          while(heightLeft > 0){
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+          line("GenFin - Relatório Financeiro Detalhado", 14, true, [15, 23, 42]);
+          line(`Período selecionado no dashboard: ${monthNames[selectedMonthPdf]}/${selectedYearPdf}`, 10);
+          line(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, 10);
+          y += 2;
+
+          section("Resumo Geral");
+          line(`Receitas (mês): ${formatCurrency(receitasMes)}`);
+          line(`Despesas (mês): ${formatCurrency(despesasMes)}`);
+          line(`Saldo (mês): ${formatCurrency(saldoMes)}`);
+          line(`Movimentações (mês): ${monthEntriesPdf.length}`);
+          line(`Saldo geral da conta: ${formatCurrency(dashPdf.saldo)}`);
+
+          section("Métricas do Dashboard");
+          line(`Taxa de poupança: ${taxaPoupancaPdf}%`);
+          line(`Burn rate (R$/dia): ${formatCurrency(burnRatePdf)}`);
+          line(`Projeção fim do mês: ${formatCurrency(saldoProjetadoPdf)}`);
+          line(`Comprometimento fixo: ${Math.round(commitmentPctRawPdf)}% (${formatCurrency(recurringFixedExpenseTotalPdf)} de ${formatCurrency(recurringFixedIncomeTotalPdf)})`);
+
+          section("Resumo por Janela de Tempo");
+          line(`Hoje - Entradas: ${formatCurrency(dailyPdf.total_receita)} | Saídas: ${formatCurrency(dailyPdf.total_despesa)} | Mov: ${dailyPdf.movimentacoes}`);
+          line(`Últimos 7 dias - Entradas: ${formatCurrency(weeklyPdf.total_receita)} | Saídas: ${formatCurrency(weeklyPdf.total_despesa)} | Mov: ${weeklyPdf.movimentacoes}`);
+          line(`Últimos 30 dias - Entradas: ${formatCurrency(monthlyPdf.total_receita)} | Saídas: ${formatCurrency(monthlyPdf.total_despesa)} | Mov: ${monthlyPdf.movimentacoes}`);
+
+          section("Top Categorias de Despesa");
+          if(topCategoriesPdf.length === 0){
+            line("Sem dados de categoria.");
+          } else {
+            topCategoriesPdf.forEach((c, idx)=>line(`${idx+1}. ${c.category}: ${formatCurrency(c.total)}`));
           }
 
-          const monthLabel = document.querySelector(".month-chip.active")?.textContent || "MES";
-          const fileName = `genfin-dashboard-${monthLabel.toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`;
+          section("Top 10 Gastos do Mês");
+          if(topExpensesPdf.length === 0){
+            line("Sem gastos no período selecionado.");
+          } else {
+            topExpensesPdf.forEach((e, idx)=>line(`${idx+1}. ${e.date} - ${e.category} - ${formatCurrency(e.amountNumber)}`));
+          }
+
+          section("Movimentações Detalhadas do Mês");
+          if(monthEntriesPdf.length === 0){
+            line("Sem movimentações no período selecionado.");
+          } else {
+            monthEntriesPdf
+              .sort((a,b)=>b.parsedDate - a.parsedDate)
+              .forEach((e)=>line(`${e.date} | ${e.entry_type} | ${e.category} | ${formatCurrency(e.amountNumber)}`, 9));
+          }
+
+          section("Despesas Fixas");
+          if(fixedExpensesPdf.length === 0){
+            line("Sem despesas fixas cadastradas.");
+          } else {
+            fixedExpensesPdf.forEach((i)=>line(`${i.date} | ${i.category} | ${formatCurrency(i.amount)} | ${i.is_recurring ? "Recorrente" : "Não recorrente"}`, 9));
+          }
+
+          section("Entradas Fixas");
+          if(fixedIncomesPdf.length === 0){
+            line("Sem entradas fixas cadastradas.");
+          } else {
+            fixedIncomesPdf.forEach((i)=>line(`${i.date} | ${i.category} | ${formatCurrency(i.amount)} | ${i.is_recurring ? "Recorrente" : "Não recorrente"}`, 9));
+          }
+
+          section("Reservas");
+          if(reservesPdf.length === 0){
+            line("Sem reservas cadastradas.");
+          } else {
+            reservesPdf.forEach((i)=>line(`${i.date} | ${i.category} | ${formatCurrency(i.amount)} | ${i.is_recurring ? "Recorrente" : "Não recorrente"}`, 9));
+          }
+
+          const monthLabel = monthNames[selectedMonthPdf] || "mes";
+          const fileName = `genfin-relatorio-detalhado-${monthLabel.toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`;
           pdf.save(fileName);
         } catch (error){
           console.error(error);
