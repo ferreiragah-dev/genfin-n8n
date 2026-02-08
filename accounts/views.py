@@ -1,5 +1,7 @@
 ﻿from datetime import datetime, timedelta
 
+import json
+from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Sum
@@ -774,3 +776,44 @@ class WeeklyStatsView(StatsBaseView):
 
 class MonthlyStatsView(StatsBaseView):
     delta_days = 30
+
+
+class WhatsAppSummaryWebhookView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        text = str(request.data.get("text", "")).strip()
+        if not text:
+            return Response(
+                {"error": "text e obrigatorio"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        outbound = {
+            "phone_number": user.phone_number,
+            "text": text,
+        }
+
+        webhook_url = "https://n8n.lowcodeforward.com/webhook/genfinWpp"
+        req = urllib_request.Request(
+            webhook_url,
+            data=json.dumps(outbound).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        try:
+            with urllib_request.urlopen(req, timeout=12) as resp:
+                webhook_status = resp.getcode()
+        except Exception as exc:
+            return Response(
+                {"error": "Falha ao enviar para webhook", "detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {"message": "Resumo enviado", "webhook_status": webhook_status},
+            status=status.HTTP_200_OK,
+        )

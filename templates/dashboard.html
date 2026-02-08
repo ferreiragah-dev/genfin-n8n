@@ -96,6 +96,7 @@ body{
 }
 .icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
 .icon-link.pdf{color:#bfdbfe;border-color:rgba(56,189,248,.35)}
+.icon-link.whatsapp{color:#86efac;border-color:rgba(34,197,94,.35)}
 .theme-switch{
   display:flex;align-items:center;gap:4px;
   border:1px solid var(--border);
@@ -857,6 +858,72 @@ async function load(){
         }
       });
     }
+    function initWhatsappSummary(){
+      const btn = document.getElementById("sendWhatsBtn");
+      if(!btn || btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", async ()=>{
+        const originalText = btn.textContent;
+        btn.textContent = "⏳";
+        btn.style.pointerEvents = "none";
+        try{
+          const month = document.querySelector(".month-chip.active")?.textContent || "-";
+          const receita = document.getElementById("receita")?.innerText || "R$ 0,00";
+          const despesa = document.getElementById("despesa")?.innerText || "R$ 0,00";
+          const saldo = document.getElementById("saldo")?.innerText || "R$ 0,00";
+          const mov = document.getElementById("movimentacoes")?.innerText || "0";
+          const poupanca = document.getElementById("taxa_poupanca")?.innerText || "0%";
+          const burn = document.getElementById("burn_rate")?.innerText || "R$ 0,00";
+          const projecao = document.getElementById("projecao_fim_mes")?.innerText || "R$ 0,00";
+          const commitment = document.getElementById("fixedCommitmentHint")?.innerText || "R$ 0,00 de R$ 0,00";
+
+          const topRows = Array.from(document.querySelectorAll("#top5 .bar-row span"))
+            .slice(0,3)
+            .map((el)=>el.textContent)
+            .filter(Boolean);
+
+          const summary = [
+            "Resumo GenFin",
+            `Mês: ${month}`,
+            `Receitas: ${receita}`,
+            `Despesas: ${despesa}`,
+            `Saldo: ${saldo}`,
+            `Movimentações: ${mov}`,
+            `Taxa de Poupança: ${poupanca}`,
+            `Burn Rate (dia): ${burn}`,
+            `Projeção fim do mês: ${projecao}`,
+            `Comprometimento fixo: ${commitment}`,
+            topRows.length ? `Top gastos: ${topRows.join(" | ")}` : "Top gastos: sem dados",
+          ].join("\n");
+
+          const response = await fetch("/api/whatsapp-summary/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({text: summary}),
+          });
+
+          if(!response.ok){
+            let msg = "Não foi possível enviar o resumo para o WhatsApp.";
+            try{
+              const data = await response.json();
+              msg = data.error || msg;
+            } catch (_error){
+              // keep default
+            }
+            alert(msg);
+            return;
+          }
+          alert("Resumo enviado para o webhook do WhatsApp.");
+        } catch (error){
+          console.error(error);
+          alert("Erro ao enviar resumo.");
+        } finally{
+          btn.textContent = originalText;
+          btn.style.pointerEvents = "";
+        }
+      });
+    }
     function initVisibilityToggle(){
       const btn = document.getElementById("visibilityToggleBtn");
       if(!btn || btn.dataset.bound) return;
@@ -911,6 +978,7 @@ async function load(){
       });
     }
     initPdfExport();
+    initWhatsappSummary();
     initVisibilityToggle();
     initThemeToggle();
     function initPanelToggles(){
@@ -2019,6 +2087,7 @@ document.addEventListener("DOMContentLoaded", load);
           <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
           <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
         </div>
+        <button id="sendWhatsBtn" class="icon-link whatsapp" type="button" title="Enviar resumo para WhatsApp" aria-label="Enviar resumo para WhatsApp">🟢</button>
         <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
         <button id="exportPdfBtn" class="icon-link pdf" type="button" title="Exportar relatório em PDF" aria-label="Exportar relatório em PDF">📄</button>
       </div>

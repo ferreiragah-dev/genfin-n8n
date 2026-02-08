@@ -20,6 +20,7 @@ from .views import (
     PlannerListView,
     RegisterView,
     ValidatePhoneView,
+    WhatsAppSummaryWebhookView,
     WeeklyStatsView,
 )
 
@@ -44,4 +45,5 @@ urlpatterns = [
     path("stats/daily/", DailyStatsView.as_view()),
     path("stats/weekly/", WeeklyStatsView.as_view()),
     path("stats/monthly/", MonthlyStatsView.as_view()),
+    path("whatsapp-summary/", WhatsAppSummaryWebhookView.as_view()),
 ]
