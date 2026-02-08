@@ -88,7 +88,12 @@ body{
 }
 .header-actions{display:flex;align-items:center;gap:14px}
 .header-links{display:flex;gap:14px}
-.logout-link{color:#fca5a5 !important;text-decoration:none}
+.icon-link{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;text-decoration:none;
+}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
 .theme-switch{
   display:flex;align-items:center;gap:4px;
   border:1px solid var(--border);
@@ -479,7 +484,11 @@ body.theme-light .field textarea{
   color:#0f172a;
 }
 body.theme-light .header-links a{color:#334155 !important}
-body.theme-light .header-links .logout-link{color:#dc2626 !important}
+body.theme-light .icon-link{
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  color:#0f172a;
+}
+body.theme-light .icon-link.logout{color:#dc2626}
 body.theme-light .user small{color:#475569 !important}
 body.theme-light #selectedMonthLabel{color:#475569 !important}
 body.theme-light .bar-bg{background:#dbe7ff}
@@ -555,6 +564,7 @@ body.theme-light .notif-item{color:#1e293b}
   .header-links a{font-size:13px}
   .theme-btn{padding:5px 8px;font-size:11px}
   .visibility-btn,.notif-btn{width:32px;height:32px}
+  .icon-link{width:32px;height:32px}
   .panel h3{font-size:12px}
 }
 </style>
@@ -1834,7 +1844,6 @@ document.addEventListener("DOMContentLoaded", load);
           <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
         </div>
         <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
-        <a href="/logout/" class="logout-link">Sair</a>
       </div>
       <div class="notif-wrap">
         <button id="notifBtn" class="notif-btn" type="button">🔔</button>
@@ -1843,6 +1852,7 @@ document.addEventListener("DOMContentLoaded", load);
           <div id="notifList"></div>
         </div>
       </div>
+      <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">⎋</a>
     </div>
   </div>
 

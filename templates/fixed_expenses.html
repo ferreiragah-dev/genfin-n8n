@@ -19,6 +19,16 @@
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.app-shell{display:grid;grid-template-columns:220px 1fr;gap:14px;min-height:100vh;padding:14px}
+.sidebar{
+  background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:14px;
+  display:grid;align-content:start;gap:10px
+}
+.sidebar h4{margin:2px 0 8px;color:#94a3b8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.side-link{
+  text-decoration:none;color:#cbd5e1;border:1px solid rgba(56,189,248,.2);background:linear-gradient(180deg,#0b1224,#020617);
+  border-radius:12px;padding:10px 12px;font-size:13px
+}
 .container{padding:20px;display:grid;gap:20px}
 .header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
 .header-right{display:flex;align-items:center;gap:10px}
@@ -38,6 +48,12 @@ body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color
   background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
 }
 .visibility-btn.active{border-color:rgba(234,179,8,.55);color:#fde68a}
+.icon-link{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+  background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;text-decoration:none;
+}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
 .grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
 .panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
 h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
@@ -60,6 +76,9 @@ th{color:#9ca3af;text-align:left}
   .grid{grid-template-columns:1fr}
 }
 @media(max-width:780px){
+  .app-shell{grid-template-columns:1fr;padding:10px;gap:10px}
+  .sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}
+  .sidebar h4{display:none}
   .container{padding:12px;gap:12px}
   .header{
     flex-direction:column;
@@ -91,6 +110,7 @@ th{color:#9ca3af;text-align:left}
   button{padding:9px 12px}
   .theme-btn{padding:5px 8px;font-size:11px}
   .visibility-btn{width:32px;height:32px}
+  .icon-link{width:32px;height:32px}
   th,td{font-size:11px;padding:7px 6px}
 }
 body.values-hidden tbody td:nth-child(4),
@@ -110,8 +130,11 @@ body.theme-light{
 }
 body.theme-light .header,
 body.theme-light .panel,
+body.theme-light .sidebar,
+body.theme-light .side-link,
 body.theme-light .theme-switch,
 body.theme-light .visibility-btn,
+body.theme-light .icon-link,
 body.theme-light input,
 body.theme-light textarea,
 body.theme-light .btn-secondary,
@@ -122,8 +145,10 @@ body.theme-light .theme-btn{
 body.theme-light h3,
 body.theme-light label,
 body.theme-light th,
-body.theme-light .links a{color:#334155}
+body.theme-light .links a,
+body.theme-light .sidebar h4{color:#334155}
 body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .icon-link.logout{color:#dc2626}
 </style>
 <script>
 let editingId = null;
@@ -369,6 +394,16 @@ document.addEventListener("DOMContentLoaded", init);
 </script>
 </head>
 <body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h4>Navegação</h4>
+    <a class="side-link" href="/dashboard/">Dashboard</a>
+    <a class="side-link" href="/transactions/">Movimentações</a>
+    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
+    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
+    <a class="side-link" href="/reserves/">Reservas</a>
+  </aside>
+
 <div class="container">
   <div class="header">
     <strong>Despesas Fixas</strong>
@@ -378,12 +413,8 @@ document.addEventListener("DOMContentLoaded", init);
         <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
       </div>
       <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
-      <div class="links">
-        <a href="/dashboard/">Dashboard</a>
-        <a href="/transactions/">Movimentacoes</a>
-        <a href="/fixed-incomes/">Entradas Fixas</a>
-        <a href="/reserves/">Reservas</a>
-      </div>
+      <a href="/dashboard/" class="icon-link" title="Notificações" aria-label="Notificações">🔔</a>
+      <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">⎋</a>
     </div>
   </div>
 
@@ -433,6 +464,7 @@ document.addEventListener("DOMContentLoaded", init);
       </table>
     </div>
   </div>
+</div>
 </div>
 </body>
 </html>
