@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -94,6 +96,7 @@ body{
   display:flex;align-items:center;justify-content:center;text-decoration:none;
 }
 .icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
+.icon-link.pdf{color:#bfdbfe;border-color:rgba(56,189,248,.35)}
 .theme-switch{
   display:flex;align-items:center;gap:4px;
   border:1px solid var(--border);
@@ -682,6 +685,61 @@ async function load(){
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
+    function initPdfExport(){
+      const btn = document.getElementById("exportPdfBtn");
+      if(!btn || btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", async ()=>{
+        if(!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF){
+          alert("Ferramenta de PDF indisponível no momento.");
+          return;
+        }
+
+        const originalText = btn.textContent;
+        btn.textContent = "⏳";
+        btn.style.pointerEvents = "none";
+
+        try{
+          const target = document.querySelector(".app-shell");
+          const canvas = await html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: getComputedStyle(document.body).backgroundColor || "#05070d",
+            windowWidth: document.documentElement.scrollWidth,
+            windowHeight: document.documentElement.scrollHeight,
+          });
+
+          const pdf = new window.jspdf.jsPDF("p", "mm", "a4");
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imgData = canvas.toDataURL("image/png");
+          const imgWidth = pageWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+
+          while(heightLeft > 0){
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+
+          const monthLabel = document.querySelector(".month-chip.active")?.textContent || "MES";
+          const fileName = `genfin-dashboard-${monthLabel.toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`;
+          pdf.save(fileName);
+        } catch (error){
+          console.error(error);
+          alert("Erro ao gerar PDF.");
+        } finally{
+          btn.textContent = originalText;
+          btn.style.pointerEvents = "";
+        }
+      });
+    }
     function initVisibilityToggle(){
       const btn = document.getElementById("visibilityToggleBtn");
       if(!btn || btn.dataset.bound) return;
@@ -735,6 +793,7 @@ async function load(){
         applyTheme("dark");
       });
     }
+    initPdfExport();
     initVisibilityToggle();
     initThemeToggle();
     function initPanelToggles(){
@@ -1844,6 +1903,7 @@ document.addEventListener("DOMContentLoaded", load);
           <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
         </div>
         <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
+        <button id="exportPdfBtn" class="icon-link pdf" type="button" title="Exportar relatório em PDF" aria-label="Exportar relatório em PDF">📄</button>
       </div>
       <div class="notif-wrap">
         <button id="notifBtn" class="notif-btn" type="button">🔔</button>
