@@ -249,6 +249,69 @@ class FinancialEntryListView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
+class FinancialEntryDetailView(APIView):
+    def put(self, request, entry_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            entry = user.entries.get(id=entry_id)
+        except FinancialEntry.DoesNotExist:
+            return Response(
+                {"error": "Movimentacao nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        category = request.data.get("category")
+        amount = request.data.get("amount")
+        data_str = request.data.get("date")
+
+        if not category or amount in (None, "") or not data_str:
+            return Response(
+                {"error": "date, category e amount sao obrigatorios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entry_type = request.data.get("entry_type")
+        if entry_type and entry_type in {"RECEITA", "DESPESA"}:
+            entry.entry_type = entry_type
+
+        try:
+            if "/" in str(data_str):
+                entry.date = datetime.strptime(data_str, "%d/%m/%Y").date()
+            else:
+                entry.date = datetime.strptime(data_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"error": "Formato de data invalido. Use DD/MM/YYYY ou YYYY-MM-DD"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entry.category = category
+        entry.amount = amount
+        entry.save()
+
+        return Response({"message": "Movimentacao atualizada"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, entry_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            entry = user.entries.get(id=entry_id)
+        except FinancialEntry.DoesNotExist:
+            return Response(
+                {"error": "Movimentacao nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class DashboardCategoryView(APIView):
     def get(self, request):
         user = get_logged_user(request)
