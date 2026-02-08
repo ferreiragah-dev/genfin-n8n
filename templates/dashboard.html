@@ -896,10 +896,19 @@ async function load(){
             topRows.length ? `Top gastos: ${topRows.join(" | ")}` : "Top gastos: sem dados",
           ].join("\n");
 
+          const csrfToken = getCsrfToken();
+          if(!csrfToken){
+            alert("Token CSRF não encontrado. Recarregue a página e tente novamente.");
+            return;
+          }
+
           const response = await fetch("/api/whatsapp-summary/", {
             method: "POST",
             credentials: "same-origin",
-            headers: {"Content-Type": "application/json"},
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
             body: JSON.stringify({text: summary}),
           });
 
