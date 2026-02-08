@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 
 class UserAccount(models.Model):
     phone_number = models.CharField(max_length=20, unique=True)
@@ -14,7 +14,12 @@ class UserAccount(models.Model):
         self.password = make_password(raw_password)
 
     def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
+        try:
+            identify_hasher(self.password)
+            return check_password(raw_password, self.password)
+        except Exception:
+            # Compatibilidade temporaria: registros antigos/alterados manualmente no admin
+            return self.password == raw_password
 
     def __str__(self):
         return self.phone_number

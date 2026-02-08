@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.hashers import identify_hasher
 from .models import UserAccount
 
 @admin.register(UserAccount)
@@ -13,3 +14,12 @@ class UserAccountAdmin(admin.ModelAdmin):
         ("Perfil", {"fields": ("first_name", "last_name")}),
         ("Status", {"fields": ("is_active", "created_at")}),
     )
+
+    def save_model(self, request, obj, form, change):
+        password = obj.password or ""
+        try:
+            identify_hasher(password)
+        except Exception:
+            if password:
+                obj.set_password(password)
+        super().save_model(request, obj, form, change)
