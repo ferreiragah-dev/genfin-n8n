@@ -77,18 +77,23 @@ def shift_month(year, month, delta):
 def card_invoice_period_and_due(card, purchase_date):
     # Regra de competência:
     # 1) compra até o fechamento entra na fatura que fecha no mesmo mês
-    # 2) compra após fechamento entra na fatura do fechamento do mês seguinte
-    # 3) a competência financeira é no mês do vencimento (sempre 1 mês após o fechamento)
+    # 2) compra após fechamento entra na fatura que fecha no mês seguinte
+    # 3) competência financeira = mês da fatura que FECHA (não mês seguinte)
+    # Ex.: fechamento 14 / vencimento 20
+    # compras de 15/01 até 14/02 => fatura de fevereiro (competência fevereiro)
     close_year = purchase_date.year
     close_month = purchase_date.month
     closing_day = int(getattr(card, "closing_day", 20) or 20)
     if purchase_date.day > closing_day:
         close_year, close_month = shift_month(close_year, close_month, 1)
 
-    due_year, due_month = shift_month(close_year, close_month, 1)
+    due_year, due_month = close_year, close_month
+    # Se o dia de vencimento vier antes/igual ao fechamento, desloca para o mês seguinte.
+    if int(card.due_day) <= closing_day:
+        due_year, due_month = shift_month(close_year, close_month, 1)
     due_day = clamp_day(due_year, due_month, int(card.due_day))
     due_date = datetime(due_year, due_month, due_day).date()
-    return close_year, close_month, due_date, due_year, due_month
+    return close_year, close_month, due_date, close_year, close_month
 
 
 def sync_credit_card_bills(user, card):
