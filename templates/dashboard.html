@@ -1410,6 +1410,7 @@ async function load(){
     let fixedExpenses = [];
     let fixedIncomes = [];
     let reserves = [];
+    let creditCardExpenses = [];
     let vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
     let creditCards = [];
     let creditCardSummaryData = {by_card:[], total_limit:0, total_spent:0};
@@ -1433,6 +1434,12 @@ async function load(){
     } catch (cardError){
       console.error("Falha ao carregar cartões:", cardError);
       creditCards = [];
+    }
+    try{
+      creditCardExpenses = await fetchJson("/api/credit-card-expenses/");
+    } catch (cardExpenseError){
+      console.error("Falha ao carregar gastos no cartão:", cardExpenseError);
+      creditCardExpenses = [];
     }
     async function loadVehicleSummary(month, year){
       try{
@@ -1509,6 +1516,13 @@ async function load(){
       parsedDate: parseIsoDate(item.date),
       amountNumber: Number(item.amount || 0),
     }));
+    const creditCardsById = new Map((creditCards || []).map((card)=>[Number(card.id), card]));
+    const creditCardExpensesParsed = creditCardExpenses.map((item)=>({
+      ...item,
+      parsedDate: parseIsoDate(item.date),
+      amountNumber: Number(item.amount || 0),
+      card: creditCardsById.get(Number(item.card_id)) || null,
+    }));
     const monthsToCheck = 6;
 
     function getPeriodRange(period, anchorDate){
@@ -1547,6 +1561,37 @@ async function load(){
         map[key] = (map[key] || 0) + e.amountNumber;
       });
       return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+    }
+    function getCreditCardCompetence(item){
+      const date = item.parsedDate;
+      if(!date) return null;
+      const card = item.card || {};
+      const closingDay = Number(card.closing_day || card.best_purchase_day || 20);
+      let year = date.getFullYear();
+      let month = date.getMonth();
+      if(date.getDate() > closingDay){
+        const shifted = new Date(year, month + 1, 1);
+        year = shifted.getFullYear();
+        month = shifted.getMonth();
+      }
+      return {year, month};
+    }
+    function buildCreditCardEntriesByCompetence(year, month){
+      return creditCardExpensesParsed
+        .filter((item)=>{
+          const c = getCreditCardCompetence(item);
+          return c && c.year === year && c.month === month;
+        })
+        .map((item)=>({
+          id: `cc-${item.id}`,
+          date: item.date,
+          category: item.category || "Cartão de crédito",
+          entry_type: "DESPESA",
+          amount: item.amountNumber,
+          amountNumber: item.amountNumber,
+          parsedDate: item.parsedDate,
+          is_credit_card: true,
+        }));
     }
     function recurringLargest(){
       const items = fixedExpensesParsed.filter((e)=>e.is_recurring);
@@ -2221,6 +2266,8 @@ async function load(){
         if(!e.parsedDate) return false;
         return e.parsedDate.getFullYear() === selectedYear && e.parsedDate.getMonth() === monthIndex;
       });
+      const creditCardMonthEntries = buildCreditCardEntriesByCompetence(selectedYear, monthIndex);
+      const selectedMonthEntriesForStats = [...selectedMonthEntries, ...creditCardMonthEntries];
 
       const receitaMes = sumByType(selectedMonthEntries, "RECEITA");
       const despesaMes = sumByType(selectedMonthEntries, "DESPESA");
@@ -2245,26 +2292,28 @@ async function load(){
       document.getElementById("projecao_fim_mes").innerText = formatCurrency(saldoProjetado);
 
       const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-      selectedMonthEntries.forEach((e)=>{
+      selectedMonthEntriesForStats.forEach((e)=>{
         if(e.entry_type === "DESPESA" && e.parsedDate){
           weekMap[e.parsedDate.getDay()] += e.amountNumber;
         }
       });
       setHeatmap(Object.values(weekMap));
 
-      const monthStats = statObj(selectedMonthEntries);
+      const monthStats = statObj(selectedMonthEntriesForStats);
       const last7Start = new Date(selectedMonthEnd.getFullYear(), selectedMonthEnd.getMonth(), selectedMonthEnd.getDate() - 6);
-      const last7Entries = selectedMonthEntries.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
+      const last7Entries = selectedMonthEntriesForStats.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
       const last7Stats = statObj(last7Entries);
       const prevMonthStart = new Date(selectedYear, monthIndex - 1, 1);
       const prevMonthEnd = new Date(selectedYear, monthIndex, 0);
-      const prevMonthEntries = entriesParsed.filter((e)=>inRange(e.parsedDate, prevMonthStart, prevMonthEnd));
+      const prevMonthEntriesBase = entriesParsed.filter((e)=>inRange(e.parsedDate, prevMonthStart, prevMonthEnd));
+      const prevMonthCardEntries = buildCreditCardEntriesByCompetence(prevMonthStart.getFullYear(), prevMonthStart.getMonth());
+      const prevMonthEntries = [...prevMonthEntriesBase, ...prevMonthCardEntries];
       const prevMonthStats = statObj(prevMonthEntries);
       writeStats("d", monthStats, "chartDaily");
       writeStats("w", last7Stats, "chartWeekly");
       writeStats("m", prevMonthStats, "chartMonthly");
 
-      renderCategoryGauges(selectedMonthEntries.filter((e)=>e.entry_type === "DESPESA"));
+      renderCategoryGauges(selectedMonthEntriesForStats.filter((e)=>e.entry_type === "DESPESA"));
       await loadVehicleSummary(monthIndex + 1, selectedYear);
       await loadCreditCardSummary(monthIndex + 1, selectedYear);
       applyPeriodFilter("month");
