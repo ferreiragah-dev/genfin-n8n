@@ -2414,19 +2414,22 @@ async function load(){
 
     const monthBar = document.getElementById("monthFilterBar");
     monthBar.textContent = "";
-    const monthsWithExpenses = new Set();
+    const monthsWithData = new Set();
     entriesParsed.forEach((e)=>{
-      if(e.entry_type === "DESPESA" && e.parsedDate){
-        monthsWithExpenses.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
+      if(e.parsedDate){
+        monthsWithData.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
       }
     });
     creditCardExpensesParsed.forEach((e)=>{
       if(e.parsedDate){
-        monthsWithExpenses.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
+        monthsWithData.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
       }
     });
+    // Garante visibilidade do mês atual para evitar "sumir" do filtro
+    const nowRef = new Date();
+    monthsWithData.add(`${nowRef.getFullYear()}-${nowRef.getMonth()}`);
     monthNames.forEach((name, idx)=>{
-      if(!monthsWithExpenses.has(`${selectedYear}-${idx}`)) return;
+      if(!monthsWithData.has(`${selectedYear}-${idx}`)) return;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "month-chip";
@@ -2435,9 +2438,9 @@ async function load(){
       btn.addEventListener("click", ()=>renderTopSectionByMonth(idx));
       monthBar.appendChild(btn);
     });
-    const fallbackMonth = monthsWithExpenses.has(`${selectedYear}-${selectedMonth}`)
+    const fallbackMonth = monthsWithData.has(`${selectedYear}-${selectedMonth}`)
       ? selectedMonth
-      : (()=>{ for(let i=11;i>=0;i--){ if(monthsWithExpenses.has(`${selectedYear}-${i}`)) return i; } return selectedMonth; })();
+      : (()=>{ for(let i=11;i>=0;i--){ if(monthsWithData.has(`${selectedYear}-${i}`)) return i; } return selectedMonth; })();
     renderTopSectionByMonth(fallbackMonth);
   } catch (error){
     console.error(error);
