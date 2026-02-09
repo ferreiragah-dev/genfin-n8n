@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from accounts.views import (
+    credit_cards_page,
     dashboard_page,
     fixed_expenses_page,
     fixed_incomes_page,
@@ -27,4 +28,5 @@ urlpatterns = [
     path("fixed-incomes/", fixed_incomes_page),
     path("reserves/", reserves_page),
     path("vehicles/", vehicles_page),
+    path("credit-cards/", credit_cards_page),
 ]

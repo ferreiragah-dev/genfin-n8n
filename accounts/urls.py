@@ -1,6 +1,13 @@
 ﻿from django.urls import path
 
 from .views import (
+    CreditCardCreateView,
+    CreditCardDetailView,
+    CreditCardExpenseCreateView,
+    CreditCardExpenseDetailView,
+    CreditCardExpenseListView,
+    CreditCardListView,
+    CreditCardSummaryView,
     DailyStatsView,
     DashboardCategoryView,
     DashboardView,
@@ -56,6 +63,13 @@ urlpatterns = [
     path("vehicle-expenses/create/", VehicleExpenseCreateView.as_view()),
     path("vehicle-expenses/<int:expense_id>/", VehicleExpenseDetailView.as_view()),
     path("vehicles/summary/", VehicleSummaryView.as_view()),
+    path("credit-cards/", CreditCardListView.as_view()),
+    path("credit-cards/create/", CreditCardCreateView.as_view()),
+    path("credit-cards/<int:card_id>/", CreditCardDetailView.as_view()),
+    path("credit-card-expenses/", CreditCardExpenseListView.as_view()),
+    path("credit-card-expenses/create/", CreditCardExpenseCreateView.as_view()),
+    path("credit-card-expenses/<int:expense_id>/", CreditCardExpenseDetailView.as_view()),
+    path("credit-cards/summary/", CreditCardSummaryView.as_view()),
     path("stats/daily/", DailyStatsView.as_view()),
     path("stats/weekly/", WeeklyStatsView.as_view()),
     path("stats/monthly/", MonthlyStatsView.as_view()),

@@ -69,6 +69,7 @@ class PlannedExpense(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     is_recurring = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
+    source_key = models.CharField(max_length=120, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -163,3 +164,42 @@ class VehicleExpense(models.Model):
 
     def __str__(self):
         return f"{self.vehicle.name} - {self.expense_type} - {self.amount}"
+
+
+class CreditCard(models.Model):
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="credit_cards"
+    )
+    nickname = models.CharField(max_length=80, blank=True, default="")
+    last4 = models.CharField(max_length=4)
+    due_day = models.PositiveSmallIntegerField(default=10)
+    best_purchase_day = models.PositiveSmallIntegerField(default=1)
+    limit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    miles_per_point = models.DecimalField(max_digits=8, decimal_places=4, default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cartao ****{self.last4}"
+
+
+class CreditCardExpense(models.Model):
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="credit_card_expenses"
+    )
+    card = models.ForeignKey(
+        CreditCard,
+        on_delete=models.CASCADE,
+        related_name="expenses"
+    )
+    date = models.DateField()
+    category = models.CharField(max_length=80)
+    description = models.TextField(blank=True, default="")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"****{self.card.last4} - {self.category} - {self.amount}"

@@ -1,4 +1,6 @@
-﻿from datetime import datetime, timedelta
+﻿import calendar
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 import json
 from urllib import request as urllib_request
@@ -15,7 +17,17 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FinancialEntry, PlannedExpense, PlannedIncome, PlannedReserve, UserAccount, Vehicle, VehicleExpense
+from .models import (
+    CreditCard,
+    CreditCardExpense,
+    FinancialEntry,
+    PlannedExpense,
+    PlannedIncome,
+    PlannedReserve,
+    UserAccount,
+    Vehicle,
+    VehicleExpense,
+)
 
 
 def get_logged_user(request):
@@ -31,6 +43,70 @@ def parse_bool(value):
     if value is None:
         return False
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def clamp_day(year, month, day):
+    max_day = calendar.monthrange(year, month)[1]
+    return max(1, min(int(day), max_day))
+
+
+def shift_month(year, month, delta):
+    idx = (year * 12 + (month - 1)) + delta
+    new_year = idx // 12
+    new_month = (idx % 12) + 1
+    return new_year, new_month
+
+
+def card_invoice_period_and_due(card, purchase_date):
+    # Regra simples:
+    # compra apos a "melhor data" cai na proxima fatura
+    base_year = purchase_date.year
+    base_month = purchase_date.month
+    if purchase_date.day > int(card.best_purchase_day):
+        base_year, base_month = shift_month(base_year, base_month, 1)
+    due_day = clamp_day(base_year, base_month, int(card.due_day))
+    due_date = datetime(base_year, base_month, due_day).date()
+    return base_year, base_month, due_date
+
+
+def sync_credit_card_bills(user, card):
+    grouped = defaultdict(lambda: {"amount": 0.0, "due_date": None})
+    expenses = user.credit_card_expenses.filter(card=card).order_by("date", "id")
+    for expense in expenses:
+        p_year, p_month, due_date = card_invoice_period_and_due(card, expense.date)
+        key = f"CC:{card.id}:{p_year:04d}-{p_month:02d}"
+        grouped[key]["amount"] += float(expense.amount or 0)
+        grouped[key]["due_date"] = due_date
+
+    active_keys = set(grouped.keys())
+    existing_qs = user.planned_expenses.filter(source_key__startswith=f"CC:{card.id}:")
+    for planned in existing_qs:
+        if planned.source_key not in active_keys:
+            planned.delete()
+
+    for source_key, data in grouped.items():
+        due_date = data["due_date"]
+        total = round(data["amount"], 2)
+        period = source_key.split(":")[-1]
+        defaults = {
+            "date": due_date,
+            "category": f"Fatura Cartão {card.last4}",
+            "description": f"Fatura cartão final {card.last4} ({period})",
+            "amount": total,
+            "is_recurring": True,
+        }
+        planned, created = PlannedExpense.objects.get_or_create(
+            user=user,
+            source_key=source_key,
+            defaults=defaults,
+        )
+        if not created:
+            planned.date = defaults["date"]
+            planned.category = defaults["category"]
+            planned.description = defaults["description"]
+            planned.amount = defaults["amount"]
+            planned.is_recurring = True
+            planned.save()
 
 
 class ValidatePhoneView(APIView):
@@ -299,6 +375,13 @@ def vehicles_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "vehicles.html")
+
+
+@ensure_csrf_cookie
+def credit_cards_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "credit_cards.html")
 
 
 @ensure_csrf_cookie
@@ -771,6 +854,290 @@ class VehicleSummaryView(APIView):
         )
 
 
+class CreditCardListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.credit_cards.all().order_by("-created_at")
+        return Response(
+            [
+                {
+                    "id": c.id,
+                    "nickname": c.nickname,
+                    "last4": c.last4,
+                    "due_day": c.due_day,
+                    "best_purchase_day": c.best_purchase_day,
+                    "limit_amount": c.limit_amount,
+                    "miles_per_point": c.miles_per_point,
+                }
+                for c in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CreditCardCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        last4 = "".join(ch for ch in str(request.data.get("last4", "")) if ch.isdigit())
+        try:
+            due_day = int(request.data.get("due_day") or 0)
+            best_purchase_day = int(request.data.get("best_purchase_day") or 0)
+        except (TypeError, ValueError):
+            return Response({"error": "Vencimento e melhor dia devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(last4) != 4:
+            return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
+        if due_day < 1 or due_day > 31:
+            return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+        if best_purchase_day < 1 or best_purchase_day > 31:
+            return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+
+        card = CreditCard.objects.create(
+            user=user,
+            nickname=str(request.data.get("nickname", "")).strip(),
+            last4=last4,
+            due_day=due_day,
+            best_purchase_day=best_purchase_day,
+            limit_amount=request.data.get("limit_amount") or 0,
+            miles_per_point=request.data.get("miles_per_point") or 1,
+        )
+        return Response({"message": "Cartão criado", "id": card.id}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CreditCardDetailView(APIView):
+    def put(self, request, card_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            card = user.credit_cards.get(id=card_id)
+        except CreditCard.DoesNotExist:
+            return Response({"error": "Cartão não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        last4 = "".join(ch for ch in str(request.data.get("last4", card.last4)) if ch.isdigit())
+        try:
+            due_day = int(request.data.get("due_day") or card.due_day)
+            best_purchase_day = int(request.data.get("best_purchase_day") or card.best_purchase_day)
+        except (TypeError, ValueError):
+            return Response({"error": "Vencimento e melhor dia devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(last4) != 4:
+            return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
+        if due_day < 1 or due_day > 31:
+            return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+        if best_purchase_day < 1 or best_purchase_day > 31:
+            return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+
+        card.nickname = str(request.data.get("nickname", card.nickname)).strip()
+        card.last4 = last4
+        card.due_day = due_day
+        card.best_purchase_day = best_purchase_day
+        card.limit_amount = request.data.get("limit_amount") or 0
+        card.miles_per_point = request.data.get("miles_per_point") or 1
+        card.save()
+        sync_credit_card_bills(user, card)
+        return Response({"message": "Cartão atualizado"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, card_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            card = user.credit_cards.get(id=card_id)
+        except CreditCard.DoesNotExist:
+            return Response({"error": "Cartão não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        user.planned_expenses.filter(source_key__startswith=f"CC:{card.id}:").delete()
+        card.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CreditCardExpenseListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.credit_card_expenses.select_related("card").all().order_by("-date", "-id")
+        card_id = request.query_params.get("card_id")
+        if card_id:
+            data = data.filter(card_id=card_id)
+        return Response(
+            [
+                {
+                    "id": e.id,
+                    "card_id": e.card_id,
+                    "card_last4": e.card.last4,
+                    "card_name": e.card.nickname or f"****{e.card.last4}",
+                    "date": e.date.strftime("%Y-%m-%d"),
+                    "category": e.category,
+                    "description": e.description,
+                    "amount": e.amount,
+                }
+                for e in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CreditCardExpenseCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        card_id = request.data.get("card_id")
+        date = request.data.get("date")
+        category = str(request.data.get("category", "")).strip()
+        amount = request.data.get("amount")
+        if not card_id or not date or not category or amount in (None, ""):
+            return Response(
+                {"error": "card_id, date, category e amount são obrigatórios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            card = user.credit_cards.get(id=card_id)
+        except CreditCard.DoesNotExist:
+            return Response({"error": "Cartão não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        expense = CreditCardExpense.objects.create(
+            user=user,
+            card=card,
+            date=date,
+            category=category,
+            description=request.data.get("description", "") or "",
+            amount=amount,
+        )
+        sync_credit_card_bills(user, card)
+        return Response({"message": "Gasto no cartão criado", "id": expense.id}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CreditCardExpenseDetailView(APIView):
+    def put(self, request, expense_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            expense = user.credit_card_expenses.get(id=expense_id)
+        except CreditCardExpense.DoesNotExist:
+            return Response({"error": "Gasto não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        old_card = expense.card
+        card_id = request.data.get("card_id") or expense.card_id
+        try:
+            card = user.credit_cards.get(id=card_id)
+        except CreditCard.DoesNotExist:
+            return Response({"error": "Cartão não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        date = request.data.get("date")
+        category = str(request.data.get("category", "")).strip()
+        amount = request.data.get("amount")
+        if not date or not category or amount in (None, ""):
+            return Response(
+                {"error": "date, category e amount são obrigatórios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        expense.card = card
+        expense.date = date
+        expense.category = category
+        expense.description = request.data.get("description", "") or ""
+        expense.amount = amount
+        expense.save()
+
+        sync_credit_card_bills(user, card)
+        if old_card.id != card.id:
+            sync_credit_card_bills(user, old_card)
+        return Response({"message": "Gasto no cartão atualizado"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, expense_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            expense = user.credit_card_expenses.get(id=expense_id)
+        except CreditCardExpense.DoesNotExist:
+            return Response({"error": "Gasto não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        card = expense.card
+        expense.delete()
+        sync_credit_card_bills(user, card)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CreditCardSummaryView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        today = timezone.now().date()
+        try:
+            month = int(request.query_params.get("month", today.month))
+        except ValueError:
+            month = today.month
+        try:
+            year = int(request.query_params.get("year", today.year))
+        except ValueError:
+            year = today.year
+
+        cards = list(user.credit_cards.all())
+        expenses = user.credit_card_expenses.filter(date__year=year, date__month=month).select_related("card")
+        total_spent = sum(float(e.amount or 0) for e in expenses)
+        total_limit = sum(float(c.limit_amount or 0) for c in cards)
+
+        by_category = defaultdict(float)
+        by_card = defaultdict(float)
+        miles_total = 0.0
+        for expense in expenses:
+            by_category[expense.category] += float(expense.amount or 0)
+            by_card[f"****{expense.card.last4}"] += float(expense.amount or 0)
+            miles_total += float(expense.amount or 0) * float(expense.card.miles_per_point or 0)
+
+        by_category_rows = [{"category": k, "total": round(v, 2)} for k, v in by_category.items()]
+        by_category_rows.sort(key=lambda x: x["total"], reverse=True)
+        by_card_rows = [{"card": k, "total": round(v, 2)} for k, v in by_card.items()]
+        by_card_rows.sort(key=lambda x: x["total"], reverse=True)
+
+        upcoming = user.planned_expenses.filter(
+            source_key__startswith="CC:",
+            date__year=year,
+            date__month=month,
+        ).order_by("date")
+        upcoming_rows = [
+            {
+                "id": p.id,
+                "date": p.date.strftime("%Y-%m-%d"),
+                "category": p.category,
+                "amount": p.amount,
+                "is_paid": p.is_paid,
+            }
+            for p in upcoming
+        ]
+
+        return Response(
+            {
+                "month": month,
+                "year": year,
+                "card_count": len(cards),
+                "total_spent": round(total_spent, 2),
+                "total_limit": round(total_limit, 2),
+                "usage_percent": round((total_spent / total_limit) * 100, 2) if total_limit > 0 else 0,
+                "estimated_miles": round(miles_total, 2),
+                "by_category": by_category_rows,
+                "by_card": by_card_rows,
+                "upcoming_bills": upcoming_rows,
+            }
+        )
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class PlannerCreateView(APIView):
     def post(self, request):
@@ -1120,3 +1487,5 @@ class WhatsAppSummaryWebhookView(APIView):
             {"message": "Resumo enviado", "webhook_status": webhook_status, "mode": mode},
             status=status.HTTP_200_OK,
         )
+
+

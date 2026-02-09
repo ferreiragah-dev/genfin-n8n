@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.hashers import identify_hasher
-from .models import UserAccount, Vehicle, VehicleExpense
+from .models import CreditCard, CreditCardExpense, UserAccount, Vehicle, VehicleExpense
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
@@ -37,3 +37,17 @@ class VehicleExpenseAdmin(admin.ModelAdmin):
     list_display = ("vehicle", "expense_type", "date", "amount", "is_recurring", "user")
     search_fields = ("vehicle__name", "description", "user__phone_number")
     list_filter = ("expense_type", "is_recurring")
+
+
+@admin.register(CreditCard)
+class CreditCardAdmin(admin.ModelAdmin):
+    list_display = ("nickname", "last4", "due_day", "best_purchase_day", "limit_amount", "miles_per_point", "user")
+    search_fields = ("nickname", "last4", "user__phone_number")
+    list_filter = ("due_day", "best_purchase_day")
+
+
+@admin.register(CreditCardExpense)
+class CreditCardExpenseAdmin(admin.ModelAdmin):
+    list_display = ("card", "date", "category", "amount", "user")
+    search_fields = ("card__last4", "category", "description", "user__phone_number")
+    list_filter = ("category", "date")
