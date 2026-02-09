@@ -63,6 +63,16 @@ th{color:#9ca3af;text-align:left}
 .message{font-size:12px;color:var(--green);margin-top:8px;min-height:16px}
 .list-box{display:grid;gap:8px}
 .bill-item{font-size:12px;padding:8px;border:1px dashed rgba(148,163,184,.25);border-radius:10px}
+.rule-box{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+  font-size:12px;
+  color:#cbd5e1;
+  line-height:1.5;
+}
+.rule-box strong{color:#e2e8f0}
 body.values-hidden .card strong, body.values-hidden tbody td:nth-child(4), body.values-hidden .bill-item{filter:blur(6px);user-select:none}
 body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--yellow:#ca8a04}
 body.theme-light .header,body.theme-light .panel,body.theme-light .month-wrap,body.theme-light .card,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .visibility-btn,body.theme-light .icon-link,body.theme-light input,body.theme-light textarea,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn,body.theme-light .month-chip{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#0f172a}
@@ -70,6 +80,8 @@ body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light 
 body.theme-light .month-head strong{color:#334155 !important}
 body.theme-light .month-chip.active,body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
 body.theme-light .icon-link.logout{color:#dc2626}
+body.theme-light .rule-box{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#334155}
+body.theme-light .rule-box strong{color:#0f172a}
 @media(max-width:1100px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
 @media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}.sidebar h4{display:none}.container{padding:12px;gap:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}.header-right{width:100%;flex-wrap:wrap;gap:8px}.panel{padding:12px}.cards{grid-template-columns:1fr}.panel table{display:block;width:100%;overflow-x:auto;white-space:nowrap}}
 @media(max-width:520px){.theme-btn{padding:5px 8px;font-size:11px}.visibility-btn,.icon-link{width:32px;height:32px}th,td{font-size:11px;padding:7px 6px}.month-chip{padding:6px 10px;font-size:11px}.card strong{font-size:18px}}
@@ -407,6 +419,13 @@ document.addEventListener("DOMContentLoaded", init);
       <div id="monthFilterBar" class="month-bar"></div>
     </div>
 
+    <div class="rule-box">
+      <strong>Regra de competÃªncia do cartÃ£o:</strong><br>
+      Compras no cartÃ£o seguem o mÃªs da fatura (vencimento), nÃ£o o mÃªs da compra.<br>
+      Compras feitas atÃ© o dia de fechamento entram na fatura que fecha no mÃªs atual e aparecem no mÃªs seguinte.<br>
+      Compras feitas apÃ³s o fechamento entram na fatura do mÃªs seguinte e aparecem no mÃªs seguinte ao prÃ³ximo.
+    </div>
+
     <div class="cards">
       <div class="card"><span>Total no CartÃ£o</span><strong id="card_spent">R$ 0,00</strong></div>
       <div class="card"><span>Uso de Limite</span><strong id="card_usage">0%</strong></div>
@@ -430,7 +449,7 @@ document.addEventListener("DOMContentLoaded", init);
           <label for="card_due_day">Dia do vencimento</label>
           <input id="card_due_day" type="number" min="1" max="31" required>
 
-          <label for="card_best_day">Melhor dia de compra</label>
+          <label for="card_best_day">Dia de fechamento da fatura</label>
           <input id="card_best_day" type="number" min="1" max="31" required>
 
           <label for="card_limit">Limite</label>
@@ -456,7 +475,7 @@ document.addEventListener("DOMContentLoaded", init);
               <th>Final</th>
               <th>Herdado de</th>
               <th>Venc.</th>
-              <th>Melhor dia</th>
+              <th>Fechamento</th>
               <th>Limite</th>
               <th>Milhas/ponto</th>
               <th>AÃ§Ãµes</th>

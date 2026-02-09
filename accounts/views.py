@@ -75,15 +75,19 @@ def shift_month(year, month, delta):
 
 
 def card_invoice_period_and_due(card, purchase_date):
-    # Regra simples:
-    # compra apos a "melhor data" cai na proxima fatura
-    base_year = purchase_date.year
-    base_month = purchase_date.month
+    # Regra de competência:
+    # 1) compra até o fechamento entra na fatura que fecha no mesmo mês
+    # 2) compra após fechamento entra na fatura do fechamento do mês seguinte
+    # 3) a competência financeira é no mês do vencimento (sempre 1 mês após o fechamento)
+    close_year = purchase_date.year
+    close_month = purchase_date.month
     if purchase_date.day > int(card.best_purchase_day):
-        base_year, base_month = shift_month(base_year, base_month, 1)
-    due_day = clamp_day(base_year, base_month, int(card.due_day))
-    due_date = datetime(base_year, base_month, due_day).date()
-    return base_year, base_month, due_date
+        close_year, close_month = shift_month(close_year, close_month, 1)
+
+    due_year, due_month = shift_month(close_year, close_month, 1)
+    due_day = clamp_day(due_year, due_month, int(card.due_day))
+    due_date = datetime(due_year, due_month, due_day).date()
+    return close_year, close_month, due_date, due_year, due_month
 
 
 def sync_credit_card_bills(user, card):
@@ -99,13 +103,15 @@ def sync_credit_card_bills(user, card):
         if get_owner_id_for_card(c, cards_by_id) == owner_id
     ]
 
-    grouped = defaultdict(lambda: {"amount": 0.0, "due_date": None})
+    grouped = defaultdict(lambda: {"amount": 0.0, "due_date": None, "close_year": None, "close_month": None})
     expenses = user.credit_card_expenses.filter(card_id__in=family_card_ids).order_by("date", "id")
     for expense in expenses:
-        p_year, p_month, due_date = card_invoice_period_and_due(owner_card, expense.date)
-        key = f"CC:{owner_id}:{p_year:04d}-{p_month:02d}"
+        close_year, close_month, due_date, comp_year, comp_month = card_invoice_period_and_due(owner_card, expense.date)
+        key = f"CC:{owner_id}:{comp_year:04d}-{comp_month:02d}"
         grouped[key]["amount"] += float(expense.amount or 0)
         grouped[key]["due_date"] = due_date
+        grouped[key]["close_year"] = close_year
+        grouped[key]["close_month"] = close_month
 
     active_keys = set(grouped.keys())
     existing_qs = user.planned_expenses.filter(source_key__startswith=f"CC:{owner_id}:")
@@ -117,10 +123,12 @@ def sync_credit_card_bills(user, card):
         due_date = data["due_date"]
         total = round(data["amount"], 2)
         period = source_key.split(":")[-1]
+        close_year = data["close_year"]
+        close_month = data["close_month"]
         defaults = {
             "date": due_date,
             "category": f"Fatura Cartão {owner_card.last4}",
-            "description": f"Fatura unificada cartão final {owner_card.last4} ({period})",
+            "description": f"Fatura cartão final {owner_card.last4} (fechamento {close_month:02d}/{close_year}, competência {period})",
             "amount": total,
             "is_recurring": True,
         }
@@ -922,13 +930,13 @@ class CreditCardCreateView(APIView):
             due_day = int(request.data.get("due_day") or 0)
             best_purchase_day = int(request.data.get("best_purchase_day") or 0)
         except (TypeError, ValueError):
-            return Response({"error": "Vencimento e melhor dia devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Vencimento e fechamento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
         if len(last4) != 4:
             return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
         if due_day < 1 or due_day > 31:
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
-            return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         parent_card_id = request.data.get("parent_card_id")
         parent_card = None
         if parent_card_id not in (None, "", "null"):
@@ -966,13 +974,13 @@ class CreditCardDetailView(APIView):
             due_day = int(request.data.get("due_day") or card.due_day)
             best_purchase_day = int(request.data.get("best_purchase_day") or card.best_purchase_day)
         except (TypeError, ValueError):
-            return Response({"error": "Vencimento e melhor dia devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Vencimento e fechamento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
         if len(last4) != 4:
             return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
         if due_day < 1 or due_day > 31:
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
-            return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         parent_card_id = request.data.get("parent_card_id")
         new_parent = None
         if parent_card_id not in (None, "", "null"):
@@ -1160,7 +1168,7 @@ class CreditCardSummaryView(APIView):
 
         cards = list(user.credit_cards.select_related("parent_card").all())
         cards_by_id = {c.id: c for c in cards}
-        expenses = user.credit_card_expenses.filter(date__year=year, date__month=month).select_related("card")
+        all_expenses = user.credit_card_expenses.select_related("card").all()
         owner_limit_map = {}
         owner_card_map = {}
         for card in cards:
@@ -1175,11 +1183,15 @@ class CreditCardSummaryView(APIView):
         by_card = defaultdict(float)
         by_billing = defaultdict(float)
         miles_total = 0.0
-        for expense in expenses:
+        for expense in all_expenses:
+            owner_id = get_owner_id_for_card(expense.card, cards_by_id)
+            owner_card = owner_card_map.get(owner_id, expense.card)
+            _, _, _, comp_year, comp_month = card_invoice_period_and_due(owner_card, expense.date)
+            if comp_year != year or comp_month != month:
+                continue
             total_spent += float(expense.amount or 0)
             by_category[expense.category] += float(expense.amount or 0)
             by_card[f"****{expense.card.last4}"] += float(expense.amount or 0)
-            owner_id = get_owner_id_for_card(expense.card, cards_by_id)
             by_billing[owner_id] += float(expense.amount or 0)
             miles_total += float(expense.amount or 0) * float(expense.card.miles_per_point or 0)
 
