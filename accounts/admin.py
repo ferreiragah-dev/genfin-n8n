@@ -41,9 +41,9 @@ class VehicleExpenseAdmin(admin.ModelAdmin):
 
 @admin.register(CreditCard)
 class CreditCardAdmin(admin.ModelAdmin):
-    list_display = ("nickname", "last4", "parent_card", "due_day", "best_purchase_day", "limit_amount", "miles_per_point", "user")
+    list_display = ("nickname", "last4", "parent_card", "closing_day", "due_day", "best_purchase_day", "limit_amount", "miles_per_point", "user")
     search_fields = ("nickname", "last4", "user__phone_number")
-    list_filter = ("due_day", "best_purchase_day", "parent_card")
+    list_filter = ("closing_day", "due_day", "best_purchase_day", "parent_card")
 
 
 @admin.register(CreditCardExpense)

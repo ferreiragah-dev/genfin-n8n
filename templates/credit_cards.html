@@ -158,7 +158,7 @@ async function loadCards(){
       <td>**** ${card.last4}</td>
       <td>${card.parent_card_last4 ? `**** ${card.parent_card_last4}` : "-"}</td>
       <td>Dia ${card.due_day}</td>
-      <td>Dia ${card.best_purchase_day}</td>
+      <td>Dia ${card.closing_day || card.best_purchase_day}</td>
       <td>${formatCurrency(card.limit_amount)}</td>
       <td>${Number(card.miles_per_point || 0).toFixed(2)}</td>
       <td><div class="row-actions"><button class="btn-secondary">Editar</button><button class="btn-danger">Remover</button></div></td>
@@ -186,7 +186,7 @@ function fillCardForm(card){
   document.getElementById("card_last4").value = card.last4 || "";
   document.getElementById("card_parent").value = card.parent_card_id || "";
   document.getElementById("card_due_day").value = card.due_day;
-  document.getElementById("card_best_day").value = card.best_purchase_day;
+  document.getElementById("card_closing_day").value = card.closing_day || card.best_purchase_day;
   document.getElementById("card_limit").value = card.limit_amount;
   document.getElementById("card_miles_per_point").value = card.miles_per_point;
   document.getElementById("cancelCardEdit").style.display = "inline-block";
@@ -217,7 +217,8 @@ async function submitCardForm(event){
     last4: document.getElementById("card_last4").value.trim(),
     parent_card_id: document.getElementById("card_parent").value || null,
     due_day: document.getElementById("card_due_day").value,
-    best_purchase_day: document.getElementById("card_best_day").value,
+    closing_day: document.getElementById("card_closing_day").value,
+    best_purchase_day: document.getElementById("card_closing_day").value,
     limit_amount: document.getElementById("card_limit").value || 0,
     miles_per_point: document.getElementById("card_miles_per_point").value || 1,
   };
@@ -449,8 +450,8 @@ document.addEventListener("DOMContentLoaded", init);
           <label for="card_due_day">Dia do vencimento</label>
           <input id="card_due_day" type="number" min="1" max="31" required>
 
-          <label for="card_best_day">Dia de fechamento da fatura</label>
-          <input id="card_best_day" type="number" min="1" max="31" required>
+          <label for="card_closing_day">Dia de fechamento da fatura</label>
+          <input id="card_closing_day" type="number" min="1" max="31" required>
 
           <label for="card_limit">Limite</label>
           <input id="card_limit" type="number" min="0" step="0.01">

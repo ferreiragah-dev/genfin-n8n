@@ -181,6 +181,7 @@ class CreditCard(models.Model):
     )
     nickname = models.CharField(max_length=80, blank=True, default="")
     last4 = models.CharField(max_length=4)
+    closing_day = models.PositiveSmallIntegerField(default=20)
     due_day = models.PositiveSmallIntegerField(default=10)
     best_purchase_day = models.PositiveSmallIntegerField(default=1)
     limit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)

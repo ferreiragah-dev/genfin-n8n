@@ -81,7 +81,8 @@ def card_invoice_period_and_due(card, purchase_date):
     # 3) a competência financeira é no mês do vencimento (sempre 1 mês após o fechamento)
     close_year = purchase_date.year
     close_month = purchase_date.month
-    if purchase_date.day > int(card.best_purchase_day):
+    closing_day = int(getattr(card, "closing_day", 20) or 20)
+    if purchase_date.day > closing_day:
         close_year, close_month = shift_month(close_year, close_month, 1)
 
     due_year, due_month = shift_month(close_year, close_month, 1)
@@ -907,6 +908,7 @@ class CreditCardListView(APIView):
                     "last4": c.last4,
                     "parent_card_id": c.parent_card_id,
                     "parent_card_last4": c.parent_card.last4 if c.parent_card else None,
+                    "closing_day": c.closing_day,
                     "due_day": c.due_day,
                     "best_purchase_day": c.best_purchase_day,
                     "limit_amount": c.limit_amount,
@@ -927,16 +929,19 @@ class CreditCardCreateView(APIView):
 
         last4 = "".join(ch for ch in str(request.data.get("last4", "")) if ch.isdigit())
         try:
+            closing_day = int(request.data.get("closing_day") or 0)
             due_day = int(request.data.get("due_day") or 0)
-            best_purchase_day = int(request.data.get("best_purchase_day") or 0)
+            best_purchase_day = int(request.data.get("best_purchase_day") or closing_day or 1)
         except (TypeError, ValueError):
-            return Response({"error": "Vencimento e fechamento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Fechamento e vencimento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+        if closing_day < 1 or closing_day > 31:
+            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if len(last4) != 4:
             return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
         if due_day < 1 or due_day > 31:
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
-            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+            best_purchase_day = closing_day
         parent_card_id = request.data.get("parent_card_id")
         parent_card = None
         if parent_card_id not in (None, "", "null"):
@@ -950,6 +955,7 @@ class CreditCardCreateView(APIView):
             parent_card=parent_card,
             nickname=str(request.data.get("nickname", "")).strip(),
             last4=last4,
+            closing_day=closing_day,
             due_day=due_day,
             best_purchase_day=best_purchase_day,
             limit_amount=request.data.get("limit_amount") or 0,
@@ -971,16 +977,19 @@ class CreditCardDetailView(APIView):
 
         last4 = "".join(ch for ch in str(request.data.get("last4", card.last4)) if ch.isdigit())
         try:
+            closing_day = int(request.data.get("closing_day") or card.closing_day)
             due_day = int(request.data.get("due_day") or card.due_day)
-            best_purchase_day = int(request.data.get("best_purchase_day") or card.best_purchase_day)
+            best_purchase_day = int(request.data.get("best_purchase_day") or closing_day)
         except (TypeError, ValueError):
-            return Response({"error": "Vencimento e fechamento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Fechamento e vencimento devem ser números válidos"}, status=status.HTTP_400_BAD_REQUEST)
+        if closing_day < 1 or closing_day > 31:
+            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if len(last4) != 4:
             return Response({"error": "Informe os 4 últimos dígitos do cartão"}, status=status.HTTP_400_BAD_REQUEST)
         if due_day < 1 or due_day > 31:
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
-            return Response({"error": "Fechamento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+            best_purchase_day = closing_day
         parent_card_id = request.data.get("parent_card_id")
         new_parent = None
         if parent_card_id not in (None, "", "null"):
@@ -1003,6 +1012,7 @@ class CreditCardDetailView(APIView):
         card.nickname = str(request.data.get("nickname", card.nickname)).strip()
         card.last4 = last4
         card.parent_card = new_parent
+        card.closing_day = closing_day
         card.due_day = due_day
         card.best_purchase_day = best_purchase_day
         card.limit_amount = request.data.get("limit_amount") or 0
