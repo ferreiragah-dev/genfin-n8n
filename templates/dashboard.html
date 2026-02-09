@@ -1644,6 +1644,28 @@ async function load(){
         "Meta sugerida: 6 meses de despesas fixas"
       );
 
+      const fixedPeriodItems = fixedExpensesParsed.filter((item)=>{
+        if(item.is_recurring) return true;
+        return inRange(item.parsedDate, range.start, today);
+      });
+      const fixedPaidItems = fixedPeriodItems.filter((item)=>item.is_paid);
+      const fixedUnpaidItems = fixedPeriodItems.filter((item)=>!item.is_paid);
+      const fixedPaidCount = fixedPaidItems.length;
+      const fixedTotalCount = fixedPeriodItems.length;
+      const fixedPaidAmount = fixedPaidItems.reduce((sum, item)=>sum + item.amountNumber, 0);
+      const fixedUnpaidAmount = fixedUnpaidItems.reduce((sum, item)=>sum + item.amountNumber, 0);
+      const fixedPaidPctRaw = fixedTotalCount > 0 ? (fixedPaidCount / fixedTotalCount) * 100 : 0;
+      renderMiniDonut(
+        "fixedPaidChart",
+        fixedPaidPctRaw,
+        fixedPaidAmount,
+        "#22c55e",
+        `${fixedPaidCount}/${fixedTotalCount}`,
+        "fixedPaidHint",
+        `${formatCurrency(fixedPaidAmount)} pago | ${formatCurrency(fixedUnpaidAmount)} faltante`
+      );
+      document.getElementById("fixedPaidCount").innerText = `${fixedPaidCount}/${fixedTotalCount} pagas`;
+
       const vehicleMonthlyCost = Number(vehicleSummaryData.monthly_total || 0);
       document.getElementById("vehicle_monthly_cost").innerText = formatCurrency(vehicleMonthlyCost);
       const vehicleCostPct = despesaPeriodo > 0 ? (vehicleMonthlyCost / despesaPeriodo) * 100 : 0;
@@ -2268,6 +2290,12 @@ document.addEventListener("DOMContentLoaded", load);
               <h5>Reserva para Fixas</h5>
               <canvas id="fixedReserveChart"></canvas>
               <small id="fixedReserveHint">Meta sugerida: 6 meses de despesas fixas</small>
+            </div>
+            <div class="mini-card card-donut">
+              <h5>Contas Fixas Pagas</h5>
+              <canvas id="fixedPaidChart"></canvas>
+              <strong id="fixedPaidCount">0/0 pagas</strong>
+              <small id="fixedPaidHint">R$ 0,00 pago | R$ 0,00 faltante</small>
             </div>
             <div class="mini-card card-donut">
               <h5>Peso Veículos</h5>

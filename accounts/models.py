@@ -68,6 +68,7 @@ class PlannedExpense(models.Model):
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     is_recurring = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

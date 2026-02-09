@@ -431,6 +431,7 @@ class PlannerListView(APIView):
                     "description": p.description,
                     "amount": p.amount,
                     "is_recurring": p.is_recurring,
+                    "is_paid": p.is_paid,
                 }
                 for p in data
             ]
@@ -794,6 +795,7 @@ class PlannerCreateView(APIView):
             description=request.data.get("description", ""),
             amount=amount,
             is_recurring=parse_bool(request.data.get("is_recurring", False)),
+            is_paid=parse_bool(request.data.get("is_paid", False)),
         )
 
         return Response(
@@ -905,6 +907,7 @@ class PlannerDetailView(APIView):
         planned.description = request.data.get("description", "")
         planned.amount = amount
         planned.is_recurring = parse_bool(request.data.get("is_recurring", False))
+        planned.is_paid = parse_bool(request.data.get("is_paid", False))
         planned.save()
 
         return Response({"message": "Despesa fixa atualizada"}, status=status.HTTP_200_OK)
