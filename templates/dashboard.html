@@ -204,6 +204,9 @@ body{
   border-radius:12px;
   padding:10px;
 }
+.top5-inline{
+  margin-top:8px;
+}
 .calendar-head{
   display:flex;
   justify-content:space-between;
@@ -2849,6 +2852,10 @@ document.addEventListener("DOMContentLoaded", load);
   <div class="week-calendar-grid">
     <div class="week-box">
       <canvas id="heatmapWeek"></canvas>
+      <div class="top5-inline">
+        <h3 style="margin:12px 0 8px">Top 5 Maiores Gastos</h3>
+        <div id="top5"></div>
+      </div>
     </div>
     <div class="calendar-box">
       <div class="calendar-head">
@@ -2859,12 +2866,6 @@ document.addEventListener("DOMContentLoaded", load);
     </div>
   </div>
 </div>
-
-<div class="panel">
-  <h3>Top 5 Maiores Gastos</h3>
-  <div id="top5"></div>
-</div>
-
 
     </div>
 
