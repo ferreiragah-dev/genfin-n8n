@@ -345,9 +345,26 @@ async function loadSummary(){
   document.getElementById("card_count").textContent = String(data.card_count || 0);
   document.getElementById("card_spent").textContent = formatCurrency(data.total_spent || 0);
   document.getElementById("card_usage").textContent = `${Number(data.usage_percent || 0).toFixed(1)}%`;
-  const estimatedPoints = Number(data.estimated_points ?? data.estimated_miles ?? 0);
+  let usdRate = Number(data.usd_brl_rate || 0);
+  if(!(usdRate > 0)){
+    try{
+      const fxResponse = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL");
+      if(fxResponse.ok){
+        const fxData = await fxResponse.json();
+        usdRate = Number((((fxData || {}).USDBRL || {}).bid) || 0);
+      }
+    } catch(_error){}
+  }
+  let estimatedPoints = Number(data.estimated_points ?? data.estimated_miles ?? 0);
+  if(!(estimatedPoints > 0) && usdRate > 0){
+    const pointsBase = Number(data.points_brl_base || 0);
+    estimatedPoints = pointsBase / usdRate;
+  }
   document.getElementById("card_miles").textContent = estimatedPoints.toLocaleString("pt-BR", {maximumFractionDigits:2});
-  const rateText = data.usd_brl_rate ? `USD/BRL: ${Number(data.usd_brl_rate).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:4})}` : "USD/BRL indisponivel";
+  const sourceText = data.usd_brl_source === "fallback" ? " (fallback)" : "";
+  const rateText = usdRate > 0
+    ? `USD/BRL: ${usdRate.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:4})}${sourceText}`
+    : "USD/BRL indisponivel";
   document.getElementById("card_rate").textContent = rateText;
 
   const billsBox = document.getElementById("billList");
@@ -532,4 +549,3 @@ document.addEventListener("DOMContentLoaded", init);
 </div>
 </body>
 </html>
-

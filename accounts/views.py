@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 import json
+import os
 from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -76,6 +77,7 @@ def shift_month(year, month, delta):
 
 def fetch_usd_brl_quote():
     url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+    fallback_rate = float(os.getenv("GENFIN_USD_BRL_FALLBACK", "5.2"))
     try:
         req = urllib_request.Request(
             url,
@@ -92,15 +94,22 @@ def fetch_usd_brl_quote():
         raw_rate = bid if bid is not None else ask
         rate = float(raw_rate) if raw_rate is not None else 0.0
         if rate <= 0:
-            return None
+            raise ValueError("USD/BRL invalido")
         return {
             "rate": rate,
             "timestamp": quote.get("timestamp"),
             "create_date": quote.get("create_date"),
             "name": quote.get("name"),
+            "source": "awesomeapi",
         }
     except Exception:
-        return None
+        return {
+            "rate": fallback_rate if fallback_rate > 0 else 5.2,
+            "timestamp": None,
+            "create_date": None,
+            "name": "Cotacao fallback",
+            "source": "fallback",
+        }
 
 
 def card_invoice_period_and_due(card, purchase_date):
@@ -1308,6 +1317,7 @@ class CreditCardSummaryView(APIView):
                 "usd_brl_timestamp": (usd_brl_quote or {}).get("timestamp"),
                 "usd_brl_create_date": (usd_brl_quote or {}).get("create_date"),
                 "usd_brl_name": (usd_brl_quote or {}).get("name"),
+                "usd_brl_source": (usd_brl_quote or {}).get("source"),
                 "points_brl_base": round(points_brl_base, 4),
                 "estimated_points": round(points_total, 2),
                 "estimated_miles": round(points_total, 2),
