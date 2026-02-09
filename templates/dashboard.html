@@ -192,6 +192,60 @@ body{
 .panel-compact canvas{
   max-height: 140px;
 }
+.week-calendar-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  align-items:start;
+}
+.week-box,.calendar-box{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.calendar-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  color:#94a3b8;
+  font-size:12px;
+}
+.calendar-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:6px;
+}
+.calendar-dow{
+  font-size:10px;
+  color:#94a3b8;
+  text-align:center;
+}
+.calendar-day{
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:8px;
+  min-height:56px;
+  padding:5px;
+  font-size:10px;
+  color:#cbd5e1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.calendar-day.empty{
+  opacity:.4;
+}
+.calendar-day .num{
+  font-weight:600;
+}
+.calendar-day .val{
+  color:#fca5a5;
+}
+.calendar-day.has-expense{
+  border-color:rgba(239,68,68,.45);
+  box-shadow:0 0 0 1px rgba(239,68,68,.2) inset;
+}
 
 /* CARDS PRINCIPAIS */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
@@ -562,6 +616,10 @@ body.theme-light .cc-last4,
 body.theme-light .cc-meta,
 body.theme-light .cc-empty{color:#475569}
 body.theme-light .cc-bar{background:#dbe7ff}
+body.theme-light .week-box,
+body.theme-light .calendar-box{background:linear-gradient(180deg,#ffffff,#f8fbff)}
+body.theme-light .calendar-day{color:#334155;border-color:rgba(100,116,139,.28)}
+body.theme-light .calendar-day .val{color:#b91c1c}
 body.theme-light .month-chip.active,
 body.theme-light .period-btn.active,
 body.theme-light .theme-btn.active{
@@ -593,6 +651,7 @@ body.theme-light .notif-item{color:#1e293b}
   .cc-grid{grid-template-columns:1fr}
   .intel-grid{grid-template-columns:1fr}
   .intel-right{grid-template-columns:1fr}
+  .week-calendar-grid{grid-template-columns:1fr}
   .eff-grid{grid-template-columns:1fr}
   .eff-metrics{grid-template-columns:1fr}
   .eff-charts{grid-template-columns:1fr}
@@ -1637,6 +1696,50 @@ async function load(){
         topBox.textContent = "Sem dados no periodo selecionado.";
       }
     }
+    function renderExpenseCalendar(year, month, expenseEntries){
+      const root = document.getElementById("expenseCalendar");
+      const label = document.getElementById("expenseCalendarLabel");
+      if(!root || !label) return;
+      root.textContent = "";
+      const monthNamesLong = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      label.innerText = `${monthNamesLong[month]}/${year}`;
+
+      const dayTotals = {};
+      expenseEntries.forEach((e)=>{
+        if(!e.parsedDate) return;
+        const d = e.parsedDate.getDate();
+        dayTotals[d] = (dayTotals[d] || 0) + Number(e.amountNumber || 0);
+      });
+
+      ["Dom","Seg","Ter","Qua","Qui","Sex","Sab"].forEach((dow)=>{
+        const h = document.createElement("div");
+        h.className = "calendar-dow";
+        h.textContent = dow;
+        root.appendChild(h);
+      });
+
+      const firstDow = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for(let i=0; i<firstDow; i++){
+        const empty = document.createElement("div");
+        empty.className = "calendar-day empty";
+        root.appendChild(empty);
+      }
+      for(let day=1; day<=daysInMonth; day++){
+        const val = Number(dayTotals[day] || 0);
+        const cell = document.createElement("div");
+        cell.className = `calendar-day ${val > 0 ? "has-expense" : ""}`;
+        const num = document.createElement("div");
+        num.className = "num";
+        num.textContent = String(day);
+        const amount = document.createElement("div");
+        amount.className = "val";
+        amount.textContent = val > 0 ? formatCurrency(val) : "-";
+        cell.appendChild(num);
+        cell.appendChild(amount);
+        root.appendChild(cell);
+      }
+    }
     const miniDonutCharts = {};
     const effCharts = {};
     function renderMiniDonut(canvasId, pctRaw, value, color, pctLabel, hintId, hintText){
@@ -2268,6 +2371,7 @@ async function load(){
       });
       const creditCardMonthEntries = buildCreditCardEntriesByCompetence(selectedYear, monthIndex);
       const selectedMonthEntriesForStats = [...selectedMonthEntries, ...creditCardMonthEntries];
+      const selectedMonthExpenseEntries = selectedMonthEntriesForStats.filter((e)=>e.entry_type === "DESPESA");
 
       const receitaMes = sumByType(selectedMonthEntries, "RECEITA");
       const despesaMes = sumByType(selectedMonthEntries, "DESPESA");
@@ -2292,28 +2396,29 @@ async function load(){
       document.getElementById("projecao_fim_mes").innerText = formatCurrency(saldoProjetado);
 
       const weekMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-      selectedMonthEntriesForStats.forEach((e)=>{
-        if(e.entry_type === "DESPESA" && e.parsedDate){
+      selectedMonthExpenseEntries.forEach((e)=>{
+        if(e.parsedDate){
           weekMap[e.parsedDate.getDay()] += e.amountNumber;
         }
       });
       setHeatmap(Object.values(weekMap));
+      renderExpenseCalendar(selectedYear, monthIndex, selectedMonthExpenseEntries);
 
-      const monthStats = statObj(selectedMonthEntriesForStats);
+      const monthStats = statObj(selectedMonthExpenseEntries);
       const last7Start = new Date(selectedMonthEnd.getFullYear(), selectedMonthEnd.getMonth(), selectedMonthEnd.getDate() - 6);
-      const last7Entries = selectedMonthEntriesForStats.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
+      const last7Entries = selectedMonthExpenseEntries.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
       const last7Stats = statObj(last7Entries);
       const prevMonthStart = new Date(selectedYear, monthIndex - 1, 1);
       const prevMonthEnd = new Date(selectedYear, monthIndex, 0);
       const prevMonthEntriesBase = entriesParsed.filter((e)=>inRange(e.parsedDate, prevMonthStart, prevMonthEnd));
       const prevMonthCardEntries = buildCreditCardEntriesByCompetence(prevMonthStart.getFullYear(), prevMonthStart.getMonth());
-      const prevMonthEntries = [...prevMonthEntriesBase, ...prevMonthCardEntries];
+      const prevMonthEntries = [...prevMonthEntriesBase, ...prevMonthCardEntries].filter((e)=>e.entry_type === "DESPESA");
       const prevMonthStats = statObj(prevMonthEntries);
       writeStats("d", monthStats, "chartDaily");
       writeStats("w", last7Stats, "chartWeekly");
       writeStats("m", prevMonthStats, "chartMonthly");
 
-      renderCategoryGauges(selectedMonthEntriesForStats.filter((e)=>e.entry_type === "DESPESA"));
+      renderCategoryGauges(selectedMonthExpenseEntries);
       await loadVehicleSummary(monthIndex + 1, selectedYear);
       await loadCreditCardSummary(monthIndex + 1, selectedYear);
       applyPeriodFilter("month");
@@ -2321,7 +2426,20 @@ async function load(){
 
     const monthBar = document.getElementById("monthFilterBar");
     monthBar.textContent = "";
+    const monthsWithExpenses = new Set();
+    entriesParsed.forEach((e)=>{
+      if(e.entry_type === "DESPESA" && e.parsedDate){
+        monthsWithExpenses.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
+      }
+    });
+    creditCardExpensesParsed.forEach((e)=>{
+      const c = getCreditCardCompetence(e);
+      if(c){
+        monthsWithExpenses.add(`${c.year}-${c.month}`);
+      }
+    });
     monthNames.forEach((name, idx)=>{
+      if(!monthsWithExpenses.has(`${selectedYear}-${idx}`)) return;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "month-chip";
@@ -2330,7 +2448,10 @@ async function load(){
       btn.addEventListener("click", ()=>renderTopSectionByMonth(idx));
       monthBar.appendChild(btn);
     });
-    renderTopSectionByMonth(selectedMonth);
+    const fallbackMonth = monthsWithExpenses.has(`${selectedYear}-${selectedMonth}`)
+      ? selectedMonth
+      : (()=>{ for(let i=11;i>=0;i--){ if(monthsWithExpenses.has(`${selectedYear}-${i}`)) return i; } return selectedMonth; })();
+    renderTopSectionByMonth(fallbackMonth);
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
@@ -2735,7 +2856,18 @@ document.addEventListener("DOMContentLoaded", load);
 
 <div class="panel panel-compact">
   <h3>Gastos por Dia da Semana</h3>
-  <canvas id="heatmapWeek"></canvas>
+  <div class="week-calendar-grid">
+    <div class="week-box">
+      <canvas id="heatmapWeek"></canvas>
+    </div>
+    <div class="calendar-box">
+      <div class="calendar-head">
+        <span>Calendário de Gastos</span>
+        <small id="expenseCalendarLabel"></small>
+      </div>
+      <div id="expenseCalendar" class="calendar-grid"></div>
+    </div>
+  </div>
 </div>
 
 <div class="panel">
