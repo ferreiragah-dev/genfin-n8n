@@ -283,6 +283,7 @@ body{
 .period-btn.active{background:#38bdf8;color:#04111d}
 .intel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
 .intel-left,.intel-right{display:grid;gap:12px}
+.intel-left{align-content:start}
 .intel-right{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
 .mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
 .mini-card{
@@ -291,6 +292,7 @@ body{
   border-radius:14px;
   padding:10px;
 }
+.intel-left .mini-cards .mini-card{min-height:104px}
 .mini-card-link{
   color:inherit;
   text-decoration:none;
@@ -2259,8 +2261,6 @@ document.addEventListener("DOMContentLoaded", load);
                 <h5>Tendência Saldo</h5>
                 <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
               </div>
-            </div>
-            <div class="mini-cards">
               <div class="mini-card">
                 <h5>Runway Pessoal</h5>
                 <strong id="runwayValue">0 dias</strong>
