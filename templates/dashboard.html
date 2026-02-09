@@ -1641,16 +1641,22 @@ async function load(){
           const c = getCreditCardCompetence(item);
           return c && c.year === year && c.month === month;
         })
-        .map((item)=>({
-          id: `cc-${item.id}`,
-          date: item.date,
-          category: item.category || "Cartão de crédito",
-          entry_type: "DESPESA",
-          amount: item.amountNumber,
-          amountNumber: item.amountNumber,
-          parsedDate: item.parsedDate,
-          is_credit_card: true,
-        }));
+        .map((item)=>{
+          const sourceDay = item.parsedDate ? item.parsedDate.getDate() : 1;
+          const lastDay = new Date(year, month + 1, 0).getDate();
+          const visualDay = Math.max(1, Math.min(sourceDay, lastDay));
+          const competenceDate = new Date(year, month, visualDay);
+          return {
+            id: `cc-${item.id}`,
+            date: item.date,
+            category: item.category || "Cartão de crédito",
+            entry_type: "DESPESA",
+            amount: item.amountNumber,
+            amountNumber: item.amountNumber,
+            parsedDate: competenceDate,
+            is_credit_card: true,
+          };
+        });
     }
     function recurringLargest(){
       const items = fixedExpensesParsed.filter((e)=>e.is_recurring);
