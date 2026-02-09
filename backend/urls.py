@@ -13,6 +13,7 @@ from accounts.views import (
     logout_page,
     reserves_page,
     transactions_page,
+    vehicles_page,
 )
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path("fixed-expenses/", fixed_expenses_page),
     path("fixed-incomes/", fixed_incomes_page),
     path("reserves/", reserves_page),
+    path("vehicles/", vehicles_page),
 ]

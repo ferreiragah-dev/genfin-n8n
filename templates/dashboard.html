@@ -1321,6 +1321,7 @@ async function load(){
     let fixedExpenses = [];
     let fixedIncomes = [];
     let reserves = [];
+    let vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
     try{
       fixedExpenses = await fetchJson("/api/planner/");
     } catch (plannerError){
@@ -1335,6 +1336,14 @@ async function load(){
       reserves = await fetchJson("/api/reserves/");
     } catch (reserveError){
       console.error("Falha ao carregar reservas:", reserveError);
+    }
+    async function loadVehicleSummary(month, year){
+      try{
+        vehicleSummaryData = await fetchJson(`/api/vehicles/summary/?month=${month}&year=${year}`);
+      } catch (vehicleError){
+        console.error("Falha ao carregar resumo de veículos:", vehicleError);
+        vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
+      }
     }
 
     const fixedByCategory = {};
@@ -1633,6 +1642,19 @@ async function load(){
         `${reserveMonths.toFixed(1)}m`,
         "fixedReserveHint",
         "Meta sugerida: 6 meses de despesas fixas"
+      );
+
+      const vehicleMonthlyCost = Number(vehicleSummaryData.monthly_total || 0);
+      document.getElementById("vehicle_monthly_cost").innerText = formatCurrency(vehicleMonthlyCost);
+      const vehicleCostPct = despesaPeriodo > 0 ? (vehicleMonthlyCost / despesaPeriodo) * 100 : 0;
+      renderMiniDonut(
+        "vehicleCostDonut",
+        vehicleCostPct,
+        vehicleMonthlyCost,
+        "#38bdf8",
+        `${Math.round(vehicleCostPct)}%`,
+        "vehicleCostHint",
+        `Veículos: ${formatCurrency(vehicleMonthlyCost)} no mês`
       );
 
       const largestRecurring = recurringLargest();
@@ -2019,7 +2041,7 @@ async function load(){
       btn.addEventListener("click", ()=>applyPeriodFilter(btn.dataset.period));
     });
 
-    function renderTopSectionByMonth(monthIndex){
+    async function renderTopSectionByMonth(monthIndex){
       selectedMonth = monthIndex;
       document.querySelectorAll(".month-chip").forEach((chip)=>{
         chip.classList.toggle("active", Number(chip.dataset.month) === monthIndex);
@@ -2074,6 +2096,7 @@ async function load(){
       writeStats("m", prevMonthStats, "chartMonthly");
 
       renderCategoryGauges(selectedMonthEntries.filter((e)=>e.entry_type === "DESPESA"));
+      await loadVehicleSummary(monthIndex + 1, selectedYear);
       applyPeriodFilter("month");
     }
 
@@ -2106,6 +2129,7 @@ document.addEventListener("DOMContentLoaded", load);
     <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
     <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
     <a class="side-link" href="/reserves/">Reservas</a>
+    <a class="side-link" href="/vehicles/">Veículos</a>
   </aside>
 
 <div class="container">
@@ -2180,7 +2204,7 @@ document.addEventListener("DOMContentLoaded", load);
         <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
         <div class="card"><span>Projeção Fim do Mês</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
-        <div class="card"><span>—</span><strong class="blue">—</strong></div>
+        <div class="card"><span>Custo Mensal Veículo</span><strong class="blue" id="vehicle_monthly_cost">R$ 0</strong></div>
       </div>
 
       <div class="panel">
@@ -2244,6 +2268,11 @@ document.addEventListener("DOMContentLoaded", load);
               <h5>Reserva para Fixas</h5>
               <canvas id="fixedReserveChart"></canvas>
               <small id="fixedReserveHint">Meta sugerida: 6 meses de despesas fixas</small>
+            </div>
+            <div class="mini-card card-donut">
+              <h5>Peso Veículos</h5>
+              <canvas id="vehicleCostDonut"></canvas>
+              <small id="vehicleCostHint">Veículos: R$ 0,00 no mês</small>
             </div>
           </div>
         </div>
@@ -2515,3 +2544,5 @@ document.addEventListener("DOMContentLoaded", load);
 </div>
 </body>
 </html>
+
+

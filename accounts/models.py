@@ -109,3 +109,56 @@ class PlannedReserve(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.category} - {self.amount}"
+
+
+class Vehicle(models.Model):
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="vehicles"
+    )
+    name = models.CharField(max_length=80)
+    brand = models.CharField(max_length=80, blank=True, default="")
+    model = models.CharField(max_length=80, blank=True, default="")
+    year = models.PositiveIntegerField(null=True, blank=True)
+    fipe_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    fipe_variation_percent = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    documentation_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ipva_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    licensing_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    financing_remaining_installments = models.PositiveIntegerField(default=0)
+    financing_installment_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.brand} {self.model})".strip()
+
+
+class VehicleExpense(models.Model):
+    EXPENSE_TYPE_CHOICES = (
+        ("COMBUSTIVEL", "Combustível"),
+        ("MANUTENCAO", "Manutenção"),
+        ("SEGURO", "Seguro"),
+        ("PEDAGIO", "Pedágio"),
+        ("ESTACIONAMENTO", "Estacionamento"),
+        ("OUTRO", "Outro"),
+    )
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="vehicle_expenses"
+    )
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name="expenses"
+    )
+    date = models.DateField()
+    expense_type = models.CharField(max_length=30, choices=EXPENSE_TYPE_CHOICES)
+    description = models.TextField(blank=True, default="")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vehicle.name} - {self.expense_type} - {self.amount}"

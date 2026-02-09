@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FinancialEntry, PlannedExpense, PlannedIncome, PlannedReserve, UserAccount
+from .models import FinancialEntry, PlannedExpense, PlannedIncome, PlannedReserve, UserAccount, Vehicle, VehicleExpense
 
 
 def get_logged_user(request):
@@ -295,6 +295,13 @@ def reserves_page(request):
 
 
 @ensure_csrf_cookie
+def vehicles_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "vehicles.html")
+
+
+@ensure_csrf_cookie
 def logout_page(request):
     request.session.flush()
     return redirect("/login/")
@@ -473,6 +480,293 @@ class PlannedReserveListView(APIView):
                 }
                 for p in data
             ]
+        )
+
+
+class VehicleListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.vehicles.all().order_by("-created_at")
+        return Response(
+            [
+                {
+                    "id": v.id,
+                    "name": v.name,
+                    "brand": v.brand,
+                    "model": v.model,
+                    "year": v.year,
+                    "fipe_value": v.fipe_value,
+                    "fipe_variation_percent": v.fipe_variation_percent,
+                    "documentation_cost": v.documentation_cost,
+                    "ipva_cost": v.ipva_cost,
+                    "licensing_cost": v.licensing_cost,
+                    "financing_remaining_installments": v.financing_remaining_installments,
+                    "financing_installment_value": v.financing_installment_value,
+                }
+                for v in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        name = str(request.data.get("name", "")).strip()
+        if not name:
+            return Response({"error": "name e obrigatorio"}, status=status.HTTP_400_BAD_REQUEST)
+
+        vehicle = Vehicle.objects.create(
+            user=user,
+            name=name,
+            brand=request.data.get("brand", "") or "",
+            model=request.data.get("model", "") or "",
+            year=request.data.get("year") or None,
+            fipe_value=request.data.get("fipe_value") or 0,
+            fipe_variation_percent=request.data.get("fipe_variation_percent") or 0,
+            documentation_cost=request.data.get("documentation_cost") or 0,
+            ipva_cost=request.data.get("ipva_cost") or 0,
+            licensing_cost=request.data.get("licensing_cost") or 0,
+            financing_remaining_installments=request.data.get("financing_remaining_installments") or 0,
+            financing_installment_value=request.data.get("financing_installment_value") or 0,
+        )
+        return Response({"message": "Veiculo criado", "id": vehicle.id}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleDetailView(APIView):
+    def put(self, request, vehicle_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        name = str(request.data.get("name", "")).strip()
+        if not name:
+            return Response({"error": "name e obrigatorio"}, status=status.HTTP_400_BAD_REQUEST)
+
+        vehicle.name = name
+        vehicle.brand = request.data.get("brand", "") or ""
+        vehicle.model = request.data.get("model", "") or ""
+        vehicle.year = request.data.get("year") or None
+        vehicle.fipe_value = request.data.get("fipe_value") or 0
+        vehicle.fipe_variation_percent = request.data.get("fipe_variation_percent") or 0
+        vehicle.documentation_cost = request.data.get("documentation_cost") or 0
+        vehicle.ipva_cost = request.data.get("ipva_cost") or 0
+        vehicle.licensing_cost = request.data.get("licensing_cost") or 0
+        vehicle.financing_remaining_installments = request.data.get("financing_remaining_installments") or 0
+        vehicle.financing_installment_value = request.data.get("financing_installment_value") or 0
+        vehicle.save()
+        return Response({"message": "Veiculo atualizado"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, vehicle_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        vehicle.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VehicleExpenseListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.vehicle_expenses.select_related("vehicle").all().order_by("-date")
+        vehicle_id = request.query_params.get("vehicle_id")
+        if vehicle_id:
+            data = data.filter(vehicle_id=vehicle_id)
+
+        return Response(
+            [
+                {
+                    "id": e.id,
+                    "vehicle_id": e.vehicle_id,
+                    "vehicle_name": e.vehicle.name,
+                    "date": e.date.strftime("%Y-%m-%d"),
+                    "expense_type": e.expense_type,
+                    "description": e.description,
+                    "amount": e.amount,
+                    "is_recurring": e.is_recurring,
+                }
+                for e in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleExpenseCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        vehicle_id = request.data.get("vehicle_id")
+        date = request.data.get("date")
+        expense_type = request.data.get("expense_type")
+        amount = request.data.get("amount")
+        if not vehicle_id or not date or not expense_type or amount in (None, ""):
+            return Response({"error": "vehicle_id, date, expense_type e amount sao obrigatorios"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        item = VehicleExpense.objects.create(
+            user=user,
+            vehicle=vehicle,
+            date=date,
+            expense_type=expense_type,
+            description=request.data.get("description", "") or "",
+            amount=amount,
+            is_recurring=parse_bool(request.data.get("is_recurring", False)),
+        )
+        return Response({"message": "Gasto criado", "id": item.id}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleExpenseDetailView(APIView):
+    def put(self, request, expense_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            item = user.vehicle_expenses.get(id=expense_id)
+        except VehicleExpense.DoesNotExist:
+            return Response({"error": "Gasto nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicle_id = request.data.get("vehicle_id")
+        if vehicle_id:
+            try:
+                item.vehicle = user.vehicles.get(id=vehicle_id)
+            except Vehicle.DoesNotExist:
+                return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        date = request.data.get("date")
+        expense_type = request.data.get("expense_type")
+        amount = request.data.get("amount")
+        if not date or not expense_type or amount in (None, ""):
+            return Response({"error": "date, expense_type e amount sao obrigatorios"}, status=status.HTTP_400_BAD_REQUEST)
+
+        item.date = date
+        item.expense_type = expense_type
+        item.description = request.data.get("description", "") or ""
+        item.amount = amount
+        item.is_recurring = parse_bool(request.data.get("is_recurring", False))
+        item.save()
+        return Response({"message": "Gasto atualizado"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, expense_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            item = user.vehicle_expenses.get(id=expense_id)
+        except VehicleExpense.DoesNotExist:
+            return Response({"error": "Gasto nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VehicleSummaryView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        today = timezone.now().date()
+        try:
+            month = int(request.query_params.get("month", today.month))
+        except ValueError:
+            month = today.month
+        try:
+            year = int(request.query_params.get("year", today.year))
+        except ValueError:
+            year = today.year
+
+        vehicles = list(user.vehicles.all())
+        recurring_expenses = user.vehicle_expenses.filter(is_recurring=True)
+        month_expenses = user.vehicle_expenses.filter(date__year=year, date__month=month, is_recurring=False)
+
+        by_category = {
+            "COMBUSTIVEL": 0,
+            "MANUTENCAO": 0,
+            "SEGURO": 0,
+            "PEDAGIO": 0,
+            "ESTACIONAMENTO": 0,
+            "OUTRO": 0,
+            "DOCUMENTACAO": 0,
+            "IPVA": 0,
+            "LICENCIAMENTO": 0,
+            "FINANCIAMENTO": 0,
+        }
+
+        vehicle_totals = []
+        monthly_total = 0
+        for v in vehicles:
+            base_doc = float(v.documentation_cost or 0) / 12
+            base_ipva = float(v.ipva_cost or 0) / 12
+            base_lic = float(v.licensing_cost or 0) / 12
+            financing = float(v.financing_installment_value or 0) if int(v.financing_remaining_installments or 0) > 0 else 0
+
+            recurrent_total = sum(float(e.amount or 0) for e in recurring_expenses.filter(vehicle=v))
+            month_total = sum(float(e.amount or 0) for e in month_expenses.filter(vehicle=v))
+
+            vehicle_monthly_total = base_doc + base_ipva + base_lic + financing + recurrent_total + month_total
+            monthly_total += vehicle_monthly_total
+
+            by_category["DOCUMENTACAO"] += base_doc
+            by_category["IPVA"] += base_ipva
+            by_category["LICENCIAMENTO"] += base_lic
+            by_category["FINANCIAMENTO"] += financing
+            for e in recurring_expenses.filter(vehicle=v):
+                by_category[e.expense_type] += float(e.amount or 0)
+            for e in month_expenses.filter(vehicle=v):
+                by_category[e.expense_type] += float(e.amount or 0)
+
+            vehicle_totals.append(
+                {
+                    "vehicle_id": v.id,
+                    "name": v.name,
+                    "monthly_cost": round(vehicle_monthly_total, 2),
+                    "fipe_value": float(v.fipe_value or 0),
+                    "fipe_variation_percent": float(v.fipe_variation_percent or 0),
+                    "financing_remaining_installments": int(v.financing_remaining_installments or 0),
+                }
+            )
+
+        category_rows = [
+            {"category": k, "total": round(val, 2)}
+            for k, val in by_category.items()
+            if val > 0
+        ]
+        category_rows.sort(key=lambda x: x["total"], reverse=True)
+        vehicle_totals.sort(key=lambda x: x["monthly_cost"], reverse=True)
+
+        return Response(
+            {
+                "month": month,
+                "year": year,
+                "monthly_total": round(monthly_total, 2),
+                "vehicle_count": len(vehicles),
+                "by_category": category_rows,
+                "vehicle_totals": vehicle_totals,
+            }
         )
 
 

@@ -1,0 +1,526 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Veiculos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --panel:#0b1224;
+  --border:rgba(56,189,248,.15);
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --blue:#38bdf8;
+  --red:#ef4444;
+  --green:#22c55e;
+  --yellow:#eab308;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.app-shell{display:grid;grid-template-columns:220px 1fr;gap:14px;min-height:100vh;padding:14px}
+.sidebar{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:14px;display:grid;align-content:start;gap:10px}
+.sidebar h4{margin:2px 0 8px;color:#94a3b8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.side-link{text-decoration:none;color:#cbd5e1;border:1px solid rgba(56,189,248,.2);background:linear-gradient(180deg,#0b1224,#020617);border-radius:12px;padding:10px 12px;font-size:13px}
+.container{padding:20px;display:grid;gap:20px}
+.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header-right{display:flex;align-items:center;gap:10px}
+.theme-switch{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px;background:linear-gradient(180deg,#0b1224,#020617)}
+.theme-btn{border:0;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;background:transparent;color:#cbd5e1}
+.theme-btn.active{background:#38bdf8;color:#04111d}
+.visibility-btn,.icon-link{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.visibility-btn.active{border-color:rgba(234,179,8,.55);color:#fde68a}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
+.month-wrap{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:12px}
+.month-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.month-head small{color:#94a3b8}
+.month-bar{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+.month-chip{border:1px solid var(--border);background:#0b1224;color:#cbd5e1;border-radius:999px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
+.month-chip.active{background:#38bdf8;color:#04111d}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{background:linear-gradient(180deg,#0b1224,#020617);border:1px solid var(--border);border-radius:16px;padding:16px}
+.card span{color:var(--muted);font-size:12px}
+.card strong{display:block;font-size:22px;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:20px}
+.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
+h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+input,textarea,select{width:100%;background:#0b1224;color:var(--text);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;font:inherit}
+textarea{resize:vertical;min-height:62px}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.checkbox-row input[type="checkbox"]{width:auto;accent-color:#38bdf8}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--blue);color:#04111d}
+.btn-secondary{background:#1e293b;color:#cbd5e1}
+.btn-danger{background:var(--red);color:#fff}
+.btn-warning{background:var(--yellow);color:#111827}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;vertical-align:top}
+th{color:#9ca3af;text-align:left}
+.row-actions{display:flex;gap:8px}
+.message{font-size:12px;color:var(--green);margin-top:8px;min-height:16px}
+body.values-hidden .card strong, body.values-hidden tbody td:nth-child(4){filter:blur(6px);user-select:none}
+body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--yellow:#ca8a04}
+body.theme-light .header,body.theme-light .panel,body.theme-light .month-wrap,body.theme-light .card,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .visibility-btn,body.theme-light .icon-link,body.theme-light input,body.theme-light textarea,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn,body.theme-light .month-chip{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#0f172a}
+body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light .month-head small,body.theme-light #selectedMonthLabel,body.theme-light .card span,body.theme-light .sidebar h4{color:#334155}
+body.theme-light .month-head strong{color:#334155 !important}
+body.theme-light .month-chip.active,body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .icon-link.logout{color:#dc2626}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}}
+@media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}.sidebar h4{display:none}.container{padding:12px;gap:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}.header-right{width:100%;flex-wrap:wrap;gap:8px}.panel{padding:12px}.cards{grid-template-columns:1fr}}
+@media(max-width:520px){.theme-btn{padding:5px 8px;font-size:11px}.visibility-btn,.icon-link{width:32px;height:32px}th,td{font-size:11px;padding:7px 6px}.month-chip{padding:6px 10px;font-size:11px}.card strong{font-size:18px}}
+</style>
+<script>
+let editingVehicleId = null;
+let editingExpenseId = null;
+let selectedMonth = new Date().getMonth();
+let selectedYear = new Date().getFullYear();
+
+function formatCurrency(value){
+  return "R$ " + Number(value || 0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function getCsrfToken(){
+  const token = document.cookie.split("; ").find((row)=>row.startsWith("csrftoken="));
+  return token ? decodeURIComponent(token.split("=")[1]) : "";
+}
+async function parseError(response, fallback){
+  try{ const data = await response.json(); if(data && data.error) return data.error; } catch(_error){}
+  return fallback;
+}
+function setMessage(id, text, isError){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.color = isError ? "#ef4444" : "#22c55e";
+}
+function initUiPrefs(){
+  const visibilityBtn = document.getElementById("visibilityToggleBtn");
+  const dayBtn = document.getElementById("themeDayBtn");
+  const nightBtn = document.getElementById("themeNightBtn");
+  const applyHidden = (hidden)=>{
+    document.body.classList.toggle("values-hidden", hidden);
+    visibilityBtn.classList.toggle("active", hidden);
+    visibilityBtn.textContent = hidden ? "🙈" : "👁";
+  };
+  const applyTheme = (mode)=>{
+    const isLight = mode === "light";
+    document.body.classList.toggle("theme-light", isLight);
+    dayBtn.classList.toggle("active", isLight);
+    nightBtn.classList.toggle("active", !isLight);
+  };
+  applyHidden(localStorage.getItem("genfin_values_hidden") === "1");
+  applyTheme(localStorage.getItem("genfin_theme_mode") === "light" ? "light" : "dark");
+  visibilityBtn.addEventListener("click", ()=>{
+    const hidden = !document.body.classList.contains("values-hidden");
+    localStorage.setItem("genfin_values_hidden", hidden ? "1" : "0");
+    applyHidden(hidden);
+  });
+  dayBtn.addEventListener("click", ()=>{localStorage.setItem("genfin_theme_mode", "light"); applyTheme("light");});
+  nightBtn.addEventListener("click", ()=>{localStorage.setItem("genfin_theme_mode", "dark"); applyTheme("dark");});
+}
+
+async function loadVehicles(){
+  const response = await fetch("/api/vehicles/", {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar veiculos");
+  const items = await response.json();
+  const tbody = document.getElementById("vehicleRows");
+  const select = document.getElementById("expense_vehicle_id");
+  tbody.textContent = "";
+  select.textContent = "";
+
+  if(items.length === 0){
+    tbody.innerHTML = '<tr><td colspan="8">Sem veículos cadastrados.</td></tr>';
+  }
+
+  items.forEach((v)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${v.name}</td>
+      <td>${v.brand || "-"} ${v.model || ""}</td>
+      <td>${v.year || "-"}</td>
+      <td>${formatCurrency(v.fipe_value)}</td>
+      <td>${Number(v.fipe_variation_percent || 0).toFixed(2)}%</td>
+      <td>${v.financing_remaining_installments || 0}</td>
+      <td>${formatCurrency(v.financing_installment_value)}</td>
+      <td><div class="row-actions"><button class="btn-secondary">Editar</button><button class="btn-danger">Remover</button></div></td>
+    `;
+    const [editBtn, delBtn] = tr.querySelectorAll("button");
+    editBtn.addEventListener("click", ()=>fillVehicleForm(v));
+    delBtn.addEventListener("click", ()=>deleteVehicle(v.id));
+    tbody.appendChild(tr);
+
+    const option = document.createElement("option");
+    option.value = v.id;
+    option.textContent = v.name;
+    select.appendChild(option);
+  });
+}
+
+function fillVehicleForm(v){
+  editingVehicleId = v.id;
+  document.getElementById("vehicle_form_title").textContent = "Editar Veículo";
+  const map = {
+    vehicle_name: v.name,
+    vehicle_brand: v.brand,
+    vehicle_model: v.model,
+    vehicle_year: v.year || "",
+    vehicle_fipe_value: v.fipe_value,
+    vehicle_fipe_variation: v.fipe_variation_percent,
+    vehicle_documentation_cost: v.documentation_cost,
+    vehicle_ipva_cost: v.ipva_cost,
+    vehicle_licensing_cost: v.licensing_cost,
+    vehicle_financing_remaining: v.financing_remaining_installments,
+    vehicle_financing_value: v.financing_installment_value,
+  };
+  Object.entries(map).forEach(([id,val])=>{ document.getElementById(id).value = val ?? ""; });
+  document.getElementById("cancelVehicleEdit").style.display = "inline-block";
+}
+
+function resetVehicleForm(){
+  editingVehicleId = null;
+  document.getElementById("vehicle_form_title").textContent = "Adicionar Veículo";
+  document.getElementById("vehicleForm").reset();
+  document.getElementById("cancelVehicleEdit").style.display = "none";
+}
+
+async function deleteVehicle(id){
+  if(!confirm("Remover este veículo?")) return;
+  const response = await fetch(`/api/vehicles/${id}/`, {method:"DELETE", credentials:"same-origin", headers:{"X-CSRFToken":getCsrfToken()}});
+  if(!response.ok){ setMessage("vehicleMessage", await parseError(response, "Erro ao remover veículo."), true); return; }
+  setMessage("vehicleMessage", "Veículo removido.", false);
+  if(editingVehicleId === id) resetVehicleForm();
+  await refreshAll();
+}
+
+async function submitVehicleForm(event){
+  event.preventDefault();
+  const payload = {
+    name: document.getElementById("vehicle_name").value.trim(),
+    brand: document.getElementById("vehicle_brand").value.trim(),
+    model: document.getElementById("vehicle_model").value.trim(),
+    year: document.getElementById("vehicle_year").value || null,
+    fipe_value: document.getElementById("vehicle_fipe_value").value || 0,
+    fipe_variation_percent: document.getElementById("vehicle_fipe_variation").value || 0,
+    documentation_cost: document.getElementById("vehicle_documentation_cost").value || 0,
+    ipva_cost: document.getElementById("vehicle_ipva_cost").value || 0,
+    licensing_cost: document.getElementById("vehicle_licensing_cost").value || 0,
+    financing_remaining_installments: document.getElementById("vehicle_financing_remaining").value || 0,
+    financing_installment_value: document.getElementById("vehicle_financing_value").value || 0,
+  };
+  const url = editingVehicleId ? `/api/vehicles/${editingVehicleId}/` : "/api/vehicles/create/";
+  const method = editingVehicleId ? "PUT" : "POST";
+  const response = await fetch(url, {method, credentials:"same-origin", headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()}, body: JSON.stringify(payload)});
+  if(!response.ok){ setMessage("vehicleMessage", await parseError(response, "Erro ao salvar veículo."), true); return; }
+  setMessage("vehicleMessage", editingVehicleId ? "Veículo atualizado." : "Veículo criado.", false);
+  resetVehicleForm();
+  await refreshAll();
+}
+
+async function loadExpenses(){
+  const response = await fetch("/api/vehicle-expenses/", {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar gastos");
+  const items = await response.json();
+  const tbody = document.getElementById("expenseRows");
+  tbody.textContent = "";
+  if(items.length === 0){ tbody.innerHTML = '<tr><td colspan="8">Sem gastos cadastrados.</td></tr>'; }
+
+  items.forEach((e)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${e.vehicle_name}</td>
+      <td>${e.date}</td>
+      <td>${e.expense_type}</td>
+      <td>${e.description || "-"}</td>
+      <td>${formatCurrency(e.amount)}</td>
+      <td>${e.is_recurring ? "Sim" : "Não"}</td>
+      <td><div class="row-actions"><button class="btn-secondary">Editar</button><button class="btn-danger">Remover</button></div></td>
+    `;
+    const [editBtn, delBtn] = tr.querySelectorAll("button");
+    editBtn.addEventListener("click", ()=>fillExpenseForm(e));
+    delBtn.addEventListener("click", ()=>deleteExpense(e.id));
+    tbody.appendChild(tr);
+  });
+}
+
+function fillExpenseForm(e){
+  editingExpenseId = e.id;
+  document.getElementById("expense_form_title").textContent = "Editar Gasto do Veículo";
+  document.getElementById("expense_vehicle_id").value = e.vehicle_id;
+  document.getElementById("expense_date").value = e.date;
+  document.getElementById("expense_type").value = e.expense_type;
+  document.getElementById("expense_description").value = e.description || "";
+  document.getElementById("expense_amount").value = e.amount;
+  document.getElementById("expense_is_recurring").checked = Boolean(e.is_recurring);
+  document.getElementById("cancelExpenseEdit").style.display = "inline-block";
+}
+
+function resetExpenseForm(){
+  editingExpenseId = null;
+  document.getElementById("expense_form_title").textContent = "Adicionar Gasto do Veículo";
+  document.getElementById("expenseForm").reset();
+  document.getElementById("cancelExpenseEdit").style.display = "none";
+}
+
+async function deleteExpense(id){
+  if(!confirm("Remover este gasto?")) return;
+  const response = await fetch(`/api/vehicle-expenses/${id}/`, {method:"DELETE", credentials:"same-origin", headers:{"X-CSRFToken":getCsrfToken()}});
+  if(!response.ok){ setMessage("expenseMessage", await parseError(response, "Erro ao remover gasto."), true); return; }
+  setMessage("expenseMessage", "Gasto removido.", false);
+  if(editingExpenseId === id) resetExpenseForm();
+  await refreshAll();
+}
+
+async function submitExpenseForm(event){
+  event.preventDefault();
+  const payload = {
+    vehicle_id: document.getElementById("expense_vehicle_id").value,
+    date: document.getElementById("expense_date").value,
+    expense_type: document.getElementById("expense_type").value,
+    description: document.getElementById("expense_description").value,
+    amount: document.getElementById("expense_amount").value,
+    is_recurring: document.getElementById("expense_is_recurring").checked,
+  };
+  const url = editingExpenseId ? `/api/vehicle-expenses/${editingExpenseId}/` : "/api/vehicle-expenses/create/";
+  const method = editingExpenseId ? "PUT" : "POST";
+  const response = await fetch(url, {method, credentials:"same-origin", headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()}, body: JSON.stringify(payload)});
+  if(!response.ok){ setMessage("expenseMessage", await parseError(response, "Erro ao salvar gasto."), true); return; }
+  setMessage("expenseMessage", editingExpenseId ? "Gasto atualizado." : "Gasto criado.", false);
+  resetExpenseForm();
+  await refreshAll();
+}
+
+async function loadSummary(){
+  const response = await fetch(`/api/vehicles/summary/?month=${selectedMonth+1}&year=${selectedYear}`, {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar resumo de veículos");
+  const data = await response.json();
+  document.getElementById("vehicle_monthly_total").textContent = formatCurrency(data.monthly_total || 0);
+  document.getElementById("vehicle_count").textContent = String(data.vehicle_count || 0);
+  const avgVar = (data.vehicle_totals || []).length
+    ? (data.vehicle_totals.reduce((s,v)=>s + Number(v.fipe_variation_percent || 0), 0) / data.vehicle_totals.length)
+    : 0;
+  document.getElementById("vehicle_fipe_var").textContent = `${avgVar.toFixed(2)}%`;
+
+  const topBox = document.getElementById("vehicleByCategory");
+  topBox.textContent = "";
+  (data.by_category || []).slice(0,8).forEach((row)=>{
+    const div = document.createElement("div");
+    div.style.fontSize = "12px";
+    div.style.padding = "6px 0";
+    div.style.borderBottom = "1px dashed rgba(255,255,255,.06)";
+    div.textContent = `${row.category}: ${formatCurrency(row.total)}`;
+    topBox.appendChild(div);
+  });
+  if(!topBox.childElementCount){ topBox.textContent = "Sem dados no período."; }
+}
+
+function renderMonthBar(){
+  const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const bar = document.getElementById("monthFilterBar");
+  bar.textContent = "";
+  monthNames.forEach((name, idx)=>{
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "month-chip";
+    btn.dataset.month = String(idx);
+    btn.textContent = name;
+    btn.classList.toggle("active", idx === selectedMonth);
+    btn.addEventListener("click", async ()=>{
+      selectedMonth = idx;
+      renderMonthBar();
+      await loadSummary();
+    });
+    bar.appendChild(btn);
+  });
+  document.getElementById("selectedMonthLabel").textContent = `Ano ${selectedYear}`;
+}
+
+async function refreshAll(){
+  await loadVehicles();
+  await loadExpenses();
+  await loadSummary();
+}
+
+async function init(){
+  initUiPrefs();
+  renderMonthBar();
+  document.getElementById("vehicleForm").addEventListener("submit", submitVehicleForm);
+  document.getElementById("expenseForm").addEventListener("submit", submitExpenseForm);
+  document.getElementById("cancelVehicleEdit").addEventListener("click", resetVehicleForm);
+  document.getElementById("cancelExpenseEdit").addEventListener("click", resetExpenseForm);
+  try{ await refreshAll(); }
+  catch(error){ console.error(error); setMessage("vehicleMessage", "Erro ao carregar dados de veículos.", true); }
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h4>Navegação</h4>
+    <a class="side-link" href="/dashboard/">Dashboard</a>
+    <a class="side-link" href="/transactions/">Movimentações</a>
+    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
+    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
+    <a class="side-link" href="/reserves/">Reservas</a>
+    <a class="side-link" href="/vehicles/">Veículos</a>
+  </aside>
+
+  <div class="container">
+    <div class="header">
+      <strong>Veículos</strong>
+      <div class="header-right">
+        <div class="theme-switch" aria-label="Alternar tema">
+          <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
+        </div>
+        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">👁</button>
+        <a href="/dashboard/" class="icon-link" title="Notificações" aria-label="Notificações">🔔</a>
+        <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">⎋</a>
+      </div>
+    </div>
+
+    <div class="month-wrap">
+      <div class="month-head">
+        <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Resumo mensal de Veículos</strong>
+        <small id="selectedMonthLabel"></small>
+      </div>
+      <div id="monthFilterBar" class="month-bar"></div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><span>Custo Mensal Veículos</span><strong id="vehicle_monthly_total">R$ 0,00</strong></div>
+      <div class="card"><span>Total de Veículos</span><strong id="vehicle_count">0</strong></div>
+      <div class="card"><span>Variação média FIPE</span><strong id="vehicle_fipe_var">0,00%</strong></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h3 id="vehicle_form_title">Adicionar Veículo</h3>
+        <form id="vehicleForm">
+          <label for="vehicle_name">Nome</label>
+          <input id="vehicle_name" type="text" maxlength="80" required>
+
+          <label for="vehicle_brand">Marca</label>
+          <input id="vehicle_brand" type="text" maxlength="80">
+
+          <label for="vehicle_model">Modelo</label>
+          <input id="vehicle_model" type="text" maxlength="80">
+
+          <label for="vehicle_year">Ano</label>
+          <input id="vehicle_year" type="number" min="1900" max="2100">
+
+          <label for="vehicle_fipe_value">Valor FIPE</label>
+          <input id="vehicle_fipe_value" type="number" min="0" step="0.01">
+
+          <label for="vehicle_fipe_variation">Variação FIPE (%)</label>
+          <input id="vehicle_fipe_variation" type="number" step="0.01">
+
+          <label for="vehicle_documentation_cost">Custo documentação anual</label>
+          <input id="vehicle_documentation_cost" type="number" min="0" step="0.01">
+
+          <label for="vehicle_ipva_cost">IPVA anual</label>
+          <input id="vehicle_ipva_cost" type="number" min="0" step="0.01">
+
+          <label for="vehicle_licensing_cost">Licenciamento anual</label>
+          <input id="vehicle_licensing_cost" type="number" min="0" step="0.01">
+
+          <label for="vehicle_financing_remaining">Parcelas restantes</label>
+          <input id="vehicle_financing_remaining" type="number" min="0" step="1">
+
+          <label for="vehicle_financing_value">Valor da parcela</label>
+          <input id="vehicle_financing_value" type="number" min="0" step="0.01">
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Salvar Veículo</button>
+            <button type="button" id="cancelVehicleEdit" class="btn-secondary" style="display:none">Cancelar</button>
+          </div>
+        </form>
+        <div id="vehicleMessage" class="message"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Veículos Cadastrados</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Marca/Modelo</th>
+              <th>Ano</th>
+              <th>FIPE</th>
+              <th>Var. FIPE</th>
+              <th>Parcelas</th>
+              <th>Valor Parcela</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="vehicleRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h3 id="expense_form_title">Adicionar Gasto do Veículo</h3>
+        <form id="expenseForm">
+          <label for="expense_vehicle_id">Veículo</label>
+          <select id="expense_vehicle_id" required></select>
+
+          <label for="expense_date">Data</label>
+          <input id="expense_date" type="date" required>
+
+          <label for="expense_type">Tipo de gasto</label>
+          <select id="expense_type" required>
+            <option value="COMBUSTIVEL">Combustível</option>
+            <option value="MANUTENCAO">Manutenção</option>
+            <option value="SEGURO">Seguro</option>
+            <option value="PEDAGIO">Pedágio</option>
+            <option value="ESTACIONAMENTO">Estacionamento</option>
+            <option value="OUTRO">Outro</option>
+          </select>
+
+          <label for="expense_description">Descrição</label>
+          <textarea id="expense_description"></textarea>
+
+          <label for="expense_amount">Valor</label>
+          <input id="expense_amount" type="number" min="0" step="0.01" required>
+
+          <div class="checkbox-row">
+            <input id="expense_is_recurring" type="checkbox">
+            <label for="expense_is_recurring" style="margin:0">Recorrente (mensal)</label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Salvar Gasto</button>
+            <button type="button" id="cancelExpenseEdit" class="btn-secondary" style="display:none">Cancelar</button>
+          </div>
+        </form>
+        <div id="expenseMessage" class="message"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Gastos por Categoria (mês selecionado)</h3>
+        <div id="vehicleByCategory"></div>
+        <h3 style="margin-top:16px">Lançamentos de Gastos</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Veículo</th>
+              <th>Data</th>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Recorrente</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="expenseRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
