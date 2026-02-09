@@ -193,7 +193,7 @@ body{
 
 /* CARDS PRINCIPAIS */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
-.cards-top{grid-template-columns:repeat(4,1fr);}
+.cards-top{grid-template-columns:repeat(3,1fr);}
 .card{
   background:linear-gradient(180deg,#0b1224,#020617);
   border-radius:16px;
@@ -290,6 +290,11 @@ body{
   border:1px solid var(--border);
   border-radius:14px;
   padding:10px;
+}
+.mini-card-link{
+  color:inherit;
+  text-decoration:none;
+  display:block;
 }
 .mini-card h5{margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .mini-card strong{display:block;margin-top:6px;font-size:20px}
@@ -2216,21 +2221,6 @@ document.addEventListener("DOMContentLoaded", load);
           <strong class="red" id="despesa">R$ 0</strong>
         </div>
         <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0</strong></div>
-        <a class="card" href="/transactions/" style="text-decoration:none;color:inherit;cursor:pointer">
-          <span>Movimentacoes</span><strong class="blue" id="movimentacoes">--</strong>
-        </a>
-      </div>
-
-      <!-- NOVOS CARDS -->
-      <div class="cards">
-        <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
-        <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
-        <div class="card">
-          <span>Projeção Fim do Mês</span>
-          <strong class="yellow" id="projecao_fim_mes">R$ 0</strong>
-          <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
-        </div>
-        <div class="card"><span>Custo Mensal Veículo</span><strong class="blue" id="vehicle_monthly_cost">R$ 0</strong></div>
       </div>
 
       <div class="panel">
@@ -2244,6 +2234,29 @@ document.addEventListener("DOMContentLoaded", load);
         </div>
         <div class="intel-grid">
           <div class="intel-left">
+            <div class="mini-cards">
+              <a class="mini-card mini-card-link" href="/transactions/">
+                <h5>Movimentações</h5>
+                <strong class="blue" id="movimentacoes">0</strong>
+              </a>
+              <div class="mini-card">
+                <h5>Taxa de Poupança</h5>
+                <strong class="green" id="taxa_poupanca">0%</strong>
+              </div>
+              <div class="mini-card">
+                <h5>Burn Rate (R$/dia)</h5>
+                <strong class="red" id="burn_rate">R$ 0</strong>
+              </div>
+              <div class="mini-card">
+                <h5>Projeção Fim do Mês</h5>
+                <strong class="yellow" id="projecao_fim_mes">R$ 0</strong>
+                <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
+              </div>
+              <div class="mini-card">
+                <h5>Custo Mensal Veículo</h5>
+                <strong class="blue" id="vehicle_monthly_cost">R$ 0</strong>
+              </div>
+            </div>
             <div class="mini-cards">
               <div class="mini-card">
                 <h5>Runway Pessoal</h5>
