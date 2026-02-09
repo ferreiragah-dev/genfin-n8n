@@ -74,14 +74,24 @@ def shift_month(year, month, delta):
     return new_year, new_month
 
 
-def fetch_usd_brl_rate():
+def fetch_usd_brl_quote():
     url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
     try:
         with urllib_request.urlopen(url, timeout=5) as response:
             payload = json.loads(response.read().decode("utf-8"))
-        bid = payload.get("USDBRL", {}).get("bid")
-        rate = float(bid) if bid is not None else 0.0
-        return rate if rate > 0 else None
+        quote = payload.get("USDBRL", {}) if isinstance(payload, dict) else {}
+        bid = quote.get("bid")
+        ask = quote.get("ask")
+        raw_rate = bid if bid is not None else ask
+        rate = float(raw_rate) if raw_rate is not None else 0.0
+        if rate <= 0:
+            return None
+        return {
+            "rate": rate,
+            "timestamp": quote.get("timestamp"),
+            "create_date": quote.get("create_date"),
+            "name": quote.get("name"),
+        }
     except Exception:
         return None
 
@@ -1210,8 +1220,8 @@ class CreditCardSummaryView(APIView):
         by_card = defaultdict(float)
         by_billing = defaultdict(float)
         points_total = 0.0
-        usd_brl_rate = fetch_usd_brl_rate()
-        effective_rate = float(usd_brl_rate or 0)
+        usd_brl_quote = fetch_usd_brl_quote()
+        effective_rate = float((usd_brl_quote or {}).get("rate") or 0)
         for expense in all_expenses:
             owner_id = get_owner_id_for_card(expense.card, cards_by_id)
             owner_card = owner_card_map.get(owner_id, expense.card)
@@ -1286,6 +1296,9 @@ class CreditCardSummaryView(APIView):
                 "total_limit": round(total_limit, 2),
                 "usage_percent": round((total_spent / total_limit) * 100, 2) if total_limit > 0 else 0,
                 "usd_brl_rate": round(effective_rate, 4) if effective_rate > 0 else None,
+                "usd_brl_timestamp": (usd_brl_quote or {}).get("timestamp"),
+                "usd_brl_create_date": (usd_brl_quote or {}).get("create_date"),
+                "usd_brl_name": (usd_brl_quote or {}).get("name"),
                 "estimated_points": round(points_total, 2),
                 "estimated_miles": round(points_total, 2),
                 "by_category": by_category_rows,
