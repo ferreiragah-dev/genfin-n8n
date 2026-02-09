@@ -2392,15 +2392,15 @@ async function load(){
       setHeatmap(Object.values(weekMap));
       renderExpenseCalendar(selectedYear, monthIndex, selectedMonthExpenseEntries);
 
-      const monthStats = statObj(selectedMonthExpenseEntries);
+      const monthStats = statObj(selectedMonthEntriesForStats);
       const last7Start = new Date(selectedMonthEnd.getFullYear(), selectedMonthEnd.getMonth(), selectedMonthEnd.getDate() - 6);
-      const last7Entries = selectedMonthExpenseEntries.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
+      const last7Entries = selectedMonthEntriesForStats.filter((e)=>inRange(e.parsedDate, last7Start, selectedMonthEnd));
       const last7Stats = statObj(last7Entries);
       const prevMonthStart = new Date(selectedYear, monthIndex - 1, 1);
       const prevMonthEnd = new Date(selectedYear, monthIndex, 0);
       const prevMonthEntriesBase = entriesParsed.filter((e)=>inRange(e.parsedDate, prevMonthStart, prevMonthEnd));
       const prevMonthCardEntries = buildCreditCardEntriesByCompetence(prevMonthStart.getFullYear(), prevMonthStart.getMonth());
-      const prevMonthEntries = [...prevMonthEntriesBase, ...prevMonthCardEntries].filter((e)=>e.entry_type === "DESPESA");
+      const prevMonthEntries = [...prevMonthEntriesBase, ...prevMonthCardEntries];
       const prevMonthStats = statObj(prevMonthEntries);
       writeStats("d", monthStats, "chartDaily");
       writeStats("w", last7Stats, "chartWeekly");
