@@ -685,6 +685,10 @@ async function load(){
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
     document.getElementById("movimentacoes").innerText = entries.length;
+    const webhookModeSwitch = document.getElementById("webhookModeSwitch");
+    if(webhookModeSwitch){
+      webhookModeSwitch.style.display = dash.phone_number === "5511913305093" ? "flex" : "none";
+    }
     function initPdfExport(){
       const btn = document.getElementById("exportPdfBtn");
       if(!btn || btn.dataset.bound) return;
@@ -2120,7 +2124,7 @@ document.addEventListener("DOMContentLoaded", load);
           <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">☀ Dia</button>
           <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">🌙 Noite</button>
         </div>
-        <div class="theme-switch" aria-label="Modo webhook">
+        <div id="webhookModeSwitch" class="theme-switch" aria-label="Modo webhook" style="display:none">
           <button id="webhookDevBtn" class="theme-btn" type="button" title="Enviar para ambiente de teste">Dev</button>
           <button id="webhookProdBtn" class="theme-btn active" type="button" title="Enviar para ambiente de produção">Prod</button>
         </div>

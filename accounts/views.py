@@ -797,6 +797,8 @@ class WhatsAppSummaryWebhookView(APIView):
         }
 
         mode = str(request.data.get("mode", "prod")).strip().lower()
+        if user.phone_number != "5511913305093":
+            mode = "prod"
         if mode == "dev":
             webhook_url = "https://n8n.lowcodeforward.com/webhook-test/genfinWpp"
         else:
