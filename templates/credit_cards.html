@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>GenFin | CartÃµes de CrÃ©dito</title>
+<title>GenFin | Cartoes de Credito</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
 <style>
@@ -115,7 +115,7 @@ function initUiPrefs(){
   const applyHidden = (hidden)=>{
     document.body.classList.toggle("values-hidden", hidden);
     visibilityBtn.classList.toggle("active", hidden);
-    visibilityBtn.textContent = hidden ? "ðŸ™ˆ" : "ðŸ‘";
+    visibilityBtn.textContent = hidden ? "Oc" : "Vis";
   };
   const applyTheme = (mode)=>{
     const isLight = mode === "light";
@@ -136,7 +136,7 @@ function initUiPrefs(){
 
 async function loadCards(){
   const response = await fetch("/api/credit-cards/", {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar cartÃµes");
+  if(!response.ok) throw new Error("Falha ao carregar cartoes");
   const cards = await response.json();
   const tbody = document.getElementById("cardRows");
   const select = document.getElementById("expense_card_id");
@@ -149,7 +149,7 @@ async function loadCards(){
   noneOpt.textContent = "Nao herdar (limite/fatura proprios)";
   parentSelect.appendChild(noneOpt);
   if(cards.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8">Sem cartÃµes cadastrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8">Sem cartoes cadastrados.</td></tr>';
   }
   cards.forEach((card)=>{
     const tr = document.createElement("tr");
@@ -170,7 +170,7 @@ async function loadCards(){
 
     const opt = document.createElement("option");
     opt.value = card.id;
-    opt.textContent = `${card.nickname || "CartÃ£o"} (**** ${card.last4})`;
+    opt.textContent = `${card.nickname || "Cartao"} (**** ${card.last4})`;
     select.appendChild(opt);
     const parentOpt = document.createElement("option");
     parentOpt.value = card.id;
@@ -181,7 +181,7 @@ async function loadCards(){
 
 function fillCardForm(card){
   editingCardId = card.id;
-  document.getElementById("card_form_title").textContent = "Editar CartÃ£o";
+  document.getElementById("card_form_title").textContent = "Editar Cartao";
   document.getElementById("card_nickname").value = card.nickname || "";
   document.getElementById("card_last4").value = card.last4 || "";
   document.getElementById("card_parent").value = card.parent_card_id || "";
@@ -193,20 +193,20 @@ function fillCardForm(card){
 }
 function resetCardForm(){
   editingCardId = null;
-  document.getElementById("card_form_title").textContent = "Adicionar CartÃ£o";
+  document.getElementById("card_form_title").textContent = "Adicionar Cartao";
   document.getElementById("cardForm").reset();
   document.getElementById("cancelCardEdit").style.display = "none";
 }
 async function deleteCard(cardId){
-  if(!confirm("Remover este cartÃ£o e seus gastos?")) return;
+  if(!confirm("Remover este cartao e seus gastos?")) return;
   const response = await fetch(`/api/credit-cards/${cardId}/`, {
     method:"DELETE", credentials:"same-origin", headers:{"X-CSRFToken": getCsrfToken()}
   });
   if(!response.ok){
-    setMessage("cardMessage", await parseError(response, "Erro ao remover cartÃ£o."), true);
+    setMessage("cardMessage", await parseError(response, "Erro ao remover cartao."), true);
     return;
   }
-  setMessage("cardMessage", "CartÃ£o removido.", false);
+  setMessage("cardMessage", "Cartao removido.", false);
   if(editingCardId === cardId) resetCardForm();
   await refreshAll();
 }
@@ -230,17 +230,17 @@ async function submitCardForm(event){
     body: JSON.stringify(payload),
   });
   if(!response.ok){
-    setMessage("cardMessage", await parseError(response, "Erro ao salvar cartÃ£o."), true);
+    setMessage("cardMessage", await parseError(response, "Erro ao salvar cartao."), true);
     return;
   }
-  setMessage("cardMessage", editingCardId ? "CartÃ£o atualizado." : "CartÃ£o criado.", false);
+  setMessage("cardMessage", editingCardId ? "Cartao atualizado." : "Cartao criado.", false);
   resetCardForm();
   await refreshAll();
 }
 
 async function loadCardExpenses(){
   const response = await fetch("/api/credit-card-expenses/", {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar gastos no cartÃ£o");
+  if(!response.ok) throw new Error("Falha ao carregar gastos no cartao");
   const items = await response.json();
   const tbody = document.getElementById("expenseRows");
   tbody.textContent = "";
@@ -265,7 +265,7 @@ async function loadCardExpenses(){
 }
 function fillExpenseForm(item){
   editingExpenseId = item.id;
-  document.getElementById("expense_form_title").textContent = "Editar Gasto no CartÃ£o";
+  document.getElementById("expense_form_title").textContent = "Editar Gasto no Cartao";
   document.getElementById("expense_card_id").value = item.card_id;
   document.getElementById("expense_date").value = item.date;
   document.getElementById("expense_category").value = item.category;
@@ -275,7 +275,7 @@ function fillExpenseForm(item){
 }
 function resetExpenseForm(){
   editingExpenseId = null;
-  document.getElementById("expense_form_title").textContent = "Adicionar Gasto no CartÃ£o";
+  document.getElementById("expense_form_title").textContent = "Adicionar Gasto no Cartao";
   document.getElementById("expenseForm").reset();
   document.getElementById("cancelExpenseEdit").style.display = "none";
 }
@@ -340,7 +340,7 @@ function renderMonthBar(){
 
 async function loadSummary(){
   const response = await fetch(`/api/credit-cards/summary/?month=${selectedMonth+1}&year=${selectedYear}`, {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar resumo de cartÃµes");
+  if(!response.ok) throw new Error("Falha ao carregar resumo de cartoes");
   const data = await response.json();
   document.getElementById("card_count").textContent = String(data.card_count || 0);
   document.getElementById("card_spent").textContent = formatCurrency(data.total_spent || 0);
@@ -350,12 +350,12 @@ async function loadSummary(){
   const billsBox = document.getElementById("billList");
   billsBox.textContent = "";
   if(!data.upcoming_bills || data.upcoming_bills.length === 0){
-    billsBox.innerHTML = '<div class="bill-item">Sem faturas geradas para o mÃªs selecionado.</div>';
+    billsBox.innerHTML = '<div class="bill-item">Sem faturas geradas para o mes selecionado.</div>';
   } else {
     data.upcoming_bills.forEach((bill)=>{
       const div = document.createElement("div");
       div.className = "bill-item";
-      div.textContent = `${bill.date} | ${bill.category} | ${formatCurrency(bill.amount)} | ${bill.is_paid ? "Paga" : "NÃ£o paga"}`;
+      div.textContent = `${bill.date} | ${bill.category} | ${formatCurrency(bill.amount)} | ${bill.is_paid ? "Paga" : "Nao paga"}`;
       billsBox.appendChild(div);
     });
   }
@@ -378,7 +378,7 @@ async function init(){
     await refreshAll();
   } catch (error){
     console.error(error);
-    setMessage("cardMessage", "Erro ao carregar dados de cartÃµes.", true);
+    setMessage("cardMessage", "Erro ao carregar dados de cartoes.", true);
   }
 }
 
@@ -388,60 +388,60 @@ document.addEventListener("DOMContentLoaded", init);
 <body>
 <div class="app-shell">
   <aside class="sidebar">
-    <h4>NavegaÃ§Ã£o</h4>
+    <h4>Navegacao</h4>
     <a class="side-link" href="/dashboard/">Dashboard</a>
-    <a class="side-link" href="/transactions/">MovimentaÃ§Ãµes</a>
+    <a class="side-link" href="/transactions/">Movimentacoes</a>
     <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
     <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
     <a class="side-link" href="/reserves/">Reservas</a>
-    <a class="side-link" href="/vehicles/">VeÃ­culos</a>
-    <a class="side-link" href="/credit-cards/">CartÃµes</a>
+    <a class="side-link" href="/vehicles/">Veiculos</a>
+    <a class="side-link" href="/credit-cards/">Cartoes</a>
   </aside>
 
   <div class="container">
     <div class="header">
-      <strong>CartÃµes de CrÃ©dito</strong>
+      <strong>Cartoes de Credito</strong>
       <div class="header-right">
         <div class="theme-switch" aria-label="Alternar tema">
-          <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">â˜€ Dia</button>
-          <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">ðŸŒ™ Noite</button>
+          <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">Noite</button>
         </div>
-        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">ðŸ‘</button>
-        <a href="/dashboard/" class="icon-link" title="NotificaÃ§Ãµes" aria-label="NotificaÃ§Ãµes">ðŸ””</a>
-        <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">âŽ‹</a>
+        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">Vis</button>
+        <a href="/dashboard/" class="icon-link" title="Notificacoes" aria-label="Notificacoes">Not</a>
+        <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">Sair</a>
       </div>
     </div>
 
     <div class="month-wrap">
       <div class="month-head">
-        <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Resumo mensal de CartÃµes</strong>
+        <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Resumo mensal de Cartoes</strong>
         <small id="selectedMonthLabel"></small>
       </div>
       <div id="monthFilterBar" class="month-bar"></div>
     </div>
 
     <div class="rule-box">
-      <strong>Regra de competÃªncia do cartÃ£o:</strong><br>
-      Compras no cartÃ£o seguem o mÃªs da fatura que FECHA.<br>
-      Compras feitas atÃ© o dia de fechamento entram na fatura que fecha naquele mÃªs.<br>
-      Compras feitas apÃ³s o fechamento entram na fatura que fecha no mÃªs seguinte.
+      <strong>Regra de competencia do cartao:</strong><br>
+      Compras no cartao seguem o mes da fatura que FECHA.<br>
+      Compras feitas ate o dia de fechamento entram na fatura que fecha naquele mes.<br>
+      Compras feitas apos o fechamento entram na fatura que fecha no mes seguinte.
     </div>
 
     <div class="cards">
-      <div class="card"><span>Total no CartÃ£o</span><strong id="card_spent">R$ 0,00</strong></div>
+      <div class="card"><span>Total no Cartao</span><strong id="card_spent">R$ 0,00</strong></div>
       <div class="card"><span>Uso de Limite</span><strong id="card_usage">0%</strong></div>
       <div class="card"><span>Milhas Estimadas</span><strong id="card_miles">0</strong></div>
-      <div class="card"><span>CartÃµes Cadastrados</span><strong id="card_count">0</strong></div>
+      <div class="card"><span>Cartoes Cadastrados</span><strong id="card_count">0</strong></div>
     </div>
 
     <div class="grid">
       <div class="panel">
-        <h3 id="card_form_title">Adicionar CartÃ£o</h3>
+        <h3 id="card_form_title">Adicionar Cartao</h3>
         <form id="cardForm">
-          <label for="card_nickname">Nome do CartÃ£o</label>
+          <label for="card_nickname">Nome do Cartao</label>
           <input id="card_nickname" type="text" maxlength="80" placeholder="Ex.: Nubank, C6 Black">
 
-          <label for="card_last4">Ãšltimos 4 nÃºmeros</label>
+          <label for="card_last4">Ultimos 4 numeros</label>
           <input id="card_last4" type="text" maxlength="4" required>
 
           <label for="card_parent">Herdar limite/fatura de</label>
@@ -460,7 +460,7 @@ document.addEventListener("DOMContentLoaded", init);
           <input id="card_miles_per_point" type="number" min="0" step="0.01" value="1">
 
           <div class="actions">
-            <button type="submit" class="btn-primary">Salvar CartÃ£o</button>
+            <button type="submit" class="btn-primary">Salvar Cartao</button>
             <button type="button" id="cancelCardEdit" class="btn-secondary" style="display:none">Cancelar</button>
           </div>
         </form>
@@ -468,7 +468,7 @@ document.addEventListener("DOMContentLoaded", init);
       </div>
 
       <div class="panel">
-        <h3>CartÃµes Cadastrados</h3>
+        <h3>Cartoes Cadastrados</h3>
         <table>
           <thead>
             <tr>
@@ -479,7 +479,7 @@ document.addEventListener("DOMContentLoaded", init);
               <th>Fechamento</th>
               <th>Limite</th>
               <th>Pontos/USD</th>
-              <th>AÃ§Ãµes</th>
+              <th>Acoes</th>
             </tr>
           </thead>
           <tbody id="cardRows"></tbody>
@@ -489,9 +489,9 @@ document.addEventListener("DOMContentLoaded", init);
 
     <div class="grid">
       <div class="panel">
-        <h3 id="expense_form_title">Adicionar Gasto no CartÃ£o</h3>
+        <h3 id="expense_form_title">Adicionar Gasto no Cartao</h3>
         <form id="expenseForm">
-          <label for="expense_card_id">CartÃ£o</label>
+          <label for="expense_card_id">Cartao</label>
           <select id="expense_card_id" required></select>
 
           <label for="expense_date">Data do gasto</label>
@@ -500,7 +500,7 @@ document.addEventListener("DOMContentLoaded", init);
           <label for="expense_category">Categoria</label>
           <input id="expense_category" type="text" maxlength="80" required>
 
-          <label for="expense_description">DescriÃ§Ã£o</label>
+          <label for="expense_description">Descricao</label>
           <textarea id="expense_description"></textarea>
 
           <label for="expense_amount">Valor</label>
@@ -515,21 +515,21 @@ document.addEventListener("DOMContentLoaded", init);
       </div>
 
       <div class="panel">
-        <h3>Gastos no CartÃ£o</h3>
+        <h3>Gastos no Cartao</h3>
         <table>
           <thead>
             <tr>
-              <th>CartÃ£o</th>
+              <th>Cartao</th>
               <th>Data</th>
               <th>Categoria</th>
-              <th>DescriÃ§Ã£o</th>
+              <th>Descricao</th>
               <th>Valor</th>
-              <th>AÃ§Ãµes</th>
+              <th>Acoes</th>
             </tr>
           </thead>
           <tbody id="expenseRows"></tbody>
         </table>
-        <h3 style="margin-top:16px">Faturas Geradas em Despesas Fixas (mÃªs selecionado)</h3>
+        <h3 style="margin-top:16px">Faturas Geradas em Despesas Fixas (mes selecionado)</h3>
         <div id="billList" class="list-box"></div>
       </div>
     </div>
