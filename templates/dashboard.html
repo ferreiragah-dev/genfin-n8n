@@ -2225,7 +2225,11 @@ document.addEventListener("DOMContentLoaded", load);
       <div class="cards">
         <div class="card"><span>Taxa de Poupança</span><strong class="green" id="taxa_poupanca">0%</strong></div>
         <div class="card"><span>Burn Rate (R$/dia)</span><strong class="red" id="burn_rate">R$ 0</strong></div>
-        <div class="card"><span>Projeção Fim do Mês</span><strong class="yellow" id="projecao_fim_mes">R$ 0</strong></div>
+        <div class="card">
+          <span>Projeção Fim do Mês</span>
+          <strong class="yellow" id="projecao_fim_mes">R$ 0</strong>
+          <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
+        </div>
         <div class="card"><span>Custo Mensal Veículo</span><strong class="blue" id="vehicle_monthly_cost">R$ 0</strong></div>
       </div>
 
@@ -2257,15 +2261,11 @@ document.addEventListener("DOMContentLoaded", load);
                 <div class="trend flat" id="trendDespesa">→ R$ 0,00 vs mês passado</div>
               </div>
             </div>
-            <div class="mini-card">
-              <h5>Tendencia Saldo</h5>
-              <div class="trend flat" id="trendSaldo">→ R$ 0,00 vs mês passado</div>
-            </div>
-            <div>
+            <div style="display:none">
               <h3>Badges</h3>
               <div class="badges" id="badgesBox"></div>
             </div>
-            <div>
+            <div style="display:none">
               <h3>Insights Automaticos</h3>
               <div class="insight-box" id="insightsBox"></div>
             </div>
