@@ -304,6 +304,70 @@ body{
 .mini-card strong{display:block;margin-top:6px;font-size:20px}
 .mini-card.card-donut canvas{max-height:110px}
 .mini-card.card-donut small{display:block;margin-top:6px;color:#94a3b8;font-size:11px}
+.cc-section{
+  margin-top:2px;
+  display:grid;
+  gap:10px;
+}
+.cc-section h5{
+  margin:0;
+  color:#94a3b8;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.cc-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.cc-card{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.cc-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+.cc-name{
+  font-size:12px;
+  font-weight:600;
+  color:#e2e8f0;
+}
+.cc-last4{
+  font-size:11px;
+  color:#94a3b8;
+}
+.cc-bar{
+  height:8px;
+  border-radius:999px;
+  overflow:hidden;
+  background:#1e293b;
+}
+.cc-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);
+}
+.cc-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:6px;
+  font-size:11px;
+  color:#94a3b8;
+}
+.cc-empty{
+  font-size:12px;
+  color:#94a3b8;
+  padding:10px;
+  border:1px dashed rgba(148,163,184,.25);
+  border-radius:12px;
+}
 .trend{font-size:12px;margin-top:4px}
 .trend.up{color:#22c55e}
 .trend.down{color:#ef4444}
@@ -416,6 +480,8 @@ body.values-hidden .trend,
 body.values-hidden .bar-row span,
 body.values-hidden .insight-box,
 body.values-hidden .notif-item,
+body.values-hidden .cc-meta,
+body.values-hidden .cc-name,
 body.values-hidden .gauge small,
 body.values-hidden .fixed-gauge small{
   filter:blur(6px);
@@ -490,6 +556,12 @@ body.theme-light .mini-card strong{
 }
 body.theme-light .trend.up{color:#16a34a}
 body.theme-light .trend.down{color:#dc2626}
+body.theme-light .cc-card{background:linear-gradient(180deg,#ffffff,#f8fbff)}
+body.theme-light .cc-name{color:#0f172a}
+body.theme-light .cc-last4,
+body.theme-light .cc-meta,
+body.theme-light .cc-empty{color:#475569}
+body.theme-light .cc-bar{background:#dbe7ff}
 body.theme-light .month-chip.active,
 body.theme-light .period-btn.active,
 body.theme-light .theme-btn.active{
@@ -518,6 +590,7 @@ body.theme-light .notif-item{color:#1e293b}
 @media(max-width:1100px){
   .cards{grid-template-columns:1fr 1fr}
   .mini-cards{grid-template-columns:1fr}
+  .cc-grid{grid-template-columns:1fr}
   .intel-grid{grid-template-columns:1fr}
   .intel-right{grid-template-columns:1fr}
   .eff-grid{grid-template-columns:1fr}
@@ -1338,6 +1411,8 @@ async function load(){
     let fixedIncomes = [];
     let reserves = [];
     let vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
+    let creditCards = [];
+    let creditCardSummaryData = {by_card:[], total_limit:0, total_spent:0};
     try{
       fixedExpenses = await fetchJson("/api/planner/");
     } catch (plannerError){
@@ -1353,12 +1428,26 @@ async function load(){
     } catch (reserveError){
       console.error("Falha ao carregar reservas:", reserveError);
     }
+    try{
+      creditCards = await fetchJson("/api/credit-cards/");
+    } catch (cardError){
+      console.error("Falha ao carregar cartões:", cardError);
+      creditCards = [];
+    }
     async function loadVehicleSummary(month, year){
       try{
         vehicleSummaryData = await fetchJson(`/api/vehicles/summary/?month=${month}&year=${year}`);
       } catch (vehicleError){
         console.error("Falha ao carregar resumo de veículos:", vehicleError);
         vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
+      }
+    }
+    async function loadCreditCardSummary(month, year){
+      try{
+        creditCardSummaryData = await fetchJson(`/api/credit-cards/summary/?month=${month}&year=${year}`);
+      } catch (cardSummaryError){
+        console.error("Falha ao carregar resumo de cartões:", cardSummaryError);
+        creditCardSummaryData = {by_card:[], total_limit:0, total_spent:0};
       }
     }
 
@@ -1532,6 +1621,46 @@ async function load(){
         document.getElementById(hintId).innerText = hintText;
       }
     }
+    function renderCreditCardCards(){
+      const box = document.getElementById("creditCardCards");
+      if(!box) return;
+      box.textContent = "";
+
+      if(!creditCards.length){
+        const empty = document.createElement("div");
+        empty.className = "cc-empty";
+        empty.textContent = "Nenhum cartão cadastrado.";
+        box.appendChild(empty);
+        return;
+      }
+
+      const spentMap = {};
+      (creditCardSummaryData.by_card || []).forEach((row)=>{
+        spentMap[String(row.card || "").replace("****","").trim()] = Number(row.total || 0);
+      });
+
+      creditCards.forEach((card)=>{
+        const limit = Number(card.limit_amount || 0);
+        const used = spentMap[String(card.last4)] || 0;
+        const pctRaw = limit > 0 ? (used / limit) * 100 : 0;
+        const pct = Math.max(0, Math.min(100, Math.round(pctRaw)));
+
+        const cardEl = document.createElement("div");
+        cardEl.className = "cc-card";
+        cardEl.innerHTML = `
+          <div class="cc-head">
+            <div class="cc-name">${card.nickname || "Cartão"}</div>
+            <div class="cc-last4">**** ${card.last4}</div>
+          </div>
+          <div class="cc-bar"><div class="cc-bar-fill" style="width:${pct}%"></div></div>
+          <div class="cc-meta">
+            <span>${formatCurrency(used)} / ${formatCurrency(limit)}</span>
+            <span>${pct}% usado</span>
+          </div>
+        `;
+        box.appendChild(cardEl);
+      });
+    }
     let upcomingBase = [];
     function applyPeriodFilter(period){
       document.querySelectorAll(".period-btn").forEach((btn)=>{
@@ -1606,6 +1735,7 @@ async function load(){
       }
 
       renderTop5(expenseEntries);
+      renderCreditCardCards();
 
       const commitmentPctRaw = recurringFixedIncomeTotal > 0
         ? (recurringFixedExpenseTotal / recurringFixedIncomeTotal) * 100
@@ -2135,6 +2265,7 @@ async function load(){
 
       renderCategoryGauges(selectedMonthEntries.filter((e)=>e.entry_type === "DESPESA"));
       await loadVehicleSummary(monthIndex + 1, selectedYear);
+      await loadCreditCardSummary(monthIndex + 1, selectedYear);
       applyPeriodFilter("month");
     }
 
@@ -2286,6 +2417,10 @@ document.addEventListener("DOMContentLoaded", load);
                 <strong id="trendOutValue">Saidas</strong>
                 <div class="trend flat" id="trendDespesa">→ R$ 0,00 vs mês passado</div>
               </div>
+            </div>
+            <div class="cc-section">
+              <h5>Cartões de Crédito</h5>
+              <div id="creditCardCards" class="cc-grid"></div>
             </div>
             <div style="display:none">
               <h3>Badges</h3>
