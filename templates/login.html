@@ -1,9 +1,11 @@
-﻿<!DOCTYPE html>
+﻿{% load static %}
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>GenFin | Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
     <style>
         :root{
             --bg1:#020617;
@@ -168,3 +170,4 @@ document.getElementById("loginPassword").addEventListener("keydown", (e)=>{ if(e
 </script>
 </body>
 </html>
+
