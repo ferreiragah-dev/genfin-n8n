@@ -345,7 +345,10 @@ async function loadSummary(){
   document.getElementById("card_count").textContent = String(data.card_count || 0);
   document.getElementById("card_spent").textContent = formatCurrency(data.total_spent || 0);
   document.getElementById("card_usage").textContent = `${Number(data.usage_percent || 0).toFixed(1)}%`;
-  document.getElementById("card_miles").textContent = Number(data.estimated_miles || 0).toLocaleString("pt-BR", {maximumFractionDigits:2});
+  const estimatedPoints = Number(data.estimated_points ?? data.estimated_miles ?? 0);
+  document.getElementById("card_miles").textContent = estimatedPoints.toLocaleString("pt-BR", {maximumFractionDigits:2});
+  const rateText = data.usd_brl_rate ? `USD/BRL: ${Number(data.usd_brl_rate).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:4})}` : "USD/BRL indisponivel";
+  document.getElementById("card_rate").textContent = rateText;
 
   const billsBox = document.getElementById("billList");
   billsBox.textContent = "";
@@ -430,7 +433,7 @@ document.addEventListener("DOMContentLoaded", init);
     <div class="cards">
       <div class="card"><span>Total no Cartao</span><strong id="card_spent">R$ 0,00</strong></div>
       <div class="card"><span>Uso de Limite</span><strong id="card_usage">0%</strong></div>
-      <div class="card"><span>Milhas Estimadas</span><strong id="card_miles">0</strong></div>
+      <div class="card"><span>Pontos Estimados</span><strong id="card_miles">0</strong><small id="card_rate" style="color:#94a3b8;font-size:11px">USD/BRL: -</small></div>
       <div class="card"><span>Cartoes Cadastrados</span><strong id="card_count">0</strong></div>
     </div>
 

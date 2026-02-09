@@ -74,6 +74,18 @@ def shift_month(year, month, delta):
     return new_year, new_month
 
 
+def fetch_usd_brl_rate():
+    url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+    try:
+        with urllib_request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        bid = payload.get("USDBRL", {}).get("bid")
+        rate = float(bid) if bid is not None else 0.0
+        return rate if rate > 0 else None
+    except Exception:
+        return None
+
+
 def card_invoice_period_and_due(card, purchase_date):
     # Regra de competência:
     # 1) compra até o fechamento entra na fatura que fecha no mesmo mês
@@ -1197,7 +1209,9 @@ class CreditCardSummaryView(APIView):
         by_category = defaultdict(float)
         by_card = defaultdict(float)
         by_billing = defaultdict(float)
-        miles_total = 0.0
+        points_total = 0.0
+        usd_brl_rate = fetch_usd_brl_rate()
+        effective_rate = float(usd_brl_rate or 0)
         for expense in all_expenses:
             owner_id = get_owner_id_for_card(expense.card, cards_by_id)
             owner_card = owner_card_map.get(owner_id, expense.card)
@@ -1208,7 +1222,10 @@ class CreditCardSummaryView(APIView):
             by_category[expense.category] += float(expense.amount or 0)
             by_card[f"****{expense.card.last4}"] += float(expense.amount or 0)
             by_billing[owner_id] += float(expense.amount or 0)
-            miles_total += float(expense.amount or 0) * float(expense.card.miles_per_point or 0)
+            if effective_rate > 0:
+                amount_brl = float(expense.amount or 0)
+                points_per_usd = float(expense.card.miles_per_point or 0)
+                points_total += (amount_brl / effective_rate) * points_per_usd
 
         by_category_rows = [{"category": k, "total": round(v, 2)} for k, v in by_category.items()]
         by_category_rows.sort(key=lambda x: x["total"], reverse=True)
@@ -1268,7 +1285,9 @@ class CreditCardSummaryView(APIView):
                 "total_spent": round(total_spent, 2),
                 "total_limit": round(total_limit, 2),
                 "usage_percent": round((total_spent / total_limit) * 100, 2) if total_limit > 0 else 0,
-                "estimated_miles": round(miles_total, 2),
+                "usd_brl_rate": round(effective_rate, 4) if effective_rate > 0 else None,
+                "estimated_points": round(points_total, 2),
+                "estimated_miles": round(points_total, 2),
                 "by_category": by_category_rows,
                 "by_card": by_card_rows,
                 "by_billing": by_billing_rows,
