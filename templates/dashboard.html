@@ -1621,31 +1621,13 @@ async function load(){
       });
       return Object.entries(map).sort((a,b)=>b[1]-a[1]);
     }
-    function getCreditCardCompetence(item){
-      const date = item.parsedDate;
-      if(!date) return null;
-      const card = item.card || {};
-      const closingDay = Number(card.closing_day || card.best_purchase_day || 20);
-      let year = date.getFullYear();
-      let month = date.getMonth();
-      if(date.getDate() > closingDay){
-        const shifted = new Date(year, month + 1, 1);
-        year = shifted.getFullYear();
-        month = shifted.getMonth();
-      }
-      return {year, month};
-    }
     function buildCreditCardEntriesByCompetence(year, month){
       return creditCardExpensesParsed
         .filter((item)=>{
-          const c = getCreditCardCompetence(item);
-          return c && c.year === year && c.month === month;
+          if(!item.parsedDate) return false;
+          return item.parsedDate.getFullYear() === year && item.parsedDate.getMonth() === month;
         })
         .map((item)=>{
-          const sourceDay = item.parsedDate ? item.parsedDate.getDate() : 1;
-          const lastDay = new Date(year, month + 1, 0).getDate();
-          const visualDay = Math.max(1, Math.min(sourceDay, lastDay));
-          const competenceDate = new Date(year, month, visualDay);
           return {
             id: `cc-${item.id}`,
             date: item.date,
@@ -1653,7 +1635,7 @@ async function load(){
             entry_type: "DESPESA",
             amount: item.amountNumber,
             amountNumber: item.amountNumber,
-            parsedDate: competenceDate,
+            parsedDate: item.parsedDate,
             is_credit_card: true,
           };
         });
@@ -2439,9 +2421,8 @@ async function load(){
       }
     });
     creditCardExpensesParsed.forEach((e)=>{
-      const c = getCreditCardCompetence(e);
-      if(c){
-        monthsWithExpenses.add(`${c.year}-${c.month}`);
+      if(e.parsedDate){
+        monthsWithExpenses.add(`${e.parsedDate.getFullYear()}-${e.parsedDate.getMonth()}`);
       }
     });
     monthNames.forEach((name, idx)=>{
