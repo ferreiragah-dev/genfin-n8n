@@ -172,6 +172,13 @@ class CreditCard(models.Model):
         on_delete=models.CASCADE,
         related_name="credit_cards"
     )
+    parent_card = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="child_cards",
+    )
     nickname = models.CharField(max_length=80, blank=True, default="")
     last4 = models.CharField(max_length=4)
     due_day = models.PositiveSmallIntegerField(default=10)

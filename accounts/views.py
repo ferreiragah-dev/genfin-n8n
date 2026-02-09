@@ -45,6 +45,23 @@ def parse_bool(value):
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def resolve_billing_owner(card, cards_by_id=None):
+    current = card
+    visited = set()
+    while current and current.parent_card_id and current.id not in visited:
+        visited.add(current.id)
+        if cards_by_id is not None:
+            current = cards_by_id.get(current.parent_card_id)
+        else:
+            current = current.parent_card
+    return current
+
+
+def get_owner_id_for_card(card, cards_by_id):
+    owner = resolve_billing_owner(card, cards_by_id)
+    return owner.id if owner else card.id
+
+
 def clamp_day(year, month, day):
     max_day = calendar.monthrange(year, month)[1]
     return max(1, min(int(day), max_day))
@@ -70,16 +87,28 @@ def card_invoice_period_and_due(card, purchase_date):
 
 
 def sync_credit_card_bills(user, card):
+    cards = list(user.credit_cards.select_related("parent_card").all())
+    cards_by_id = {c.id: c for c in cards}
+    owner = resolve_billing_owner(cards_by_id.get(card.id, card), cards_by_id) or card
+    owner_id = owner.id
+    owner_card = cards_by_id.get(owner_id, owner)
+
+    family_card_ids = [
+        c.id
+        for c in cards
+        if get_owner_id_for_card(c, cards_by_id) == owner_id
+    ]
+
     grouped = defaultdict(lambda: {"amount": 0.0, "due_date": None})
-    expenses = user.credit_card_expenses.filter(card=card).order_by("date", "id")
+    expenses = user.credit_card_expenses.filter(card_id__in=family_card_ids).order_by("date", "id")
     for expense in expenses:
-        p_year, p_month, due_date = card_invoice_period_and_due(card, expense.date)
-        key = f"CC:{card.id}:{p_year:04d}-{p_month:02d}"
+        p_year, p_month, due_date = card_invoice_period_and_due(owner_card, expense.date)
+        key = f"CC:{owner_id}:{p_year:04d}-{p_month:02d}"
         grouped[key]["amount"] += float(expense.amount or 0)
         grouped[key]["due_date"] = due_date
 
     active_keys = set(grouped.keys())
-    existing_qs = user.planned_expenses.filter(source_key__startswith=f"CC:{card.id}:")
+    existing_qs = user.planned_expenses.filter(source_key__startswith=f"CC:{owner_id}:")
     for planned in existing_qs:
         if planned.source_key not in active_keys:
             planned.delete()
@@ -90,8 +119,8 @@ def sync_credit_card_bills(user, card):
         period = source_key.split(":")[-1]
         defaults = {
             "date": due_date,
-            "category": f"Fatura Cartão {card.last4}",
-            "description": f"Fatura cartão final {card.last4} ({period})",
+            "category": f"Fatura Cartão {owner_card.last4}",
+            "description": f"Fatura unificada cartão final {owner_card.last4} ({period})",
             "amount": total,
             "is_recurring": True,
         }
@@ -860,19 +889,23 @@ class CreditCardListView(APIView):
         if not user:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        data = user.credit_cards.all().order_by("-created_at")
+        cards = list(user.credit_cards.select_related("parent_card").all().order_by("-created_at"))
+        cards_by_id = {c.id: c for c in cards}
         return Response(
             [
                 {
                     "id": c.id,
                     "nickname": c.nickname,
                     "last4": c.last4,
+                    "parent_card_id": c.parent_card_id,
+                    "parent_card_last4": c.parent_card.last4 if c.parent_card else None,
                     "due_day": c.due_day,
                     "best_purchase_day": c.best_purchase_day,
                     "limit_amount": c.limit_amount,
                     "miles_per_point": c.miles_per_point,
+                    "billing_owner_id": get_owner_id_for_card(c, cards_by_id),
                 }
-                for c in data
+                for c in cards
             ]
         )
 
@@ -896,9 +929,17 @@ class CreditCardCreateView(APIView):
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
             return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+        parent_card_id = request.data.get("parent_card_id")
+        parent_card = None
+        if parent_card_id not in (None, "", "null"):
+            try:
+                parent_card = user.credit_cards.get(id=parent_card_id)
+            except CreditCard.DoesNotExist:
+                return Response({"error": "Cartão principal não encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
         card = CreditCard.objects.create(
             user=user,
+            parent_card=parent_card,
             nickname=str(request.data.get("nickname", "")).strip(),
             last4=last4,
             due_day=due_day,
@@ -932,15 +973,36 @@ class CreditCardDetailView(APIView):
             return Response({"error": "Vencimento deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
         if best_purchase_day < 1 or best_purchase_day > 31:
             return Response({"error": "Melhor data deve estar entre 1 e 31"}, status=status.HTTP_400_BAD_REQUEST)
+        parent_card_id = request.data.get("parent_card_id")
+        new_parent = None
+        if parent_card_id not in (None, "", "null"):
+            try:
+                new_parent = user.credit_cards.get(id=parent_card_id)
+            except CreditCard.DoesNotExist:
+                return Response({"error": "Cartão principal não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            if new_parent.id == card.id:
+                return Response({"error": "Um cartão não pode herdar de si mesmo"}, status=status.HTTP_400_BAD_REQUEST)
 
+            walk = new_parent
+            seen = set()
+            while walk and walk.parent_card_id and walk.id not in seen:
+                if walk.parent_card_id == card.id:
+                    return Response({"error": "Relação inválida de herança entre cartões"}, status=status.HTTP_400_BAD_REQUEST)
+                seen.add(walk.id)
+                walk = walk.parent_card
+
+        old_owner = resolve_billing_owner(card)
         card.nickname = str(request.data.get("nickname", card.nickname)).strip()
         card.last4 = last4
+        card.parent_card = new_parent
         card.due_day = due_day
         card.best_purchase_day = best_purchase_day
         card.limit_amount = request.data.get("limit_amount") or 0
         card.miles_per_point = request.data.get("miles_per_point") or 1
         card.save()
         sync_credit_card_bills(user, card)
+        if old_owner and old_owner.id != (resolve_billing_owner(card).id if resolve_billing_owner(card) else card.id):
+            sync_credit_card_bills(user, old_owner)
         return Response({"message": "Cartão atualizado"}, status=status.HTTP_200_OK)
 
     def delete(self, request, card_id):
@@ -952,8 +1014,16 @@ class CreditCardDetailView(APIView):
         except CreditCard.DoesNotExist:
             return Response({"error": "Cartão não encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
+        old_owner = resolve_billing_owner(card)
+        child_ids = list(user.credit_cards.filter(parent_card=card).values_list("id", flat=True))
         user.planned_expenses.filter(source_key__startswith=f"CC:{card.id}:").delete()
         card.delete()
+        if old_owner and old_owner.id != card.id:
+            sync_credit_card_bills(user, old_owner)
+        for child_id in child_ids:
+            child = user.credit_cards.filter(id=child_id).first()
+            if child:
+                sync_credit_card_bills(user, child)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -1088,23 +1158,64 @@ class CreditCardSummaryView(APIView):
         except ValueError:
             year = today.year
 
-        cards = list(user.credit_cards.all())
+        cards = list(user.credit_cards.select_related("parent_card").all())
+        cards_by_id = {c.id: c for c in cards}
         expenses = user.credit_card_expenses.filter(date__year=year, date__month=month).select_related("card")
-        total_spent = sum(float(e.amount or 0) for e in expenses)
-        total_limit = sum(float(c.limit_amount or 0) for c in cards)
+        owner_limit_map = {}
+        owner_card_map = {}
+        for card in cards:
+            owner_id = get_owner_id_for_card(card, cards_by_id)
+            owner_card = cards_by_id.get(owner_id, card)
+            owner_card_map[owner_id] = owner_card
+            owner_limit_map[owner_id] = float(owner_card.limit_amount or 0)
+        total_limit = sum(owner_limit_map.values())
+        total_spent = 0.0
 
         by_category = defaultdict(float)
         by_card = defaultdict(float)
+        by_billing = defaultdict(float)
         miles_total = 0.0
         for expense in expenses:
+            total_spent += float(expense.amount or 0)
             by_category[expense.category] += float(expense.amount or 0)
             by_card[f"****{expense.card.last4}"] += float(expense.amount or 0)
+            owner_id = get_owner_id_for_card(expense.card, cards_by_id)
+            by_billing[owner_id] += float(expense.amount or 0)
             miles_total += float(expense.amount or 0) * float(expense.card.miles_per_point or 0)
 
         by_category_rows = [{"category": k, "total": round(v, 2)} for k, v in by_category.items()]
         by_category_rows.sort(key=lambda x: x["total"], reverse=True)
         by_card_rows = [{"card": k, "total": round(v, 2)} for k, v in by_card.items()]
         by_card_rows.sort(key=lambda x: x["total"], reverse=True)
+        by_billing_rows = []
+        for owner_id in owner_limit_map.keys():
+            used = by_billing.get(owner_id, 0.0)
+            owner = owner_card_map.get(owner_id)
+            if not owner:
+                continue
+            members = [
+                c for c in cards
+                if get_owner_id_for_card(c, cards_by_id) == owner_id
+            ]
+            by_billing_rows.append(
+                {
+                    "owner_card_id": owner_id,
+                    "owner_name": owner.nickname or f"Cartão {owner.last4}",
+                    "owner_last4": owner.last4,
+                    "limit_amount": round(float(owner.limit_amount or 0), 2),
+                    "used_amount": round(float(used), 2),
+                    "used_percent": round((float(used) / float(owner.limit_amount or 1)) * 100, 2) if float(owner.limit_amount or 0) > 0 else 0,
+                    "member_cards": [
+                        {
+                            "id": c.id,
+                            "nickname": c.nickname,
+                            "last4": c.last4,
+                        }
+                        for c in members
+                    ],
+                }
+            )
+        by_billing_rows.sort(key=lambda x: x["used_amount"], reverse=True)
 
         upcoming = user.planned_expenses.filter(
             source_key__startswith="CC:",
@@ -1133,6 +1244,7 @@ class CreditCardSummaryView(APIView):
                 "estimated_miles": round(miles_total, 2),
                 "by_category": by_category_rows,
                 "by_card": by_card_rows,
+                "by_billing": by_billing_rows,
                 "upcoming_bills": upcoming_rows,
             }
         )

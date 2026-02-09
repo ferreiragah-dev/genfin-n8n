@@ -1626,36 +1626,37 @@ async function load(){
       if(!box) return;
       box.textContent = "";
 
-      if(!creditCards.length){
+      const billingRows = Array.isArray(creditCardSummaryData.by_billing) ? creditCardSummaryData.by_billing : [];
+      if(!billingRows.length){
         const empty = document.createElement("div");
         empty.className = "cc-empty";
-        empty.textContent = "Nenhum cartão cadastrado.";
+        empty.textContent = creditCards.length ? "Sem uso de cartão no mês selecionado." : "Nenhum cartão cadastrado.";
         box.appendChild(empty);
         return;
       }
 
-      const spentMap = {};
-      (creditCardSummaryData.by_card || []).forEach((row)=>{
-        spentMap[String(row.card || "").replace("****","").trim()] = Number(row.total || 0);
-      });
-
-      creditCards.forEach((card)=>{
-        const limit = Number(card.limit_amount || 0);
-        const used = spentMap[String(card.last4)] || 0;
-        const pctRaw = limit > 0 ? (used / limit) * 100 : 0;
-        const pct = Math.max(0, Math.min(100, Math.round(pctRaw)));
+      billingRows.forEach((row)=>{
+        const limit = Number(row.limit_amount || 0);
+        const used = Number(row.used_amount || 0);
+        const pct = Math.max(0, Math.min(100, Math.round(Number(row.used_percent || 0))));
+        const memberCount = Array.isArray(row.member_cards) ? row.member_cards.length : 1;
+        const memberText = memberCount > 1 ? `${memberCount} cartões unidos` : "Fatura individual";
 
         const cardEl = document.createElement("div");
         cardEl.className = "cc-card";
         cardEl.innerHTML = `
           <div class="cc-head">
-            <div class="cc-name">${card.nickname || "Cartão"}</div>
-            <div class="cc-last4">**** ${card.last4}</div>
+            <div class="cc-name">${row.owner_name || "Cartão"}</div>
+            <div class="cc-last4">**** ${row.owner_last4 || ""}</div>
           </div>
           <div class="cc-bar"><div class="cc-bar-fill" style="width:${pct}%"></div></div>
           <div class="cc-meta">
             <span>${formatCurrency(used)} / ${formatCurrency(limit)}</span>
             <span>${pct}% usado</span>
+          </div>
+          <div class="cc-meta">
+            <span>${memberText}</span>
+            <span></span>
           </div>
         `;
         box.appendChild(cardEl);
