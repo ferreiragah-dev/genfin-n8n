@@ -44,8 +44,8 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:poin
 .gauge-canvas-wrap{position:relative;height:220px}
 #tripScoreGauge{width:100%;height:220px;display:block}
 .gauge-center{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);text-align:center}
-.gauge-center strong{display:block;font-size:72px;line-height:1;font-weight:700}
-.gauge-center span{font-size:24px;font-weight:600;color:var(--muted)}
+.gauge-center strong{display:block;font-size:34px;line-height:1.1;font-weight:700}
+.gauge-center span{font-size:14px;font-weight:600;color:var(--muted)}
 .gauge-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:4px}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .dot{width:10px;height:10px;border-radius:50%}
@@ -84,11 +84,13 @@ function addTollRow(name="",amount=""){
 }
 function collectPayload(){
   const tolls=[...document.querySelectorAll("#tollsBox .toll-row")].map((r)=>({name:r.children[0].value.trim(),amount:Number(r.children[1].value||0)})).filter((t)=>t.name||t.amount>0);
+  const outboundKm = Number(document.getElementById("trip_distance_outbound_km").value || 0);
+  const returnKm = Number(document.getElementById("trip_distance_return_km").value || 0);
   return {
     title: document.getElementById("trip_title").value.trim(),
     date: document.getElementById("trip_date").value || null,
     vehicle_id: document.getElementById("trip_vehicle_id").value,
-    distance_km: document.getElementById("trip_distance_km").value || 0,
+    distance_km: outboundKm + returnKm,
     lodging_cost: document.getElementById("trip_lodging_cost").value || 0,
     meal_cost: document.getElementById("trip_meal_cost").value || 0,
     extra_cost: document.getElementById("trip_extra_cost").value || 0,
@@ -113,24 +115,37 @@ function renderAnalysis(data){
   document.getElementById("tripCommitIncome").textContent=`${Number(data.commitment_pct_income||0).toFixed(2)}%`;
   document.getElementById("tripRunwayBefore").textContent=`${Number(data.runway_days_before||0).toFixed(1)} dias`;
   document.getElementById("tripRunwayAfter").textContent=`${Number(data.runway_days_after||0).toFixed(1)} dias`;
-  const score = computeTripScore(data);
-  document.getElementById("tripScoreValue").textContent=String(score);
+  const speed = computeTravelMeter(data);
+  document.getElementById("tripMeterValue").textContent=`${Math.round(speed)}%`;
   const title=document.getElementById("tripScoreTitle");
-  if(score>=800){ title.textContent="Seu Score está alto"; title.className="gauge-title ok"; }
-  else if(score>=600){ title.textContent="Seu Score está moderado"; title.className="gauge-title warn"; }
-  else { title.textContent="Seu Score está baixo"; title.className="gauge-title bad"; }
-  drawTripGauge(score);
+  const status=document.getElementById("tripMeterStatus");
+  if(data.risk_level==="baixo"){
+    title.textContent="Boa hora para viajar";
+    title.className="gauge-title ok";
+    status.textContent="Impacto financeiro baixo";
+    status.className="ok";
+  }else if(data.risk_level==="medio"){
+    title.textContent="Viaje com atenção";
+    title.className="gauge-title warn";
+    status.textContent="Impacto financeiro moderado";
+    status.className="warn";
+  }else{
+    title.textContent="Não é uma boa hora para viajar";
+    title.className="gauge-title bad";
+    status.textContent="Impacto financeiro alto";
+    status.className="bad";
+  }
+  drawTripGauge(speed);
 }
-function computeTripScore(data){
+function computeTravelMeter(data){
   const cBalance = Number(data.commitment_pct_balance || 0);
   const cIncome = Number(data.commitment_pct_income || 0);
   const runwayAfter = Number(data.runway_days_after || 0);
-  let penalty = (cBalance * 10) + (cIncome * 4);
-  if(runwayAfter < 30) penalty += (30 - runwayAfter) * 8;
-  if(data.risk_level === "alto") penalty += 120;
-  if(data.risk_level === "medio") penalty += 60;
-  const score = Math.round(Math.max(0, Math.min(1000, 1000 - penalty)));
-  return score;
+  let penalty = (cBalance * 1.2) + (cIncome * 0.8);
+  if(runwayAfter < 30) penalty += (30 - runwayAfter) * 1.4;
+  if(data.risk_level === "alto") penalty += 20;
+  if(data.risk_level === "medio") penalty += 10;
+  return Math.max(0, Math.min(100, 100 - penalty));
 }
 function drawArc(ctx,cx,cy,r,start,end,color,width){
   ctx.beginPath();
@@ -140,7 +155,7 @@ function drawArc(ctx,cx,cy,r,start,end,color,width){
   ctx.arc(cx,cy,r,start,end,false);
   ctx.stroke();
 }
-function drawTripGauge(score){
+function drawTripGauge(speedPercent){
   const canvas=document.getElementById("tripScoreGauge");
   const ctx=canvas.getContext("2d");
   const width=canvas.width, height=canvas.height;
@@ -156,9 +171,20 @@ function drawTripGauge(score){
     const e = s - segSize;
     drawArc(ctx,cx,cy,r,s,e,segColors[i],20);
   }
-  const progress=Math.max(0,Math.min(1,score/1000));
-  const pEnd = start - (start-end)*progress;
-  drawArc(ctx,cx,cy,r,start,pEnd,"#ffffff",6);
+  const progress=Math.max(0,Math.min(1,speedPercent/100));
+  const angle = start - (start-end)*progress;
+  const nx = cx + Math.cos(angle) * (r - 14);
+  const ny = cy + Math.sin(angle) * (r - 14);
+  ctx.beginPath();
+  ctx.strokeStyle="#ffffff";
+  ctx.lineWidth=4;
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(nx,ny);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.fillStyle="#ffffff";
+  ctx.arc(cx,cy,6,0,Math.PI*2);
+  ctx.fill();
 }
 async function evaluateTrip(){
   const payload=collectPayload();
@@ -250,8 +276,16 @@ document.addEventListener("DOMContentLoaded", async ()=>{
             <select id="trip_vehicle_id"></select>
           </div>
         </div>
-        <label for="trip_distance_km">Distância da viagem (km)</label>
-        <input id="trip_distance_km" type="number" min="0" step="0.01" value="0">
+        <div class="row">
+          <div>
+            <label for="trip_distance_outbound_km">Distância de Ida (km)</label>
+            <input id="trip_distance_outbound_km" type="number" min="0" step="0.01" value="0">
+          </div>
+          <div>
+            <label for="trip_distance_return_km">Distância de Volta (km)</label>
+            <input id="trip_distance_return_km" type="number" min="0" step="0.01" value="0">
+          </div>
+        </div>
         <h3 style="margin-top:16px">Pedágios</h3>
         <div id="tollsBox" class="tolls"></div>
         <div class="actions"><button type="button" id="addTollBtn" class="btn-secondary">+ Adicionar pedágio</button></div>
@@ -289,19 +323,19 @@ document.addEventListener("DOMContentLoaded", async ()=>{
           <div class="line"><span>Runway depois</span><b id="tripRunwayAfter">0 dias</b></div>
         </div>
         <div class="gauge-wrap">
-          <div id="tripScoreTitle" class="gauge-title">Score de Viagem</div>
+          <div id="tripScoreTitle" class="gauge-title">Termômetro de Viagem</div>
           <div class="gauge-canvas-wrap">
             <canvas id="tripScoreGauge" width="420" height="220"></canvas>
             <div class="gauge-center">
-              <strong id="tripScoreValue">0</strong>
-              <span>de 1000</span>
+              <strong id="tripMeterValue">0%</strong>
+              <span id="tripMeterStatus">Aguardando avaliação</span>
             </div>
           </div>
           <div class="gauge-legend">
-            <div class="legend-item"><span class="dot red"></span>Alto risco</div>
-            <div class="legend-item"><span class="dot orange"></span>Médio risco</div>
-            <div class="legend-item"><span class="dot green"></span>Baixo risco</div>
-            <div class="legend-item"><span class="dot gray"></span>Sem margem</div>
+            <div class="legend-item"><span class="dot green"></span>Boa hora</div>
+            <div class="legend-item"><span class="dot orange"></span>Atenção</div>
+            <div class="legend-item"><span class="dot red"></span>Evitar agora</div>
+            <div class="legend-item"><span class="dot gray"></span>Zona sem margem</div>
           </div>
         </div>
       </div>
