@@ -266,6 +266,11 @@ function setEditModalMessage(text, isError){
   el.textContent = text;
   el.style.color = isError ? "#ef4444" : "#22c55e";
 }
+function setReceiptModalMessage(text, isError){
+  const el = document.getElementById("entryReceiptMessage");
+  el.textContent = text;
+  el.style.color = isError ? "#ef4444" : "#22c55e";
+}
 function openEditEntryModal(entry, onChanged){
   entryModalState.entry = entry;
   entryModalState.onChanged = onChanged;
@@ -293,15 +298,37 @@ function closeDeleteEntryModal(){
   entryModalState.entry = null;
   entryModalState.onChanged = null;
 }
+function openReceiptModal(entry, onChanged){
+  entryModalState.entry = entry;
+  entryModalState.onChanged = onChanged;
+  document.getElementById("entryReceiptTitle").textContent = `Comprovante - ${entry.category}`;
+  document.getElementById("entryReceiptCurrent").textContent = entry.has_receipt ? "Comprovante anexado" : "Sem comprovante";
+  document.getElementById("entryReceiptFile").value = "";
+  setReceiptModalMessage("", false);
+  document.getElementById("entryReceiptRemove").style.display = entry.has_receipt ? "inline-block" : "none";
+  document.getElementById("entryReceiptOpen").style.display = entry.has_receipt ? "inline-block" : "none";
+  document.getElementById("entryReceiptOverlay").classList.add("open");
+}
+function closeReceiptModal(){
+  document.getElementById("entryReceiptOverlay").classList.remove("open");
+  entryModalState.entry = null;
+  entryModalState.onChanged = null;
+}
 function initEntryModals(){
   const editOverlay = document.getElementById("entryEditOverlay");
   const deleteOverlay = document.getElementById("entryDeleteOverlay");
+  const receiptOverlay = document.getElementById("entryReceiptOverlay");
   const editForm = document.getElementById("entryEditForm");
+  const receiptForm = document.getElementById("entryReceiptForm");
   const editClose = document.getElementById("entryEditClose");
   const editCancel = document.getElementById("entryEditCancel");
   const deleteClose = document.getElementById("entryDeleteClose");
   const deleteCancel = document.getElementById("entryDeleteCancel");
   const deleteConfirm = document.getElementById("entryDeleteConfirm");
+  const receiptClose = document.getElementById("entryReceiptClose");
+  const receiptCancel = document.getElementById("entryReceiptCancel");
+  const receiptOpen = document.getElementById("entryReceiptOpen");
+  const receiptRemove = document.getElementById("entryReceiptRemove");
 
   if(!editOverlay || editOverlay.dataset.bound) return;
   editOverlay.dataset.bound = "1";
@@ -310,12 +337,17 @@ function initEntryModals(){
   editCancel.addEventListener("click", closeEditEntryModal);
   deleteClose.addEventListener("click", closeDeleteEntryModal);
   deleteCancel.addEventListener("click", closeDeleteEntryModal);
+  receiptClose.addEventListener("click", closeReceiptModal);
+  receiptCancel.addEventListener("click", closeReceiptModal);
 
   editOverlay.addEventListener("click", (event)=>{
     if(event.target === editOverlay) closeEditEntryModal();
   });
   deleteOverlay.addEventListener("click", (event)=>{
     if(event.target === deleteOverlay) closeDeleteEntryModal();
+  });
+  receiptOverlay.addEventListener("click", (event)=>{
+    if(event.target === receiptOverlay) closeReceiptModal();
   });
 
   editForm.addEventListener("submit", async (event)=>{
@@ -385,6 +417,62 @@ function initEntryModals(){
     closeDeleteEntryModal();
     if(typeof fn === "function") fn(deletedId);
   });
+
+  receiptOpen.addEventListener("click", ()=>{
+    const entry = entryModalState.entry;
+    if(!entry || !entry.has_receipt) return;
+    window.open(`/api/entries/${entry.id}/receipt/`, "_blank");
+  });
+
+  receiptRemove.addEventListener("click", async ()=>{
+    const entry = entryModalState.entry;
+    if(!entry || !entry.has_receipt) return;
+    const response = await fetch(`/api/entries/${entry.id}/receipt/`, {
+      method:"DELETE",
+      credentials:"same-origin",
+      headers:{ "X-CSRFToken": getCsrfToken() },
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel remover o comprovante.");
+      setReceiptModalMessage(msg, true);
+      return;
+    }
+    entry.has_receipt = false;
+    entry.receipt_url = null;
+    const fn = entryModalState.onChanged;
+    closeReceiptModal();
+    if(typeof fn === "function") fn();
+  });
+
+  receiptForm.addEventListener("submit", async (event)=>{
+    event.preventDefault();
+    const entry = entryModalState.entry;
+    if(!entry) return;
+    const fileInput = document.getElementById("entryReceiptFile");
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){
+      setReceiptModalMessage("Selecione um arquivo.", true);
+      return;
+    }
+    const formData = new FormData();
+    formData.append("receipt", file);
+    const response = await fetch(`/api/entries/${entry.id}/receipt/`, {
+      method:"POST",
+      credentials:"same-origin",
+      headers:{ "X-CSRFToken": getCsrfToken() },
+      body: formData,
+    });
+    if(!response.ok){
+      const msg = await parseError(response, "Nao foi possivel anexar o comprovante.");
+      setReceiptModalMessage(msg, true);
+      return;
+    }
+    entry.has_receipt = true;
+    entry.receipt_url = `/api/entries/${entry.id}/receipt/`;
+    const fn = entryModalState.onChanged;
+    closeReceiptModal();
+    if(typeof fn === "function") fn();
+  });
 }
 
 function appendRow(tbody, entry, onChanged){
@@ -393,9 +481,13 @@ function appendRow(tbody, entry, onChanged){
   const categoryTd = document.createElement("td");
   const amountTd = document.createElement("td");
   const actionsTd = document.createElement("td");
+  const receiptTd = document.createElement("td");
   const actions = document.createElement("div");
+  const receiptActions = document.createElement("div");
   const editBtn = document.createElement("button");
   const deleteBtn = document.createElement("button");
+  const manageReceiptBtn = document.createElement("button");
+  const viewReceiptBtn = document.createElement("button");
 
   dateTd.textContent = entry.date;
   categoryTd.textContent = entry.category;
@@ -409,17 +501,37 @@ function appendRow(tbody, entry, onChanged){
   deleteBtn.type = "button";
   deleteBtn.title = "Apagar";
   deleteBtn.textContent = "🗑";
+  receiptActions.className = "row-actions";
+  manageReceiptBtn.className = "icon-btn";
+  manageReceiptBtn.type = "button";
+  manageReceiptBtn.title = "Anexar comprovante";
+  manageReceiptBtn.textContent = "📎";
+  viewReceiptBtn.className = "icon-btn";
+  viewReceiptBtn.type = "button";
+  viewReceiptBtn.title = "Ver comprovante";
+  viewReceiptBtn.textContent = "👁";
+  viewReceiptBtn.style.display = entry.has_receipt ? "inline-block" : "none";
 
   editBtn.addEventListener("click", ()=>openEditEntryModal(entry, onChanged));
   deleteBtn.addEventListener("click", ()=>openDeleteEntryModal(entry, onChanged));
+  manageReceiptBtn.addEventListener("click", ()=>openReceiptModal(entry, onChanged));
+  viewReceiptBtn.addEventListener("click", ()=>{
+    if(entry.has_receipt){
+      window.open(`/api/entries/${entry.id}/receipt/`, "_blank");
+    }
+  });
 
   actions.appendChild(editBtn);
   actions.appendChild(deleteBtn);
+  receiptActions.appendChild(manageReceiptBtn);
+  receiptActions.appendChild(viewReceiptBtn);
   actionsTd.appendChild(actions);
+  receiptTd.appendChild(receiptActions);
   tr.appendChild(dateTd);
   tr.appendChild(categoryTd);
   tr.appendChild(amountTd);
   tr.appendChild(actionsTd);
+  tr.appendChild(receiptTd);
   tbody.appendChild(tr);
 }
 
@@ -527,8 +639,8 @@ async function load(){
     renderMonth(selectedMonth);
   } catch (error){
     console.error(error);
-    document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="4">Erro ao carregar dados.</td></tr>';
-    document.getElementById("entriesDespesa").innerHTML = '<tr><td colspan="4">Erro ao carregar dados.</td></tr>';
+    document.getElementById("entriesReceita").innerHTML = '<tr><td colspan="5">Erro ao carregar dados.</td></tr>';
+    document.getElementById("entriesDespesa").innerHTML = '<tr><td colspan="5">Erro ao carregar dados.</td></tr>';
   }
 }
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -583,7 +695,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     <div class="panel">
       <h3>Entradas</h3>
       <table>
-        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th><th>Comprovante</th></tr></thead>
         <tbody id="entriesReceita"></tbody>
       </table>
     </div>
@@ -591,7 +703,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     <div class="panel">
       <h3>Despesas</h3>
       <table>
-        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Ações</th><th>Comprovante</th></tr></thead>
         <tbody id="entriesDespesa"></tbody>
       </table>
     </div>
@@ -641,6 +753,29 @@ document.addEventListener("DOMContentLoaded", ()=>{
         <button id="entryDeleteConfirm" type="button" class="modal-btn danger">Apagar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="entryReceiptOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="entryReceiptTitle">
+    <div class="modal-head">
+      <h4 id="entryReceiptTitle">Comprovante</h4>
+      <button id="entryReceiptClose" type="button" class="modal-close">×</button>
+    </div>
+    <form id="entryReceiptForm" class="modal-body">
+      <p id="entryReceiptCurrent" class="modal-text">Sem comprovante</p>
+      <div class="field">
+        <label for="entryReceiptFile">Anexar comprovante (PDF, imagem)</label>
+        <input id="entryReceiptFile" type="file" accept=".pdf,image/*">
+      </div>
+      <div id="entryReceiptMessage" class="modal-message"></div>
+      <div class="modal-actions">
+        <button id="entryReceiptOpen" type="button" class="modal-btn secondary">Abrir atual</button>
+        <button id="entryReceiptRemove" type="button" class="modal-btn danger">Remover</button>
+        <button id="entryReceiptCancel" type="button" class="modal-btn secondary">Cancelar</button>
+        <button type="submit" class="modal-btn primary">Salvar comprovante</button>
+      </div>
+    </form>
   </div>
 </div>
 </body>

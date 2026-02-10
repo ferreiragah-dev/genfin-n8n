@@ -50,6 +50,7 @@ class FinancialEntry(models.Model):
     category = models.CharField(max_length=100)
 
     date = models.DateField()
+    receipt_file = models.FileField(upload_to="entry_receipts/", blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

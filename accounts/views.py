@@ -8,6 +8,7 @@ from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Sum
+from django.http import FileResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
@@ -493,6 +494,8 @@ class FinancialEntryListView(APIView):
                     "category": e.category,
                     "entry_type": e.entry_type,
                     "amount": e.amount,
+                    "has_receipt": bool(e.receipt_file),
+                    "receipt_url": f"/api/entries/{e.id}/receipt/" if e.receipt_file else None,
                 }
                 for e in entries
             ]
@@ -559,6 +562,81 @@ class FinancialEntryDetailView(APIView):
             )
 
         entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class FinancialEntryReceiptView(APIView):
+    def get(self, request, entry_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            entry = user.entries.get(id=entry_id)
+        except FinancialEntry.DoesNotExist:
+            return Response(
+                {"error": "Movimentacao nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not entry.receipt_file:
+            return Response(
+                {"error": "Comprovante nao encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        filename = entry.receipt_file.name.rsplit("/", 1)[-1]
+        return FileResponse(entry.receipt_file.open("rb"), as_attachment=False, filename=filename)
+
+    def post(self, request, entry_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            entry = user.entries.get(id=entry_id)
+        except FinancialEntry.DoesNotExist:
+            return Response(
+                {"error": "Movimentacao nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        receipt = request.FILES.get("receipt")
+        if not receipt:
+            return Response(
+                {"error": "Arquivo obrigatorio no campo receipt"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        max_bytes = 10 * 1024 * 1024
+        if getattr(receipt, "size", 0) > max_bytes:
+            return Response(
+                {"error": "Arquivo muito grande (max 10MB)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entry.receipt_file = receipt
+        entry.save(update_fields=["receipt_file"])
+        return Response(
+            {
+                "message": "Comprovante anexado",
+                "has_receipt": True,
+                "receipt_url": f"/api/entries/{entry.id}/receipt/",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, entry_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            entry = user.entries.get(id=entry_id)
+        except FinancialEntry.DoesNotExist:
+            return Response(
+                {"error": "Movimentacao nao encontrada"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if entry.receipt_file:
+            entry.receipt_file.delete(save=False)
+            entry.receipt_file = None
+            entry.save(update_fields=["receipt_file"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
