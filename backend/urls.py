@@ -12,6 +12,7 @@ from accounts.views import (
     fixed_incomes_page,
     login_page,
     logout_page,
+    profile_page,
     reserves_page,
     transactions_page,
     vehicles_page,
@@ -29,4 +30,5 @@ urlpatterns = [
     path("reserves/", reserves_page),
     path("vehicles/", vehicles_page),
     path("credit-cards/", credit_cards_page),
+    path("profile/", profile_page),
 ]

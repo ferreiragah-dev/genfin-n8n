@@ -4,14 +4,15 @@ from .models import CreditCard, CreditCardExpense, UserAccount, Vehicle, Vehicle
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
-    list_display = ("phone_number", "first_name", "last_name", "email", "is_active", "created_at")
-    search_fields = ("phone_number", "first_name", "last_name", "email")
+    list_display = ("phone_number", "first_name", "last_name", "email", "city", "state", "is_active", "created_at")
+    search_fields = ("phone_number", "first_name", "last_name", "email", "address_line", "city", "state", "zip_code", "country")
     list_filter = ("is_active", "created_at")
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
         ("Conta", {"fields": ("phone_number", "email", "password")}),
         ("Perfil", {"fields": ("first_name", "last_name")}),
+        ("Endereco", {"fields": ("address_line", "city", "state", "zip_code", "country")}),
         ("Status", {"fields": ("is_active", "created_at")}),
     )
 

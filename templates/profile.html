@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Perfil</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --panel:#0b1224;
+  --border:rgba(56,189,248,.15);
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --blue:#38bdf8;
+  --green:#22c55e;
+  --red:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.app-shell{display:grid;grid-template-columns:220px 1fr;gap:14px;min-height:100vh;padding:14px}
+.sidebar{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:14px;display:grid;align-content:start;gap:10px}
+.sidebar h4{margin:2px 0 8px;color:#94a3b8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.side-link{text-decoration:none;color:#cbd5e1;border:1px solid rgba(56,189,248,.2);background:linear-gradient(180deg,#0b1224,#020617);border-radius:12px;padding:10px 12px;font-size:13px}
+.container{padding:20px;display:grid;gap:20px}
+.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header-right{display:flex;align-items:center;gap:10px}
+.theme-switch{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px;background:linear-gradient(180deg,#0b1224,#020617)}
+.theme-btn{border:0;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;background:transparent;color:#cbd5e1}
+.theme-btn.active{background:#38bdf8;color:#04111d}
+.icon-link{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
+.grid{display:grid;grid-template-columns:1.3fr .9fr;gap:20px}
+.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
+h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+input,textarea{width:100%;background:#0b1224;color:var(--text);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:10px;margin-top:14px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--blue);color:#04111d}
+.btn-secondary{background:#1e293b;color:#cbd5e1;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.message{font-size:12px;min-height:16px;margin-top:8px;color:var(--green)}
+.manual-card{display:grid;gap:12px}
+.manual-highlight{font-size:13px;color:#cbd5e1;line-height:1.5;padding:12px;border:1px dashed rgba(56,189,248,.28);border-radius:12px}
+body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
+body.theme-light .header,body.theme-light .panel,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .icon-link,body.theme-light input,body.theme-light textarea,body.theme-light .btn-secondary,body.theme-light .theme-btn{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#0f172a}
+body.theme-light h3,body.theme-light label,body.theme-light .sidebar h4{color:#334155}
+body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .icon-link.logout{color:#dc2626}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+@media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}.sidebar h4{display:none}.container{padding:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+</style>
+<script>
+function getCsrfToken(){
+  const token = document.cookie.split("; ").find((row)=>row.startsWith("csrftoken="));
+  return token ? decodeURIComponent(token.split("=")[1]) : "";
+}
+function setMessage(text, isError){
+  const el = document.getElementById("profileMessage");
+  el.textContent = text;
+  el.style.color = isError ? "#ef4444" : "#22c55e";
+}
+function initUiPrefs(){
+  const dayBtn = document.getElementById("themeDayBtn");
+  const nightBtn = document.getElementById("themeNightBtn");
+  const applyTheme = (mode)=>{
+    const isLight = mode === "light";
+    document.body.classList.toggle("theme-light", isLight);
+    dayBtn.classList.toggle("active", isLight);
+    nightBtn.classList.toggle("active", !isLight);
+  };
+  applyTheme(localStorage.getItem("genfin_theme_mode") === "light" ? "light" : "dark");
+  dayBtn.addEventListener("click", ()=>{localStorage.setItem("genfin_theme_mode","light");applyTheme("light");});
+  nightBtn.addEventListener("click", ()=>{localStorage.setItem("genfin_theme_mode","dark");applyTheme("dark");});
+}
+async function loadProfile(){
+  const response = await fetch("/api/profile/", {credentials:"same-origin"});
+  if(!response.ok) throw new Error("Falha ao carregar perfil");
+  const data = await response.json();
+  const ids = ["first_name","last_name","email","phone_number","address_line","city","state","zip_code","country"];
+  ids.forEach((id)=>{ document.getElementById(id).value = data[id] || ""; });
+}
+async function saveProfile(event){
+  event.preventDefault();
+  const payload = {
+    first_name: document.getElementById("first_name").value.trim(),
+    last_name: document.getElementById("last_name").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    phone_number: document.getElementById("phone_number").value.trim(),
+    address_line: document.getElementById("address_line").value.trim(),
+    city: document.getElementById("city").value.trim(),
+    state: document.getElementById("state").value.trim(),
+    zip_code: document.getElementById("zip_code").value.trim(),
+    country: document.getElementById("country").value.trim(),
+    password: document.getElementById("password").value,
+  };
+  const response = await fetch("/api/profile/", {
+    method:"PUT",
+    credentials:"same-origin",
+    headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},
+    body: JSON.stringify(payload),
+  });
+  if(!response.ok){
+    let msg = "Erro ao salvar perfil";
+    try{ const data = await response.json(); if(data.error) msg = data.error; }catch(_e){}
+    setMessage(msg, true);
+    return;
+  }
+  document.getElementById("password").value = "";
+  setMessage("Perfil atualizado com sucesso.", false);
+}
+document.addEventListener("DOMContentLoaded", async ()=>{
+  initUiPrefs();
+  document.getElementById("profileForm").addEventListener("submit", saveProfile);
+  try{
+    await loadProfile();
+  } catch (error){
+    console.error(error);
+    setMessage("Nao foi possivel carregar os dados do perfil.", true);
+  }
+});
+</script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h4>Navegacao</h4>
+    <a class="side-link" href="/dashboard/">Dashboard</a>
+    <a class="side-link" href="/transactions/">Movimentacoes</a>
+    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
+    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
+    <a class="side-link" href="/reserves/">Reservas</a>
+    <a class="side-link" href="/vehicles/">Veiculos</a>
+    <a class="side-link" href="/credit-cards/">Cartoes</a>
+    <a class="side-link" href="/profile/">Perfil</a>
+  </aside>
+
+  <div class="container">
+    <div class="header">
+      <strong>Perfil</strong>
+      <div class="header-right">
+        <div class="theme-switch" aria-label="Alternar tema">
+          <button id="themeDayBtn" class="theme-btn" type="button">Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button">Noite</button>
+        </div>
+        <a href="/dashboard/" class="icon-link" title="Dashboard">🏠</a>
+        <a href="/logout/" class="icon-link logout" title="Sair">⎋</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h3>Dados do Perfil</h3>
+        <form id="profileForm">
+          <div class="row">
+            <div>
+              <label for="first_name">Nome</label>
+              <input id="first_name" type="text" maxlength="80">
+            </div>
+            <div>
+              <label for="last_name">Sobrenome</label>
+              <input id="last_name" type="text" maxlength="80">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="email">Email</label>
+              <input id="email" type="email" maxlength="120">
+            </div>
+            <div>
+              <label for="phone_number">Numero</label>
+              <input id="phone_number" type="text" maxlength="20" required>
+            </div>
+          </div>
+          <label for="password">Nova senha (opcional)</label>
+          <input id="password" type="password" minlength="6" placeholder="Preencha apenas para trocar">
+
+          <label for="address_line">Endereco</label>
+          <input id="address_line" type="text" maxlength="200">
+
+          <div class="row">
+            <div>
+              <label for="city">Cidade</label>
+              <input id="city" type="text" maxlength="80">
+            </div>
+            <div>
+              <label for="state">Estado</label>
+              <input id="state" type="text" maxlength="80">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="zip_code">CEP</label>
+              <input id="zip_code" type="text" maxlength="20">
+            </div>
+            <div>
+              <label for="country">Pais</label>
+              <input id="country" type="text" maxlength="80">
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn-primary">Salvar Perfil</button>
+          </div>
+          <div id="profileMessage" class="message"></div>
+        </form>
+      </div>
+
+      <div class="panel manual-card">
+        <h3>Manual da Ferramenta</h3>
+        <div class="manual-highlight">
+          Guia completo da plataforma com explicacao de metricas, graficos, fluxos de cadastro e boas praticas de uso.
+        </div>
+        <a class="btn-secondary" href="/api/profile/manual-pdf/" target="_blank" rel="noopener">Baixar Manual em PDF</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

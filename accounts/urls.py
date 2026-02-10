@@ -23,6 +23,7 @@ from .views import (
     PlannedReserveDetailView,
     PlannedReserveListView,
     PhoneLoginView,
+    ProfileView,
     PlannerCreateView,
     PlannerDetailView,
     PlannerListView,
@@ -37,6 +38,7 @@ from .views import (
     VehicleSummaryView,
     WhatsAppSummaryWebhookView,
     WeeklyStatsView,
+    UserManualPdfView,
 )
 
 urlpatterns = [
@@ -44,6 +46,8 @@ urlpatterns = [
     path("register/", RegisterView.as_view()),
     path("financial-entry/", FinancialEntryCreateView.as_view()),
     path("login/", PhoneLoginView.as_view()),
+    path("profile/", ProfileView.as_view()),
+    path("profile/manual-pdf/", UserManualPdfView.as_view()),
     path("dashboard/", DashboardView.as_view()),
     path("entries/", FinancialEntryListView.as_view()),
     path("entries/<int:entry_id>/", FinancialEntryDetailView.as_view()),

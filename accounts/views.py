@@ -8,7 +8,7 @@ from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Sum
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
@@ -37,6 +37,106 @@ def get_logged_user(request):
     if not phone:
         return None
     return UserAccount.objects.filter(phone_number=phone).first()
+
+
+def _pdf_escape(text):
+    return str(text).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def build_manual_pdf_bytes():
+    pages = [
+        [
+            "GenFin - Manual da Plataforma",
+            "",
+            "Bem-vindo ao GenFin.",
+            "Este guia explica os modulos, metricas, graficos e uso diario.",
+            "",
+            "1) Dashboard",
+            "- Receitas, Despesas e Saldo Atual: resumo do periodo selecionado.",
+            "- Inteligencia Financeira: tendencia de entradas/saidas e runway pessoal.",
+            "- Comprometimento Fixo: despesas fixas versus entradas fixas.",
+            "- Cobertura de Fixas: quanto as entradas fixas cobrem custos fixos.",
+            "",
+            "2) Movimentacoes",
+            "- Entradas e saidas por mes.",
+            "- Acoes: editar, excluir e anexar comprovante por registro.",
+            "- Comprovantes aceitam imagem e PDF.",
+            "",
+            "3) Despesas Fixas, Entradas Fixas e Reservas",
+            "- Cadastre valores recorrentes para planejamento mensal.",
+            "- Use o status Pago/Nao pago para acompanhar execucao.",
+        ],
+        [
+            "4) Veiculos",
+            "- Controle combustivel, manutencao e custos mensais do veiculo.",
+            "",
+            "5) Cartoes de Credito",
+            "- Cadastro com fechamento e vencimento.",
+            "- Competencia segue mes da fatura.",
+            "- Pontos estimados usam cotacao USD/BRL.",
+            "",
+            "6) Metricas principais",
+            "- Taxa de poupanca, Burn rate e Runway pessoal.",
+            "- Tendencias com comparacao ao periodo anterior.",
+            "",
+            "Boas praticas",
+            "- Registrar movimentacoes diariamente.",
+            "- Revisar despesas fixas no inicio do mes.",
+            "- Acompanhar notificacoes e contas recorrentes.",
+            "",
+            "Fim do manual.",
+        ],
+    ]
+
+    objects = []
+
+    def add_obj(content):
+        objects.append(content)
+        return len(objects)
+
+    font_obj = add_obj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    page_obj_ids = []
+    content_obj_ids = []
+
+    for lines in pages:
+        cmds = ["BT", "/F1 18 Tf", "50 800 Td", f"({_pdf_escape(lines[0])}) Tj", "/F1 11 Tf"]
+        y = 770
+        for line in lines[1:]:
+            cmds.append(f"1 0 0 1 50 {y} Tm ({_pdf_escape(line)}) Tj")
+            y -= 18
+        cmds.append("ET")
+        stream = "\n".join(cmds)
+        stream_len = len(stream.encode("latin-1", errors="ignore"))
+        content_obj_id = add_obj(f"<< /Length {stream_len} >>\nstream\n{stream}\nendstream")
+        content_obj_ids.append(content_obj_id)
+        page_obj_ids.append(add_obj("__PAGE__"))
+
+    kids = " ".join(f"{pid} 0 R" for pid in page_obj_ids)
+    pages_obj = add_obj(f"<< /Type /Pages /Kids [{kids}] /Count {len(page_obj_ids)} >>")
+
+    for idx, page_obj_id in enumerate(page_obj_ids):
+        content_id = content_obj_ids[idx]
+        objects[page_obj_id - 1] = (
+            f"<< /Type /Page /Parent {pages_obj} 0 R /MediaBox [0 0 595 842] "
+            f"/Resources << /Font << /F1 {font_obj} 0 R >> >> /Contents {content_id} 0 R >>"
+        )
+
+    catalog_obj = add_obj(f"<< /Type /Catalog /Pages {pages_obj} 0 R >>")
+
+    result = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for i, obj in enumerate(objects, start=1):
+        offsets.append(len(result))
+        result.extend(f"{i} 0 obj\n{obj}\nendobj\n".encode("latin-1", errors="ignore"))
+
+    xref_pos = len(result)
+    result.extend(f"xref\n0 {len(objects)+1}\n".encode("latin-1"))
+    result.extend(b"0000000000 65535 f \n")
+    for off in offsets[1:]:
+        result.extend(f"{off:010d} 00000 n \n".encode("latin-1"))
+    trailer = f"trailer\n<< /Size {len(objects)+1} /Root {catalog_obj} 0 R >>\nstartxref\n{xref_pos}\n%%EOF"
+    result.extend(trailer.encode("latin-1"))
+    return bytes(result)
 
 
 def parse_bool(value):
@@ -385,6 +485,85 @@ class PhoneLoginView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
+class ProfileView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {
+                "first_name": user.first_name or "",
+                "last_name": user.last_name or "",
+                "email": user.email or "",
+                "phone_number": user.phone_number or "",
+                "address_line": user.address_line or "",
+                "city": user.city or "",
+                "state": user.state or "",
+                "zip_code": user.zip_code or "",
+                "country": user.country or "",
+            }
+        )
+
+    def put(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        first_name = str(request.data.get("first_name", user.first_name)).strip()
+        last_name = str(request.data.get("last_name", user.last_name)).strip()
+        email = str(request.data.get("email", user.email or "")).strip().lower()
+        phone_number = str(request.data.get("phone_number", user.phone_number)).strip()
+        address_line = str(request.data.get("address_line", user.address_line or "")).strip()
+        city = str(request.data.get("city", user.city or "")).strip()
+        state_val = str(request.data.get("state", user.state or "")).strip()
+        zip_code = str(request.data.get("zip_code", user.zip_code or "")).strip()
+        country = str(request.data.get("country", user.country or "")).strip()
+        password = str(request.data.get("password", "")).strip()
+
+        if not phone_number:
+            return Response({"error": "Numero de telefone e obrigatorio"}, status=status.HTTP_400_BAD_REQUEST)
+        if UserAccount.objects.exclude(id=user.id).filter(phone_number=phone_number).exists():
+            return Response({"error": "Telefone ja cadastrado"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return Response({"error": "Email invalido"}, status=status.HTTP_400_BAD_REQUEST)
+            if UserAccount.objects.exclude(id=user.id).filter(email=email).exists():
+                return Response({"error": "Email ja cadastrado"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if password and len(password) < 6:
+            return Response({"error": "Senha deve ter pelo menos 6 caracteres"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email or None
+        user.phone_number = phone_number
+        user.address_line = address_line
+        user.city = city
+        user.state = state_val
+        user.zip_code = zip_code
+        user.country = country
+        if password:
+            user.set_password(password)
+        user.save()
+        request.session["user_phone"] = user.phone_number
+        return Response({"message": "Perfil atualizado com sucesso"})
+
+
+class UserManualPdfView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        pdf_bytes = build_manual_pdf_bytes()
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="Manual-GenFin.pdf"'
+        return response
+
+
 class DashboardView(APIView):
     def get(self, request):
         user = get_logged_user(request)
@@ -464,6 +643,13 @@ def credit_cards_page(request):
     if not request.session.get("user_phone"):
         return redirect("/login/")
     return render(request, "credit_cards.html")
+
+
+@ensure_csrf_cookie
+def profile_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "profile.html")
 
 
 @ensure_csrf_cookie
