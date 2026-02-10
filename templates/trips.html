@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>GenFin | Viagem</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{--bg:#05070d;--bg-grad:radial-gradient(circle at top,#0a1020,#02030a 65%);--border:rgba(56,189,248,.15);--text:#e5e7eb;--muted:#9ca3af;--blue:#38bdf8;--green:#22c55e;--yellow:#eab308;--red:#ef4444}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
+.app-shell{display:grid;grid-template-columns:220px 1fr;gap:14px;min-height:100vh;padding:14px}
+.sidebar{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:14px;display:grid;align-content:start;gap:10px}
+.sidebar h4{margin:2px 0 8px;color:#94a3b8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.side-link{text-decoration:none;color:#cbd5e1;border:1px solid rgba(56,189,248,.2);background:linear-gradient(180deg,#0b1224,#020617);border-radius:12px;padding:10px 12px;font-size:13px}
+.container{padding:20px;display:grid;gap:20px}
+.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header-right{display:flex;align-items:center;gap:10px}
+.theme-switch{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px;background:linear-gradient(180deg,#0b1224,#020617)}
+.theme-btn{border:0;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;background:transparent;color:#cbd5e1}
+.theme-btn.active{background:#38bdf8;color:#04111d}
+.icon-link{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
+h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
+input,select{width:100%;background:#0b1224;color:var(--text);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:10px;margin-top:12px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--blue);color:#04111d}.btn-secondary{background:#1e293b;color:#cbd5e1}.btn-danger{background:var(--red);color:#fff}
+.tolls{display:grid;gap:8px;margin-top:8px}
+.toll-row{display:grid;grid-template-columns:1fr 140px 36px;gap:8px}
+.summary{display:grid;gap:8px}
+.line{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.line b{font-size:14px}
+.kpi{font-size:20px;font-weight:700}
+.ok{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+th{color:#9ca3af;text-align:left}
+.message{font-size:12px;min-height:16px;color:var(--green);margin-top:8px}
+body.theme-light{--bg:#f3f7ff;--bg-grad:radial-gradient(circle at top,#fff,#eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--yellow:#ca8a04;--red:#dc2626}
+body.theme-light .header,body.theme-light .panel,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .icon-link,body.theme-light input,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn{background:linear-gradient(180deg,#fff,#f8fbff);color:#0f172a}
+body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light .sidebar h4{color:#334155}
+body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .icon-link.logout{color:#dc2626}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+@media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto}.sidebar h4{display:none}.container{padding:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}}
+@media(max-width:520px){.row{grid-template-columns:1fr}.toll-row{grid-template-columns:1fr 110px 34px}}
+</style>
+<script>
+function formatCurrency(v){return "R$ " + Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function getCsrfToken(){const t=document.cookie.split("; ").find((r)=>r.startsWith("csrftoken="));return t?decodeURIComponent(t.split("=")[1]):"";}
+function setMessage(id,text,isError){const el=document.getElementById(id);el.textContent=text;el.style.color=isError?"#ef4444":"#22c55e";}
+function initTheme(){
+  const d=document.getElementById("themeDayBtn"),n=document.getElementById("themeNightBtn");
+  const apply=(m)=>{const l=m==="light";document.body.classList.toggle("theme-light",l);d.classList.toggle("active",l);n.classList.toggle("active",!l);};
+  apply(localStorage.getItem("genfin_theme_mode")==="light"?"light":"dark");
+  d.addEventListener("click",()=>{localStorage.setItem("genfin_theme_mode","light");apply("light");});
+  n.addEventListener("click",()=>{localStorage.setItem("genfin_theme_mode","dark");apply("dark");});
+}
+function addTollRow(name="",amount=""){
+  const box=document.getElementById("tollsBox");
+  const row=document.createElement("div");
+  row.className="toll-row";
+  row.innerHTML=`<input type="text" placeholder="Pedágio" value="${name}"><input type="number" min="0" step="0.01" placeholder="Valor" value="${amount}"><button type="button" class="btn-danger">×</button>`;
+  row.querySelector("button").addEventListener("click",()=>row.remove());
+  box.appendChild(row);
+}
+function collectPayload(){
+  const tolls=[...document.querySelectorAll("#tollsBox .toll-row")].map((r)=>({name:r.children[0].value.trim(),amount:Number(r.children[1].value||0)})).filter((t)=>t.name||t.amount>0);
+  return {
+    title: document.getElementById("trip_title").value.trim(),
+    date: document.getElementById("trip_date").value || null,
+    vehicle_id: document.getElementById("trip_vehicle_id").value,
+    distance_km: document.getElementById("trip_distance_km").value || 0,
+    lodging_cost: document.getElementById("trip_lodging_cost").value || 0,
+    meal_cost: document.getElementById("trip_meal_cost").value || 0,
+    extra_cost: document.getElementById("trip_extra_cost").value || 0,
+    tolls
+  };
+}
+async function loadVehicles(){
+  const r=await fetch("/api/vehicles/",{credentials:"same-origin"});
+  if(!r.ok) throw new Error("Falha ao carregar veículos");
+  const items=await r.json();
+  const s=document.getElementById("trip_vehicle_id"); s.textContent="";
+  items.forEach((v)=>{const o=document.createElement("option");o.value=v.id;o.textContent=v.name;s.appendChild(o);});
+}
+function renderAnalysis(data){
+  document.getElementById("tripFuel").textContent=formatCurrency(data.fuel_cost);
+  document.getElementById("tripTolls").textContent=formatCurrency(data.toll_total);
+  document.getElementById("tripLodging").textContent=formatCurrency(data.lodging_cost);
+  document.getElementById("tripMeals").textContent=formatCurrency(data.meal_cost);
+  document.getElementById("tripExtra").textContent=formatCurrency(data.extra_cost);
+  document.getElementById("tripTotal").textContent=formatCurrency(data.trip_total_cost);
+  document.getElementById("tripCommitBalance").textContent=`${Number(data.commitment_pct_balance||0).toFixed(2)}%`;
+  document.getElementById("tripCommitIncome").textContent=`${Number(data.commitment_pct_income||0).toFixed(2)}%`;
+  document.getElementById("tripRunwayBefore").textContent=`${Number(data.runway_days_before||0).toFixed(1)} dias`;
+  document.getElementById("tripRunwayAfter").textContent=`${Number(data.runway_days_after||0).toFixed(1)} dias`;
+  const rec=document.getElementById("tripRecommendation");
+  rec.textContent=`${data.recommendation} - ${data.reason}`;
+  rec.className="kpi " + (data.risk_level==="baixo"?"ok":data.risk_level==="medio"?"warn":"bad");
+}
+async function evaluateTrip(){
+  const payload=collectPayload();
+  const r=await fetch("/api/trips/evaluate/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
+  const data=await r.json();
+  if(!r.ok){ setMessage("tripMessage", data.error || "Erro ao avaliar viagem.", true); return; }
+  setMessage("tripMessage","Avaliação atualizada.",false);
+  renderAnalysis(data);
+}
+async function saveTrip(){
+  const payload=collectPayload();
+  const r=await fetch("/api/trips/create/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
+  const data=await r.json();
+  if(!r.ok){ setMessage("tripMessage", data.error || "Erro ao salvar viagem.", true); return; }
+  setMessage("tripMessage","Viagem salva com sucesso.",false);
+  if(data.analysis) renderAnalysis(data.analysis);
+  await loadTrips();
+}
+async function loadTrips(){
+  const r=await fetch("/api/trips/",{credentials:"same-origin"});
+  if(!r.ok) throw new Error("Falha ao carregar viagens");
+  const items=await r.json();
+  const tbody=document.getElementById("tripRows"); tbody.textContent="";
+  if(!items.length){ tbody.innerHTML='<tr><td colspan="6">Sem viagens cadastradas.</td></tr>'; return; }
+  items.forEach((t)=>{
+    const tollTotal=(t.tolls||[]).reduce((s,x)=>s+Number(x.amount||0),0);
+    const total = Number(t.lodging_cost||0)+Number(t.meal_cost||0)+Number(t.extra_cost||0)+tollTotal;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${t.date||"-"}</td><td>${t.title||"Viagem"}</td><td>${t.vehicle_name}</td><td>${Number(t.distance_km||0).toFixed(2)} km</td><td>${formatCurrency(total)}</td><td><button type="button" class="btn-danger">Apagar</button></td>`;
+    tr.querySelector("button").addEventListener("click", async ()=>{
+      const del=await fetch(`/api/trips/${t.id}/`,{method:"DELETE",credentials:"same-origin",headers:{"X-CSRFToken":getCsrfToken()}});
+      if(!del.ok){ setMessage("tripMessage","Erro ao apagar viagem.",true); return; }
+      await loadTrips();
+    });
+    tbody.appendChild(tr);
+  });
+}
+document.addEventListener("DOMContentLoaded", async ()=>{
+  initTheme();
+  document.getElementById("addTollBtn").addEventListener("click",()=>addTollRow());
+  document.getElementById("evaluateTripBtn").addEventListener("click",evaluateTrip);
+  document.getElementById("saveTripBtn").addEventListener("click",saveTrip);
+  try{
+    await loadVehicles();
+    addTollRow();
+    await evaluateTrip();
+    await loadTrips();
+  }catch(e){console.error(e);setMessage("tripMessage","Erro ao carregar dados da viagem.",true);}
+});
+</script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h4>Navegação</h4>
+    <a class="side-link" href="/dashboard/">Dashboard</a>
+    <a class="side-link" href="/transactions/">Movimentações</a>
+    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
+    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
+    <a class="side-link" href="/reserves/">Reservas</a>
+    <a class="side-link" href="/vehicles/">Veículos</a>
+    <a class="side-link" href="/trips/">Viagem</a>
+    <a class="side-link" href="/credit-cards/">Cartões</a>
+    <a class="side-link" href="/profile/">Perfil</a>
+  </aside>
+
+  <div class="container">
+    <div class="header">
+      <strong>Viagem</strong>
+      <div class="header-right">
+        <div class="theme-switch"><button id="themeDayBtn" class="theme-btn" type="button">☀ Dia</button><button id="themeNightBtn" class="theme-btn active" type="button">🌙 Noite</button></div>
+        <a href="/dashboard/" class="icon-link">🏠</a>
+        <a href="/logout/" class="icon-link logout">⎋</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h3>Planejamento da Viagem</h3>
+        <label for="trip_title">Nome da viagem</label>
+        <input id="trip_title" type="text" maxlength="120" placeholder="Ex.: Viagem para litoral">
+        <div class="row">
+          <div>
+            <label for="trip_date">Data</label>
+            <input id="trip_date" type="date">
+          </div>
+          <div>
+            <label for="trip_vehicle_id">Veículo</label>
+            <select id="trip_vehicle_id"></select>
+          </div>
+        </div>
+        <label for="trip_distance_km">Distância da viagem (km)</label>
+        <input id="trip_distance_km" type="number" min="0" step="0.01" value="0">
+        <h3 style="margin-top:16px">Pedágios</h3>
+        <div id="tollsBox" class="tolls"></div>
+        <div class="actions"><button type="button" id="addTollBtn" class="btn-secondary">+ Adicionar pedágio</button></div>
+        <div class="row">
+          <div>
+            <label for="trip_lodging_cost">Hospedagem</label>
+            <input id="trip_lodging_cost" type="number" min="0" step="0.01" value="0">
+          </div>
+          <div>
+            <label for="trip_meal_cost">Refeição</label>
+            <input id="trip_meal_cost" type="number" min="0" step="0.01" value="0">
+          </div>
+        </div>
+        <label for="trip_extra_cost">Outros gastos da viagem</label>
+        <input id="trip_extra_cost" type="number" min="0" step="0.01" value="0">
+        <div class="actions">
+          <button type="button" id="evaluateTripBtn" class="btn-secondary">Avaliar viagem</button>
+          <button type="button" id="saveTripBtn" class="btn-primary">Salvar viagem</button>
+        </div>
+        <div id="tripMessage" class="message"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Análise Financeira da Viagem</h3>
+        <div class="summary">
+          <div class="line"><span>Combustível</span><b id="tripFuel">R$ 0,00</b></div>
+          <div class="line"><span>Pedágios</span><b id="tripTolls">R$ 0,00</b></div>
+          <div class="line"><span>Hospedagem</span><b id="tripLodging">R$ 0,00</b></div>
+          <div class="line"><span>Refeições</span><b id="tripMeals">R$ 0,00</b></div>
+          <div class="line"><span>Outros</span><b id="tripExtra">R$ 0,00</b></div>
+          <div class="line"><span>Total da viagem</span><b id="tripTotal">R$ 0,00</b></div>
+          <div class="line"><span>Comprometimento do saldo</span><b id="tripCommitBalance">0%</b></div>
+          <div class="line"><span>Comprometimento da receita mensal</span><b id="tripCommitIncome">0%</b></div>
+          <div class="line"><span>Runway antes</span><b id="tripRunwayBefore">0 dias</b></div>
+          <div class="line"><span>Runway depois</span><b id="tripRunwayAfter">0 dias</b></div>
+        </div>
+        <div id="tripRecommendation" class="kpi ok" style="margin-top:12px">Aguardando avaliação</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Viagens Salvas</h3>
+      <table>
+        <thead><tr><th>Data</th><th>Título</th><th>Veículo</th><th>Distância</th><th>Custo base</th><th>Ações</th></tr></thead>
+        <tbody id="tripRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

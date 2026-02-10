@@ -27,6 +27,8 @@ from .models import (
     PlannedExpense,
     PlannedIncome,
     PlannedReserve,
+    TripPlan,
+    TripToll,
     UserAccount,
     Vehicle,
     VehicleFrequentDestination,
@@ -975,6 +977,13 @@ def profile_page(request):
 
 
 @ensure_csrf_cookie
+def trips_page(request):
+    if not request.session.get("user_phone"):
+        return redirect("/login/")
+    return render(request, "trips.html")
+
+
+@ensure_csrf_cookie
 def logout_page(request):
     request.session.flush()
     return redirect("/login/")
@@ -1450,6 +1459,84 @@ def destination_occurrences_per_month(periodicity):
     return periodicity_map.get(str(periodicity or "").upper(), 1.0)
 
 
+def evaluate_trip_payload(user, payload):
+    today = timezone.now().date()
+    month = today.month
+    year = today.year
+    month_entries = user.entries.filter(date__year=year, date__month=month)
+    total_receita_mes = float(month_entries.filter(entry_type="RECEITA").aggregate(total=Sum("amount"))["total"] or 0)
+    total_despesa_mes = float(month_entries.filter(entry_type="DESPESA").aggregate(total=Sum("amount"))["total"] or 0)
+    total_receita_all = float(user.entries.filter(entry_type="RECEITA").aggregate(total=Sum("amount"))["total"] or 0)
+    total_despesa_all = float(user.entries.filter(entry_type="DESPESA").aggregate(total=Sum("amount"))["total"] or 0)
+    saldo_atual = total_receita_all - total_despesa_all
+    recurring_fixed = float(user.planned_expenses.filter(is_recurring=True).aggregate(total=Sum("amount"))["total"] or 0)
+
+    vehicle_id = payload.get("vehicle_id")
+    vehicle = user.vehicles.filter(id=vehicle_id).first()
+    if not vehicle:
+        return {"error": "Veiculo nao encontrado"}
+
+    distance_km = float(payload.get("distance_km") or 0)
+    lodging_cost = float(payload.get("lodging_cost") or 0)
+    meal_cost = float(payload.get("meal_cost") or 0)
+    extra_cost = float(payload.get("extra_cost") or 0)
+    tolls = payload.get("tolls") or []
+    toll_total = 0.0
+    for item in tolls:
+        toll_total += float((item or {}).get("amount") or 0)
+
+    km_per_liter = float(vehicle.fuel_km_per_liter or 0)
+    fuel_price = float(vehicle.fuel_price_per_liter or 0)
+    fuel_cost = (distance_km / km_per_liter) * fuel_price if km_per_liter > 0 else 0.0
+
+    total_trip_cost = fuel_cost + toll_total + lodging_cost + meal_cost + extra_cost
+    burn_daily = total_despesa_mes / max(today.day, 1)
+    runway_before = saldo_atual / burn_daily if burn_daily > 0 else 0
+    runway_after = (saldo_atual - total_trip_cost) / burn_daily if burn_daily > 0 else 0
+    commitment_pct_balance = (total_trip_cost / saldo_atual * 100) if saldo_atual > 0 else 999
+    commitment_pct_income = (total_trip_cost / total_receita_mes * 100) if total_receita_mes > 0 else 999
+
+    if saldo_atual <= 0:
+        recommendation = "Nao recomendado"
+        level = "alto"
+        reason = "Saldo atual negativo."
+    elif commitment_pct_balance > 40 or runway_after < 30:
+        recommendation = "Alto impacto"
+        level = "alto"
+        reason = "Viagem compromete parcela elevada do caixa."
+    elif commitment_pct_balance > 20 or commitment_pct_income > 30:
+        recommendation = "Atenção"
+        level = "medio"
+        reason = "Viagem exige planejamento para nao apertar o mes."
+    else:
+        recommendation = "Boa hora para viajar"
+        level = "baixo"
+        reason = "Comprometimento dentro de faixa saudavel."
+
+    return {
+        "vehicle_name": vehicle.name,
+        "distance_km": round(distance_km, 2),
+        "fuel_cost": round(fuel_cost, 2),
+        "toll_total": round(toll_total, 2),
+        "lodging_cost": round(lodging_cost, 2),
+        "meal_cost": round(meal_cost, 2),
+        "extra_cost": round(extra_cost, 2),
+        "trip_total_cost": round(total_trip_cost, 2),
+        "monthly_income": round(total_receita_mes, 2),
+        "monthly_expense": round(total_despesa_mes, 2),
+        "current_balance": round(saldo_atual, 2),
+        "recurring_fixed": round(recurring_fixed, 2),
+        "burn_daily": round(burn_daily, 2),
+        "runway_days_before": round(runway_before, 1),
+        "runway_days_after": round(runway_after, 1),
+        "commitment_pct_balance": round(commitment_pct_balance, 2),
+        "commitment_pct_income": round(commitment_pct_income, 2),
+        "recommendation": recommendation,
+        "risk_level": level,
+        "reason": reason,
+    }
+
+
 class VehicleDestinationListView(APIView):
     def get(self, request):
         user = get_logged_user(request)
@@ -1470,6 +1557,8 @@ class VehicleDestinationListView(APIView):
                     "name": d.name,
                     "periodicity": d.periodicity,
                     "distance_km": d.distance_km,
+                    "has_paid_parking": d.has_paid_parking,
+                    "parking_cost": d.parking_cost,
                 }
                 for d in data
             ]
@@ -1502,6 +1591,8 @@ class VehicleDestinationCreateView(APIView):
             name=name,
             periodicity=periodicity,
             distance_km=distance_km,
+            has_paid_parking=parse_bool(request.data.get("has_paid_parking", False)),
+            parking_cost=request.data.get("parking_cost") or 0,
         )
         return Response({"message": "Destino frequente criado", "id": item.id}, status=status.HTTP_201_CREATED)
 
@@ -1535,6 +1626,8 @@ class VehicleDestinationDetailView(APIView):
         item.name = name
         item.periodicity = periodicity
         item.distance_km = distance_km
+        item.has_paid_parking = parse_bool(request.data.get("has_paid_parking", item.has_paid_parking))
+        item.parking_cost = request.data.get("parking_cost") or 0
         item.save()
         return Response({"message": "Destino atualizado"}, status=status.HTTP_200_OK)
 
@@ -1548,6 +1641,146 @@ class VehicleDestinationDetailView(APIView):
             return Response({"error": "Destino nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TripPlanListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        data = user.trip_plans.select_related("vehicle").all().order_by("-created_at")
+        return Response(
+            [
+                {
+                    "id": t.id,
+                    "vehicle_id": t.vehicle_id,
+                    "vehicle_name": t.vehicle.name,
+                    "title": t.title,
+                    "date": t.date.strftime("%Y-%m-%d") if t.date else None,
+                    "distance_km": t.distance_km,
+                    "lodging_cost": t.lodging_cost,
+                    "meal_cost": t.meal_cost,
+                    "extra_cost": t.extra_cost,
+                    "tolls": [{"id": x.id, "name": x.name, "amount": x.amount} for x in t.tolls.all()],
+                }
+                for t in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TripPlanCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        vehicle_id = request.data.get("vehicle_id")
+        try:
+            vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        trip = TripPlan.objects.create(
+            user=user,
+            vehicle=vehicle,
+            title=str(request.data.get("title", "")).strip(),
+            date=request.data.get("date") or None,
+            distance_km=request.data.get("distance_km") or 0,
+            lodging_cost=request.data.get("lodging_cost") or 0,
+            meal_cost=request.data.get("meal_cost") or 0,
+            extra_cost=request.data.get("extra_cost") or 0,
+        )
+        tolls = request.data.get("tolls") or []
+        for item in tolls:
+            TripToll.objects.create(
+                trip=trip,
+                name=str((item or {}).get("name", "")).strip(),
+                amount=(item or {}).get("amount") or 0,
+            )
+        analysis = evaluate_trip_payload(
+            user,
+            {
+                "vehicle_id": vehicle_id,
+                "distance_km": trip.distance_km,
+                "lodging_cost": trip.lodging_cost,
+                "meal_cost": trip.meal_cost,
+                "extra_cost": trip.extra_cost,
+                "tolls": tolls,
+            },
+        )
+        return Response({"message": "Viagem criada", "id": trip.id, "analysis": analysis}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TripPlanDetailView(APIView):
+    def put(self, request, trip_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            trip = user.trip_plans.get(id=trip_id)
+        except TripPlan.DoesNotExist:
+            return Response({"error": "Viagem nao encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicle_id = request.data.get("vehicle_id") or trip.vehicle_id
+        try:
+            trip.vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        trip.title = str(request.data.get("title", trip.title)).strip()
+        trip.date = request.data.get("date") or None
+        trip.distance_km = request.data.get("distance_km") or 0
+        trip.lodging_cost = request.data.get("lodging_cost") or 0
+        trip.meal_cost = request.data.get("meal_cost") or 0
+        trip.extra_cost = request.data.get("extra_cost") or 0
+        trip.save()
+
+        if "tolls" in request.data:
+            trip.tolls.all().delete()
+            for item in request.data.get("tolls") or []:
+                TripToll.objects.create(
+                    trip=trip,
+                    name=str((item or {}).get("name", "")).strip(),
+                    amount=(item or {}).get("amount") or 0,
+                )
+
+        analysis = evaluate_trip_payload(
+            user,
+            {
+                "vehicle_id": trip.vehicle_id,
+                "distance_km": trip.distance_km,
+                "lodging_cost": trip.lodging_cost,
+                "meal_cost": trip.meal_cost,
+                "extra_cost": trip.extra_cost,
+                "tolls": [{"name": x.name, "amount": float(x.amount or 0)} for x in trip.tolls.all()],
+            },
+        )
+        return Response({"message": "Viagem atualizada", "analysis": analysis}, status=status.HTTP_200_OK)
+
+    def delete(self, request, trip_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            trip = user.trip_plans.get(id=trip_id)
+        except TripPlan.DoesNotExist:
+            return Response({"error": "Viagem nao encontrada"}, status=status.HTTP_404_NOT_FOUND)
+        trip.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TripEvaluateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        analysis = evaluate_trip_payload(user, request.data)
+        if analysis.get("error"):
+            return Response(analysis, status=status.HTTP_400_BAD_REQUEST)
+        return Response(analysis)
 
 
 class VehicleSummaryView(APIView):
@@ -1596,11 +1829,16 @@ class VehicleSummaryView(APIView):
             month_total = sum(float(e.amount or 0) for e in month_expenses.filter(vehicle=v))
             destinations = user.vehicle_destinations.filter(vehicle=v)
             monthly_km = 0.0
+            monthly_parking = 0.0
             for d in destinations:
-                monthly_km += float(d.distance_km or 0) * destination_occurrences_per_month(d.periodicity)
+                occ = destination_occurrences_per_month(d.periodicity)
+                monthly_km += float(d.distance_km or 0) * occ
+                if d.has_paid_parking:
+                    monthly_parking += float(d.parking_cost or 0) * occ
             fuel_km_per_liter = float(v.fuel_km_per_liter or 0)
             fuel_price_per_liter = float(v.fuel_price_per_liter or 0)
-            commute_monthly_cost = (monthly_km / fuel_km_per_liter) * fuel_price_per_liter if fuel_km_per_liter > 0 else 0.0
+            commute_fuel_cost = (monthly_km / fuel_km_per_liter) * fuel_price_per_liter if fuel_km_per_liter > 0 else 0.0
+            commute_monthly_cost = commute_fuel_cost + monthly_parking
 
             vehicle_monthly_total = base_doc + base_ipva + base_lic + financing + recurrent_total + month_total + commute_monthly_cost
             monthly_total += vehicle_monthly_total
@@ -1621,6 +1859,8 @@ class VehicleSummaryView(APIView):
                     "name": v.name,
                     "monthly_cost": round(vehicle_monthly_total, 2),
                     "commute_monthly_cost": round(commute_monthly_cost, 2),
+                    "commute_fuel_cost": round(commute_fuel_cost, 2),
+                    "commute_parking_cost": round(monthly_parking, 2),
                     "monthly_km": round(monthly_km, 2),
                     "fipe_value": float(v.fipe_value or 0),
                     "fipe_variation_percent": float(v.fipe_variation_percent or 0),

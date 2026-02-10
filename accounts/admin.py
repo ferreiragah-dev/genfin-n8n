@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.hashers import identify_hasher
-from .models import CreditCard, CreditCardExpense, UserAccount, Vehicle, VehicleExpense, VehicleFrequentDestination
+from .models import CreditCard, CreditCardExpense, TripPlan, TripToll, UserAccount, Vehicle, VehicleExpense, VehicleFrequentDestination
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
@@ -45,6 +45,19 @@ class VehicleFrequentDestinationAdmin(admin.ModelAdmin):
     list_display = ("name", "vehicle", "periodicity", "distance_km", "user")
     search_fields = ("name", "vehicle__name", "user__phone_number")
     list_filter = ("periodicity",)
+
+
+class TripTollInline(admin.TabularInline):
+    model = TripToll
+    extra = 0
+
+
+@admin.register(TripPlan)
+class TripPlanAdmin(admin.ModelAdmin):
+    list_display = ("title", "vehicle", "date", "distance_km", "user", "created_at")
+    search_fields = ("title", "vehicle__name", "user__phone_number")
+    list_filter = ("date",)
+    inlines = [TripTollInline]
 
 
 @admin.register(CreditCard)

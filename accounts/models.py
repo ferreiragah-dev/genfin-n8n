@@ -195,10 +195,49 @@ class VehicleFrequentDestination(models.Model):
     name = models.CharField(max_length=120)
     periodicity = models.CharField(max_length=12, choices=PERIODICITY_CHOICES, default="SEMANAL")
     distance_km = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    has_paid_parking = models.BooleanField(default=False)
+    parking_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.vehicle.name} - {self.name}"
+
+
+class TripPlan(models.Model):
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="trip_plans"
+    )
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name="trip_plans"
+    )
+    title = models.CharField(max_length=120, blank=True, default="")
+    date = models.DateField(null=True, blank=True)
+    distance_km = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    lodging_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    meal_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    extra_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        name = self.title or f"Viagem {self.vehicle.name}"
+        return f"{name} - {self.distance_km} km"
+
+
+class TripToll(models.Model):
+    trip = models.ForeignKey(
+        TripPlan,
+        on_delete=models.CASCADE,
+        related_name="tolls"
+    )
+    name = models.CharField(max_length=120, blank=True, default="")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.trip_id} - {self.amount}"
 
 
 class CreditCard(models.Model):

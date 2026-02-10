@@ -349,11 +349,13 @@ async function loadDestinations(){
       MENSAL: "Mensal",
     }[d.periodicity] || d.periodicity;
     const tr = document.createElement("tr");
+    const parkingText = d.has_paid_parking ? formatCurrency(d.parking_cost || 0) : "Nao";
     tr.innerHTML = `
       <td>${d.vehicle_name}</td>
       <td>${d.name}</td>
       <td>${periodicityLabel}</td>
       <td>${Number(d.distance_km || 0).toFixed(2)} km</td>
+      <td>${parkingText}</td>
       <td><div class="row-actions"><button class="btn-secondary">Editar</button><button class="btn-danger">Remover</button></div></td>
     `;
     const [editBtn, delBtn] = tr.querySelectorAll("button");
@@ -370,6 +372,9 @@ function fillDestinationForm(d){
   document.getElementById("destination_name").value = d.name || "";
   document.getElementById("destination_periodicity").value = d.periodicity || "SEMANAL";
   document.getElementById("destination_distance_km").value = d.distance_km || 0;
+  document.getElementById("destination_has_paid_parking").checked = Boolean(d.has_paid_parking);
+  document.getElementById("destination_parking_cost").value = d.parking_cost || 0;
+  toggleDestinationParkingField();
   document.getElementById("cancelDestinationEdit").style.display = "inline-block";
 }
 
@@ -377,6 +382,9 @@ function resetDestinationForm(){
   editingDestinationId = null;
   document.getElementById("destination_form_title").textContent = "Adicionar Destino Frequente";
   document.getElementById("destinationForm").reset();
+  document.getElementById("destination_has_paid_parking").checked = false;
+  document.getElementById("destination_parking_cost").value = "";
+  toggleDestinationParkingField();
   document.getElementById("cancelDestinationEdit").style.display = "none";
 }
 
@@ -396,6 +404,8 @@ async function submitDestinationForm(event){
     name: document.getElementById("destination_name").value.trim(),
     periodicity: document.getElementById("destination_periodicity").value,
     distance_km: document.getElementById("destination_distance_km").value || 0,
+    has_paid_parking: document.getElementById("destination_has_paid_parking").checked,
+    parking_cost: document.getElementById("destination_parking_cost").value || 0,
   };
   const url = editingDestinationId ? `/api/vehicle-destinations/${editingDestinationId}/` : "/api/vehicle-destinations/create/";
   const method = editingDestinationId ? "PUT" : "POST";
@@ -404,6 +414,15 @@ async function submitDestinationForm(event){
   setMessage("destinationMessage", editingDestinationId ? "Destino atualizado." : "Destino criado.", false);
   resetDestinationForm();
   await refreshAll();
+}
+
+function toggleDestinationParkingField(){
+  const checked = document.getElementById("destination_has_paid_parking").checked;
+  const wrap = document.getElementById("destinationParkingWrap");
+  wrap.style.display = checked ? "block" : "none";
+  if(!checked){
+    document.getElementById("destination_parking_cost").value = "";
+  }
 }
 
 function renderMonthBar(){
@@ -443,6 +462,8 @@ async function init(){
   document.getElementById("cancelVehicleEdit").addEventListener("click", resetVehicleForm);
   document.getElementById("cancelExpenseEdit").addEventListener("click", resetExpenseForm);
   document.getElementById("cancelDestinationEdit").addEventListener("click", resetDestinationForm);
+  document.getElementById("destination_has_paid_parking").addEventListener("change", toggleDestinationParkingField);
+  toggleDestinationParkingField();
   try{ await refreshAll(); }
   catch(error){ console.error(error); setMessage("vehicleMessage", "Erro ao carregar dados de veículos.", true); }
 }
@@ -460,6 +481,7 @@ document.addEventListener("DOMContentLoaded", init);
     <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
     <a class="side-link" href="/reserves/">Reservas</a>
     <a class="side-link" href="/vehicles/">Veículos</a>
+    <a class="side-link" href="/trips/">Viagem</a>
     <a class="side-link" href="/credit-cards/">Cartões</a>
     <a class="side-link" href="/profile/">Perfil</a>
   </aside>
@@ -647,6 +669,16 @@ document.addEventListener("DOMContentLoaded", init);
           <label for="destination_distance_km">Distância (km)</label>
           <input id="destination_distance_km" type="number" min="0" step="0.01" required>
 
+          <div class="checkbox-row">
+            <input id="destination_has_paid_parking" type="checkbox">
+            <label for="destination_has_paid_parking" style="margin:0">Possui estacionamento pago?</label>
+          </div>
+
+          <div id="destinationParkingWrap" style="display:none">
+            <label for="destination_parking_cost">Valor do estacionamento por ocorrência</label>
+            <input id="destination_parking_cost" type="number" min="0" step="0.01">
+          </div>
+
           <div class="actions">
             <button type="submit" class="btn-primary">Salvar Destino</button>
             <button type="button" id="cancelDestinationEdit" class="btn-secondary" style="display:none">Cancelar</button>
@@ -664,6 +696,7 @@ document.addEventListener("DOMContentLoaded", init);
               <th>Destino</th>
               <th>Periodicidade</th>
               <th>Distância</th>
+              <th>Estacionamento</th>
               <th>Ações</th>
             </tr>
           </thead>
