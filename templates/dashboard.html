@@ -554,8 +554,12 @@ body.theme-light{
   --border:rgba(30,64,175,.16);
   --text:#0f172a;
   --muted:#475569;
-  --blue:#2563eb;
-  --green:#16a34a;
+  --genfin-blue:#0b5ed7;
+  --genfin-green:#22c55e;
+  --genfin-dark:#05070d;
+  --genfin-panel:#0b1224;
+  --blue:var(--genfin-blue);
+  --green:var(--genfin-green);
   --red:#dc2626;
   --yellow:#ca8a04;
 }
@@ -1975,9 +1979,9 @@ async function load(){
         const save10 = largestRecurring.amountNumber * 0.1;
         lines.push(`Seu maior gasto recorrente é ${largestRecurring.category} (${formatCurrency(largestRecurring.amountNumber)}). Reduzir 10% gera economia de ${formatCurrency(save10)}/mes.`);
       }
-      lines.push(`No periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
+      lines.push(`r`no periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
       if(runwayDays > 0){
-        lines.push(`No ritmo atual, seu dinheiro dura aproximadamente ${runwayDays} dias.`);
+        lines.push(`r`no ritmo atual, seu dinheiro dura aproximadamente ${runwayDays} dias.`);
       }
       lines.forEach((text)=>{
         const p = document.createElement("p");
@@ -2914,6 +2918,9 @@ document.addEventListener("DOMContentLoaded", load);
 </div>
 </body>
 </html>
+
+
+
 
 
 

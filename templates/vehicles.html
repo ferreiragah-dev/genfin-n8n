@@ -65,11 +65,11 @@ th{color:#9ca3af;text-align:left}
 .row-actions{display:flex;gap:8px}
 .message{font-size:12px;color:var(--green);margin-top:8px;min-height:16px}
 body.values-hidden .card strong, body.values-hidden tbody td:nth-child(4){filter:blur(6px);user-select:none}
-body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--yellow:#ca8a04}
+body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--genfin-blue:#0b5ed7;--genfin-green:#22c55e;--genfin-dark:#05070d;--genfin-panel:#0b1224;--blue:var(--genfin-blue);--green:var(--genfin-green);--red:#dc2626;--yellow:#ca8a04}
 body.theme-light .header,body.theme-light .panel,body.theme-light .month-wrap,body.theme-light .card,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .visibility-btn,body.theme-light .icon-link,body.theme-light input,body.theme-light textarea,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn,body.theme-light .month-chip{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#0f172a}
 body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light .month-head small,body.theme-light #selectedMonthLabel,body.theme-light .card span,body.theme-light .sidebar h4{color:#334155}
 body.theme-light .month-head strong{color:#334155 !important}
-body.theme-light .month-chip.active,body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .month-chip.active,body.theme-light .theme-btn.active{background:var(--genfin-blue);color:#fff}
 body.theme-light .icon-link.logout{color:#dc2626}
 @media(max-width:1100px){.grid{grid-template-columns:1fr}}
 @media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}.sidebar h4{display:none}.container{padding:12px;gap:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}.header-right{width:100%;flex-wrap:wrap;gap:8px}.panel{padding:12px}.cards{grid-template-columns:1fr}}
@@ -708,4 +708,6 @@ document.addEventListener("DOMContentLoaded", init);
 </div>
 </body>
 </html>
+
+
 

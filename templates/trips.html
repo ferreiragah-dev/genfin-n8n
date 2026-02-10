@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -54,10 +54,10 @@ table{width:100%;border-collapse:collapse}
 th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
 th{color:#9ca3af;text-align:left}
 .message{font-size:12px;min-height:16px;color:var(--green);margin-top:8px}
-body.theme-light{--bg:#f3f7ff;--bg-grad:radial-gradient(circle at top,#fff,#eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--blue:#2563eb;--green:#16a34a;--yellow:#ca8a04;--red:#dc2626}
+body.theme-light{--bg:#f3f7ff;--bg-grad:radial-gradient(circle at top,#fff,#eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--genfin-blue:#0b5ed7;--genfin-green:#22c55e;--genfin-dark:#05070d;--genfin-panel:#0b1224;--blue:var(--genfin-blue);--green:var(--genfin-green);--yellow:#ca8a04;--red:#dc2626}
 body.theme-light .header,body.theme-light .panel,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .icon-link,body.theme-light input,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn{background:linear-gradient(180deg,#fff,#f8fbff);color:#0f172a}
 body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light .sidebar h4{color:#334155}
-body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
+body.theme-light .theme-btn.active{background:var(--genfin-blue);color:#fff}
 body.theme-light .icon-link.logout{color:#dc2626}
 @media(max-width:980px){.grid{grid-template-columns:1fr}}
 @media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto}.sidebar h4{display:none}.container{padding:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}}
@@ -80,7 +80,7 @@ function addTollRow(name="",amount=""){
   const box=document.getElementById("tollsBox");
   const row=document.createElement("div");
   row.className="toll-row";
-  row.innerHTML=`<input type="text" placeholder="Pedágio" value="${name}"><input type="number" min="0" step="0.01" placeholder="Valor" value="${amount}"><button type="button" class="btn-danger">×</button>`;
+  row.innerHTML=`<input type="text" placeholder="PedÃ¡gio" value="${name}"><input type="number" min="0" step="0.01" placeholder="Valor" value="${amount}"><button type="button" class="btn-danger">Ã—</button>`;
   row.querySelector("button").addEventListener("click",()=>{row.remove(); scheduleEvaluateTrip();});
   row.querySelectorAll("input").forEach((input)=>input.addEventListener("input", scheduleEvaluateTrip));
   box.appendChild(row);
@@ -102,7 +102,7 @@ function collectPayload(){
 }
 async function loadVehicles(){
   const r=await fetch("/api/vehicles/",{credentials:"same-origin"});
-  if(!r.ok) throw new Error("Falha ao carregar veículos");
+  if(!r.ok) throw new Error("Falha ao carregar veÃ­culos");
   const items=await r.json();
   const s=document.getElementById("trip_vehicle_id"); s.textContent="";
   items.forEach((v)=>{const o=document.createElement("option");o.value=v.id;o.textContent=v.name;s.appendChild(o);});
@@ -128,12 +128,12 @@ function renderAnalysis(data){
     status.textContent="Impacto financeiro baixo";
     status.className="ok";
   }else if(data.risk_level==="medio"){
-    title.textContent="Viaje com atenção";
+    title.textContent="Viaje com atenÃ§Ã£o";
     title.className="gauge-title warn";
     status.textContent="Impacto financeiro moderado";
     status.className="warn";
   }else{
-    title.textContent="Não é uma boa hora para viajar";
+    title.textContent="NÃ£o Ã© uma boa hora para viajar";
     title.className="gauge-title bad";
     status.textContent="Impacto financeiro alto";
     status.className="bad";
@@ -197,7 +197,7 @@ async function evaluateTripInternal(silent){
   const r=await fetch("/api/trips/evaluate/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
   const data=await r.json();
   if(!r.ok){ if(!silent) setMessage("tripMessage", data.error || "Erro ao avaliar viagem.", true); return; }
-  if(!silent) setMessage("tripMessage","Avaliação atualizada.",false);
+  if(!silent) setMessage("tripMessage","AvaliaÃ§Ã£o atualizada.",false);
   renderAnalysis(data);
   return data;
 }
@@ -311,15 +311,15 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 <body>
 <div class="app-shell">
   <aside class="sidebar">
-    <h4>Navegação</h4>
+    <h4>NavegaÃ§Ã£o</h4>
     <a class="side-link" href="/dashboard/">Dashboard</a>
-    <a class="side-link" href="/transactions/">Movimentações</a>
+    <a class="side-link" href="/transactions/">MovimentaÃ§Ãµes</a>
     <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
     <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
     <a class="side-link" href="/reserves/">Reservas</a>
-    <a class="side-link" href="/vehicles/">Veículos</a>
+    <a class="side-link" href="/vehicles/">VeÃ­culos</a>
     <a class="side-link" href="/trips/">Viagem</a>
-    <a class="side-link" href="/credit-cards/">Cartões</a>
+    <a class="side-link" href="/credit-cards/">CartÃµes</a>
     <a class="side-link" href="/profile/">Perfil</a>
   </aside>
 
@@ -327,9 +327,9 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     <div class="header">
       <strong>Viagem</strong>
       <div class="header-right">
-        <div class="theme-switch"><button id="themeDayBtn" class="theme-btn" type="button">☀ Dia</button><button id="themeNightBtn" class="theme-btn active" type="button">🌙 Noite</button></div>
-        <a href="/dashboard/" class="icon-link">🏠</a>
-        <a href="/logout/" class="icon-link logout">⎋</a>
+        <div class="theme-switch"><button id="themeDayBtn" class="theme-btn" type="button">â˜€ Dia</button><button id="themeNightBtn" class="theme-btn active" type="button">ðŸŒ™ Noite</button></div>
+        <a href="/dashboard/" class="icon-link">ðŸ </a>
+        <a href="/logout/" class="icon-link logout">âŽ‹</a>
       </div>
     </div>
 
@@ -344,30 +344,30 @@ document.addEventListener("DOMContentLoaded", async ()=>{
             <input id="trip_date" type="date">
           </div>
           <div>
-            <label for="trip_vehicle_id">Veículo</label>
+            <label for="trip_vehicle_id">VeÃ­culo</label>
             <select id="trip_vehicle_id"></select>
           </div>
         </div>
         <div class="row">
           <div>
-            <label for="trip_distance_outbound_km">Distância de Ida (km)</label>
+            <label for="trip_distance_outbound_km">DistÃ¢ncia de Ida (km)</label>
             <input id="trip_distance_outbound_km" type="number" min="0" step="0.01" value="0">
           </div>
           <div>
-            <label for="trip_distance_return_km">Distância de Volta (km)</label>
+            <label for="trip_distance_return_km">DistÃ¢ncia de Volta (km)</label>
             <input id="trip_distance_return_km" type="number" min="0" step="0.01" value="0">
           </div>
         </div>
-        <h3 style="margin-top:16px">Pedágios</h3>
+        <h3 style="margin-top:16px">PedÃ¡gios</h3>
         <div id="tollsBox" class="tolls"></div>
-        <div class="actions"><button type="button" id="addTollBtn" class="btn-secondary">+ Adicionar pedágio</button></div>
+        <div class="actions"><button type="button" id="addTollBtn" class="btn-secondary">+ Adicionar pedÃ¡gio</button></div>
         <div class="row">
           <div>
             <label for="trip_lodging_cost">Hospedagem</label>
             <input id="trip_lodging_cost" type="number" min="0" step="0.01" value="0">
           </div>
           <div>
-            <label for="trip_meal_cost">Refeição</label>
+            <label for="trip_meal_cost">RefeiÃ§Ã£o</label>
             <input id="trip_meal_cost" type="number" min="0" step="0.01" value="0">
           </div>
         </div>
@@ -376,18 +376,18 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         <div class="actions">
           <button type="button" id="evaluateTripBtn" class="btn-secondary">Avaliar viagem</button>
           <button type="button" id="saveTripBtn" class="btn-primary">Salvar viagem</button>
-          <button type="button" id="cancelTripEditBtn" class="btn-secondary" style="display:none">Cancelar edição</button>
+          <button type="button" id="cancelTripEditBtn" class="btn-secondary" style="display:none">Cancelar ediÃ§Ã£o</button>
         </div>
         <div id="tripMessage" class="message"></div>
       </div>
 
       <div class="panel">
-        <h3>Análise Financeira da Viagem</h3>
+        <h3>AnÃ¡lise Financeira da Viagem</h3>
         <div class="summary">
-          <div class="line"><span>Combustível</span><b id="tripFuel">R$ 0,00</b></div>
-          <div class="line"><span>Pedágios</span><b id="tripTolls">R$ 0,00</b></div>
+          <div class="line"><span>CombustÃ­vel</span><b id="tripFuel">R$ 0,00</b></div>
+          <div class="line"><span>PedÃ¡gios</span><b id="tripTolls">R$ 0,00</b></div>
           <div class="line"><span>Hospedagem</span><b id="tripLodging">R$ 0,00</b></div>
-          <div class="line"><span>Refeições</span><b id="tripMeals">R$ 0,00</b></div>
+          <div class="line"><span>RefeiÃ§Ãµes</span><b id="tripMeals">R$ 0,00</b></div>
           <div class="line"><span>Outros</span><b id="tripExtra">R$ 0,00</b></div>
           <div class="line"><span>Total da viagem</span><b id="tripTotal">R$ 0,00</b></div>
           <div class="line"><span>Comprometimento do saldo</span><b id="tripCommitBalance">0%</b></div>
@@ -396,17 +396,17 @@ document.addEventListener("DOMContentLoaded", async ()=>{
           <div class="line"><span>Runway depois</span><b id="tripRunwayAfter">0 dias</b></div>
         </div>
         <div class="gauge-wrap">
-          <div id="tripScoreTitle" class="gauge-title">Termômetro de Viagem</div>
+          <div id="tripScoreTitle" class="gauge-title">TermÃ´metro de Viagem</div>
           <div class="gauge-canvas-wrap">
             <canvas id="tripScoreGauge" width="420" height="220"></canvas>
             <div class="gauge-center">
               <strong id="tripMeterValue">0%</strong>
-              <span id="tripMeterStatus">Aguardando avaliação</span>
+              <span id="tripMeterStatus">Aguardando avaliaÃ§Ã£o</span>
             </div>
           </div>
           <div class="gauge-legend">
             <div class="legend-item"><span class="dot green"></span>Boa hora</div>
-            <div class="legend-item"><span class="dot orange"></span>Atenção</div>
+            <div class="legend-item"><span class="dot orange"></span>AtenÃ§Ã£o</div>
             <div class="legend-item"><span class="dot red"></span>Evitar agora</div>
             <div class="legend-item"><span class="dot gray"></span>Zona sem margem</div>
           </div>
@@ -417,7 +417,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     <div class="panel">
       <h3>Viagens Salvas</h3>
       <table>
-        <thead><tr><th>Data</th><th>Título</th><th>Veículo</th><th>Distância</th><th>Custo base</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Data</th><th>TÃ­tulo</th><th>VeÃ­culo</th><th>DistÃ¢ncia</th><th>Custo base</th><th>AÃ§Ãµes</th></tr></thead>
         <tbody id="tripRows"></tbody>
       </table>
     </div>
@@ -425,3 +425,5 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 </div>
 </body>
 </html>
+
+
