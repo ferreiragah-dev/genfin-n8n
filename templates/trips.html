@@ -67,6 +67,8 @@ body.theme-light .icon-link.logout{color:#dc2626}
 function formatCurrency(v){return "R$ " + Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function getCsrfToken(){const t=document.cookie.split("; ").find((r)=>r.startsWith("csrftoken="));return t?decodeURIComponent(t.split("=")[1]):"";}
 function setMessage(id,text,isError){const el=document.getElementById(id);el.textContent=text;el.style.color=isError?"#ef4444":"#22c55e";}
+let editingTripId = null;
+let evaluateDebounce = null;
 function initTheme(){
   const d=document.getElementById("themeDayBtn"),n=document.getElementById("themeNightBtn");
   const apply=(m)=>{const l=m==="light";document.body.classList.toggle("theme-light",l);d.classList.toggle("active",l);n.classList.toggle("active",!l);};
@@ -79,7 +81,8 @@ function addTollRow(name="",amount=""){
   const row=document.createElement("div");
   row.className="toll-row";
   row.innerHTML=`<input type="text" placeholder="Pedágio" value="${name}"><input type="number" min="0" step="0.01" placeholder="Valor" value="${amount}"><button type="button" class="btn-danger">×</button>`;
-  row.querySelector("button").addEventListener("click",()=>row.remove());
+  row.querySelector("button").addEventListener("click",()=>{row.remove(); scheduleEvaluateTrip();});
+  row.querySelectorAll("input").forEach((input)=>input.addEventListener("input", scheduleEvaluateTrip));
   box.appendChild(row);
 }
 function collectPayload(){
@@ -187,21 +190,69 @@ function drawTripGauge(speedPercent){
   ctx.fill();
 }
 async function evaluateTrip(){
+  return evaluateTripInternal(false);
+}
+async function evaluateTripInternal(silent){
   const payload=collectPayload();
   const r=await fetch("/api/trips/evaluate/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
   const data=await r.json();
-  if(!r.ok){ setMessage("tripMessage", data.error || "Erro ao avaliar viagem.", true); return; }
-  setMessage("tripMessage","Avaliação atualizada.",false);
+  if(!r.ok){ if(!silent) setMessage("tripMessage", data.error || "Erro ao avaliar viagem.", true); return; }
+  if(!silent) setMessage("tripMessage","Avaliação atualizada.",false);
   renderAnalysis(data);
+  return data;
+}
+function scheduleEvaluateTrip(){
+  if(evaluateDebounce) clearTimeout(evaluateDebounce);
+  evaluateDebounce = setTimeout(()=>{ evaluateTripInternal(true).catch(()=>{}); }, 260);
 }
 async function saveTrip(){
   const payload=collectPayload();
-  const r=await fetch("/api/trips/create/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
+  const url = editingTripId ? `/api/trips/${editingTripId}/` : "/api/trips/create/";
+  const method = editingTripId ? "PUT" : "POST";
+  const r=await fetch(url,{method,credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},body:JSON.stringify(payload)});
   const data=await r.json();
   if(!r.ok){ setMessage("tripMessage", data.error || "Erro ao salvar viagem.", true); return; }
-  setMessage("tripMessage","Viagem salva com sucesso.",false);
+  setMessage("tripMessage", editingTripId ? "Viagem atualizada com sucesso." : "Viagem salva com sucesso.",false);
   if(data.analysis) renderAnalysis(data.analysis);
+  resetTripForm();
   await loadTrips();
+}
+function fillTripForm(t){
+  editingTripId = t.id;
+  document.getElementById("tripFormTitle").textContent = "Editar Viagem";
+  document.getElementById("saveTripBtn").textContent = "Atualizar viagem";
+  document.getElementById("cancelTripEditBtn").style.display = "inline-block";
+  document.getElementById("trip_title").value = t.title || "";
+  document.getElementById("trip_date").value = t.date || "";
+  document.getElementById("trip_vehicle_id").value = t.vehicle_id;
+  document.getElementById("trip_lodging_cost").value = t.lodging_cost || 0;
+  document.getElementById("trip_meal_cost").value = t.meal_cost || 0;
+  document.getElementById("trip_extra_cost").value = t.extra_cost || 0;
+  const totalDistance = Number(t.distance_km || 0);
+  document.getElementById("trip_distance_outbound_km").value = (totalDistance / 2).toFixed(2);
+  document.getElementById("trip_distance_return_km").value = (totalDistance / 2).toFixed(2);
+  const tollsBox = document.getElementById("tollsBox");
+  tollsBox.textContent = "";
+  (t.tolls || []).forEach((x)=>addTollRow(x.name || "", x.amount || ""));
+  if(!(t.tolls || []).length) addTollRow();
+  scheduleEvaluateTrip();
+}
+function resetTripForm(){
+  editingTripId = null;
+  document.getElementById("tripFormTitle").textContent = "Planejamento da Viagem";
+  document.getElementById("saveTripBtn").textContent = "Salvar viagem";
+  document.getElementById("cancelTripEditBtn").style.display = "none";
+  document.getElementById("trip_title").value = "";
+  document.getElementById("trip_date").value = "";
+  document.getElementById("trip_distance_outbound_km").value = "0";
+  document.getElementById("trip_distance_return_km").value = "0";
+  document.getElementById("trip_lodging_cost").value = "0";
+  document.getElementById("trip_meal_cost").value = "0";
+  document.getElementById("trip_extra_cost").value = "0";
+  const tollsBox = document.getElementById("tollsBox");
+  tollsBox.textContent = "";
+  addTollRow();
+  scheduleEvaluateTrip();
 }
 async function loadTrips(){
   const r=await fetch("/api/trips/",{credentials:"same-origin"});
@@ -213,13 +264,32 @@ async function loadTrips(){
     const tollTotal=(t.tolls||[]).reduce((s,x)=>s+Number(x.amount||0),0);
     const total = Number(t.lodging_cost||0)+Number(t.meal_cost||0)+Number(t.extra_cost||0)+tollTotal;
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${t.date||"-"}</td><td>${t.title||"Viagem"}</td><td>${t.vehicle_name}</td><td>${Number(t.distance_km||0).toFixed(2)} km</td><td>${formatCurrency(total)}</td><td><button type="button" class="btn-danger">Apagar</button></td>`;
-    tr.querySelector("button").addEventListener("click", async ()=>{
+    tr.innerHTML=`<td>${t.date||"-"}</td><td>${t.title||"Viagem"}</td><td>${t.vehicle_name}</td><td>${Number(t.distance_km||0).toFixed(2)} km</td><td>${formatCurrency(total)}</td><td><div class="actions" style="margin-top:0"><button type="button" class="btn-secondary">Editar</button><button type="button" class="btn-danger">Apagar</button></div></td>`;
+    const [editBtn, deleteBtn] = tr.querySelectorAll("button");
+    editBtn.addEventListener("click", ()=>fillTripForm(t));
+    deleteBtn.addEventListener("click", async ()=>{
       const del=await fetch(`/api/trips/${t.id}/`,{method:"DELETE",credentials:"same-origin",headers:{"X-CSRFToken":getCsrfToken()}});
       if(!del.ok){ setMessage("tripMessage","Erro ao apagar viagem.",true); return; }
+      if(editingTripId === t.id){ resetTripForm(); }
       await loadTrips();
     });
     tbody.appendChild(tr);
+  });
+}
+function bindRealtimeInputs(){
+  [
+    "trip_title",
+    "trip_date",
+    "trip_vehicle_id",
+    "trip_distance_outbound_km",
+    "trip_distance_return_km",
+    "trip_lodging_cost",
+    "trip_meal_cost",
+    "trip_extra_cost"
+  ].forEach((id)=>{
+    const el = document.getElementById(id);
+    const eventName = id === "trip_vehicle_id" ? "change" : "input";
+    el.addEventListener(eventName, scheduleEvaluateTrip);
   });
 }
 document.addEventListener("DOMContentLoaded", async ()=>{
@@ -227,6 +297,8 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   document.getElementById("addTollBtn").addEventListener("click",()=>addTollRow());
   document.getElementById("evaluateTripBtn").addEventListener("click",evaluateTrip);
   document.getElementById("saveTripBtn").addEventListener("click",saveTrip);
+  document.getElementById("cancelTripEditBtn").addEventListener("click", resetTripForm);
+  bindRealtimeInputs();
   try{
     await loadVehicles();
     addTollRow();
@@ -263,7 +335,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
     <div class="grid">
       <div class="panel">
-        <h3>Planejamento da Viagem</h3>
+        <h3 id="tripFormTitle">Planejamento da Viagem</h3>
         <label for="trip_title">Nome da viagem</label>
         <input id="trip_title" type="text" maxlength="120" placeholder="Ex.: Viagem para litoral">
         <div class="row">
@@ -304,6 +376,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         <div class="actions">
           <button type="button" id="evaluateTripBtn" class="btn-secondary">Avaliar viagem</button>
           <button type="button" id="saveTripBtn" class="btn-primary">Salvar viagem</button>
+          <button type="button" id="cancelTripEditBtn" class="btn-secondary" style="display:none">Cancelar edição</button>
         </div>
         <div id="tripMessage" class="message"></div>
       </div>
