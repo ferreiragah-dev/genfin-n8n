@@ -1,10 +1,32 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 170" role="img" aria-label="GenFin Logo">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#34f5d0"/>
-      <stop offset="100%" stop-color="#22b4ff"/>
+    <linearGradient id="arrowBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1aa0ff"/>
+      <stop offset="100%" stop-color="#0a63c7"/>
+    </linearGradient>
+    <linearGradient id="barBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f7fd6"/>
+      <stop offset="100%" stop-color="#0b4f9f"/>
+    </linearGradient>
+    <linearGradient id="barGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="12" fill="#030712"/>
-  <path d="M22 16 10 27.5a4 4 0 0 0 0 5.8L22 45a4 4 0 0 0 5.7 0L32 41.1a2.8 2.8 0 0 0-4-4l-3.5 3.2L14.8 31l9.7-9.3 9 8.5h-5.3a2.8 2.8 0 0 0 0 5.6H44a2.8 2.8 0 0 0 2.8-2.8v-5.5a2.8 2.8 0 0 0-5.6 0v.7L28 15.9a4 4 0 0 0-6 0Z" fill="url(#g)"/>
+
+  <rect x="0" y="0" width="520" height="170" fill="none"/>
+
+  <g transform="translate(26 20)">
+    <path d="M18 108 Q48 112 84 91 Q114 74 142 42" fill="none" stroke="#0b4f9f" stroke-width="6" stroke-linecap="round"/>
+    <path d="M30 104 Q67 108 102 84 Q126 68 148 32" fill="none" stroke="url(#arrowBlue)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M142 42 L156 48 L156 26 Z" fill="url(#arrowBlue)"/>
+
+    <rect x="42" y="74" width="20" height="34" fill="#53ad3d"/>
+    <rect x="66" y="56" width="20" height="52" fill="url(#barBlue)"/>
+    <rect x="90" y="40" width="20" height="68" fill="#1788d0"/>
+    <rect x="114" y="24" width="20" height="84" fill="url(#barGreen)"/>
+  </g>
+
+  <text x="190" y="108" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="700" fill="#0b4f9f">Gen</text>
+  <text x="333" y="108" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="700" fill="#4caf3d">Fin</text>
 </svg>
