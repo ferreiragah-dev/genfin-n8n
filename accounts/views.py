@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 import json
 import os
+import textwrap
 from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -44,214 +45,188 @@ def _pdf_escape(text):
 
 
 def build_manual_pdf_bytes():
+    version = os.getenv("GENFIN_MANUAL_VERSION", "v1.0")
+    updated_at = timezone.now().strftime("%d/%m/%Y")
+    generated_at = timezone.now().strftime("%d/%m/%Y %H:%M")
+
     pages = [
-        [
-            "GenFin - Manual da Plataforma",
-            "",
-            "Versao completa do produto (operacao + analise).",
-            "Objetivo: explicar cada tela, dado, percentual e leitura pratica.",
-            "",
-            "Como usar este manual",
-            "- Sempre valide o filtro de periodo (semana/mes/ano e mes selecionado).",
-            "- Compare tendencia sempre com o periodo anterior equivalente.",
-            "- Use dados de Movimentacoes para diagnosticar e telas planejadas para agir.",
-            "",
-            "Navegacao da plataforma",
-            "- Dashboard: visao executiva e indicadores consolidados.",
-            "- Movimentacoes: entradas/saidas detalhadas com edicao e comprovante.",
-            "- Despesas Fixas: contas recorrentes e status pago/nao pago.",
-            "- Entradas Fixas: salarios/rendas recorrentes.",
-            "- Reservas: metas e colchao de liquidez.",
-            "- Veiculos: custo total de propriedade mensal.",
-            "- Cartoes: gastos por fatura, limite e pontos por dolar.",
-            "- Perfil: dados da conta e acesso ao manual.",
-            "",
-            "Convencoes",
-            "- Valores: R$.",
-            "- Percentuais: relacao entre duas grandezas (base no periodo filtrado).",
-            "- Tendencia: seta para cima/baixo versus periodo anterior.",
-        ],
-        [
-            "Dashboard - Bloco Superior",
-            "",
-            "Receitas",
-            "- Soma de todas as movimentacoes tipo RECEITA no periodo.",
-            "- Leitura: mede capacidade de entrada de caixa.",
-            "",
-            "Despesas",
-            "- Soma de todas as movimentacoes tipo DESPESA no periodo.",
-            "- Leitura: mede consumo de caixa.",
-            "",
-            "Saldo Atual",
-            "- Formula: Receitas - Despesas.",
-            "- Saldo positivo: acumulacao; saldo negativo: consumo de patrimonio.",
-            "",
-            "Projecao Fim do Mes",
-            "- Estimativa do saldo final com base no burn rate atual.",
-            "- Leitura: antecipar ajuste de gastos antes do fechamento.",
-            "",
-            "Tendencia de Saldo",
-            "- Compara saldo do periodo com periodo anterior equivalente.",
-            "- Ex.: FEV vs JAN, MAR vs FEV.",
-        ],
-        [
-            "Inteligencia Financeira - Cards",
-            "",
-            "Movimentacoes",
-            "- Quantidade total de lancamentos no periodo.",
-            "- Leitura: volume operacional (nao confundir com valor financeiro).",
-            "",
-            "Taxa de Poupanca",
-            "- Formula: (Saldo / Receitas) * 100.",
-            "- >20% geralmente saudavel; proximo de 0% exige ajuste.",
-            "",
-            "Burn Rate (R$/dia)",
-            "- Formula: Despesas do periodo / dias decorridos.",
-            "- Leitura: velocidade de consumo diario.",
-            "",
-            "Runway Pessoal",
-            "- Quantos dias/meses o saldo suportaria no ritmo atual.",
-            "- Leitura: margem de seguranca em caso de queda de renda.",
-            "",
-            "Tendencia Entradas / Saidas",
-            "- Variacao absoluta vs periodo anterior.",
-            "- Entradas subindo e saidas caindo = melhor composicao.",
-        ],
-        [
-            "Donuts de Planejamento e Estrutura",
-            "",
-            "Comprometimento Fixo",
-            "- Formula: despesas fixas recorrentes / entradas fixas recorrentes.",
-            "- >70% alerta: pouca flexibilidade de caixa.",
-            "",
-            "Cobertura de Fixas",
-            "- Inverso do comprometimento: quanto da fixa e coberta por renda fixa.",
-            "- >100% indica cobertura completa com sobra.",
-            "",
-            "Peso nas Saidas",
-            "- Participacao das despesas fixas sobre total de saidas.",
-            "- Leitura: identifica rigidez da estrutura de custos.",
-            "",
-            "Reserva para Fixas",
-            "- Equivalencia de meses de fixos cobertos por reservas.",
-            "- Leitura: resiliencia para manter padrao sem renda.",
-            "",
-            "Contas Fixas Pagas",
-            "- Indicador pago/total + valor pago/restante.",
-            "- Leitura: disciplina operacional do mes.",
-            "",
-            "Peso Veiculos",
-            "- Participacao do custo de veiculo no total de despesas.",
-            "- Leitura: avaliar sustentabilidade do custo de mobilidade.",
-        ],
-        [
-            "Resumo de Movimentacoes e Categoria",
-            "",
-            "Resumo de Movimentacoes (Hoje/7 dias/30 dias)",
-            "- Entradas, saidas, quantidade e percentuais de composicao.",
-            "- Leitura: pulso de curto prazo para correcoes rapidas.",
-            "",
-            "Desempenho por Categoria (% da Despesa)",
-            "- Donuts por categoria de gasto.",
-            "- Leitura: localizar maiores drenos (moradia, mercado, lazer etc).",
-            "",
-            "Despesas Fixas por Categoria",
-            "- Donuts das contas fixas planejadas/recorrentes.",
-            "- Leitura: ver concentracao e dependencias estruturais.",
-            "",
-            "Gastos por Dia da Semana",
-            "- Barra semanal + calendario mensal de gastos.",
-            "- Leitura: identifica padroes comportamentais por dia.",
-            "",
-            "Top 5 Maiores Gastos",
-            "- Ranking dos maiores lancamentos do periodo.",
-            "- Leitura: foco imediato em corte/reducao de impacto.",
-        ],
-        [
-            "Movimentacoes - Operacao Detalhada",
-            "",
-            "Entradas e Despesas",
-            "- Cada linha contem data, categoria, valor e acoes.",
-            "- Acoes: editar (lapis), apagar (lixeira), comprovante (clip).",
-            "",
-            "Comprovantes",
-            "- Anexe nota/comprovante por lancamento (imagem ou PDF).",
-            "- Uso: auditoria pessoal, conciliacao e rastreabilidade.",
-            "",
-            "Filtro por Mes",
-            "- Exibe apenas dados do mes selecionado.",
-            "- Leitura correta depende do filtro ativo no topo.",
-            "",
-            "Boas praticas",
-            "- Categorias padronizadas (evite nomes diferentes para o mesmo gasto).",
-            "- Registrar no mesmo dia melhora qualidade analitica.",
-        ],
-        [
-            "Modulos de Planejamento",
-            "",
-            "Despesas Fixas",
-            "- Cadastro de contas recorrentes com data/categoria/valor.",
-            "- Toggle recorrente e status Pago/Nao pago.",
-            "- Leitura: previsibilidade e execucao do mes.",
-            "",
-            "Entradas Fixas",
-            "- Cadastro de receitas recorrentes (salario, aluguel, etc).",
-            "- Leitura: base minima de receita previsivel.",
-            "",
-            "Reservas",
-            "- Valores destinados a objetivos e emergencia.",
-            "- Leitura: colchao de seguranca e capacidade de absorver choques.",
-            "",
-            "Veiculos",
-            "- Custos: combustivel, manutencao, documentacao, IPVA, licenciamento.",
-            "- Tambem inclui financiamento e parcelas restantes.",
-            "- Leitura: custo total de propriedade e impacto no caixa mensal.",
-        ],
-        [
-            "Cartoes de Credito - Regra e Analise",
-            "",
-            "Cadastro de Cartoes",
-            "- Nome, ultimos 4, limite, fechamento, vencimento e pontos por dolar.",
-            "- Permite herdar limite/fatura (cartao dependente).",
-            "",
-            "Competencia da Fatura",
-            "- Gasto entra no mes da fatura que fecha, nao no mes da compra.",
-            "- Ex.: fechamento 14 / vencimento 20.",
-            "- Compras 15/01 a 14/02 = fatura de fevereiro.",
-            "",
-            "Resumo Mensal de Cartoes",
-            "- Total gasto, uso de limite, pontos estimados, quantidade de cartoes.",
-            "- Pontos: (gasto em BRL / USD-BRL) * pontos_por_dolar.",
-            "",
-            "Leituras-chave",
-            "- Uso de limite acima de 70%: atencao para risco de pressao financeira.",
-            "- Acompanhe categoria dominante para reduzir custo da fatura.",
-        ],
-        [
-            "Metricas Avancadas e Interpretacao",
-            "",
-            "Eficiencia Financeira",
-            "- IEF: (Receitas - gastos essenciais) / Receitas.",
-            "- Volatilidade: desvio dos gastos mensais ao longo do tempo.",
-            "- Previsibilidade: recorrentes vs variaveis.",
-            "",
-            "Seguranca Financeira",
-            "- IRF: reserva de emergencia / gasto essencial mensal.",
-            "- Cobertura de emergencia: reserva atual / meta de reserva.",
-            "- Exposicao a liquidez: gastos 30 dias / saldo disponivel.",
-            "",
-            "Risco Financeiro Pessoal",
-            "- Risco de estouro: gastos medios / receita media.",
-            "- Pressao financeira: compromissos / receita.",
-            "- Prob. saldo negativo: proporcao historica de meses negativos.",
-            "",
-            "Metodo pratico de analise (mensal)",
-            "- 1) Validar saldo e tendencia.",
-            "- 2) Ver comprometimento fixo e contas pagas.",
-            "- 3) Atacar top 5 gastos e categorias dominantes.",
-            "- 4) Revisar cartoes e uso de limite.",
-            "- 5) Ajustar plano (fixas, reservas e metas).",
-        ],
+        {
+            "cover": True,
+            "title": "GenFin - Manual Oficial da Plataforma",
+            "subtitle": "Guia de Uso, Operacao e Interpretacao Financeira",
+            "items": [
+                ("p", f"Versao do sistema: {version}"),
+                ("p", f"Data de atualizacao: {updated_at}"),
+                ("sp", ""),
+                ("q", "Seu sistema pessoal de inteligencia financeira"),
+            ],
+        },
+        {
+            "title": "Como usar este manual",
+            "items": [
+                ("p", "Este manual atende tres perfis: iniciante, analitico e avancado."),
+                ("li", "Iniciante: aprender telas e cadastros"),
+                ("li", "Analitico: interpretar metricas e graficos"),
+                ("li", "Avancado: planejar decisoes financeiras"),
+                ("alert", "Recomendacao", "Na primeira utilizacao, leia os capitulos 1 a 3 antes de registrar movimentacoes."),
+                ("h2", "Sumario"),
+                ("li", "1) Mapa da Plataforma"),
+                ("li", "2) Dashboard"),
+                ("li", "3) Movimentacoes"),
+                ("li", "4) Planejamento"),
+                ("li", "5) Cartoes"),
+                ("li", "6) FAQ"),
+                ("li", "7) Glossario"),
+                ("li", "8) Roteiro tecnico e checklist"),
+            ],
+        },
+        {
+            "title": "1) Mapa da Plataforma",
+            "items": [
+                ("mono", "Dashboard"),
+                ("mono", "  |- KPIs Financeiros"),
+                ("mono", "  |- Inteligencia Financeira"),
+                ("mono", "  |- Planejamento (donuts)"),
+                ("mono", "  |- Graficos de categoria"),
+                ("mono", "  `- Top 5 Gastos"),
+                ("sp", ""),
+                ("mono", "Movimentacoes"),
+                ("mono", "  |- Entradas"),
+                ("mono", "  |- Despesas"),
+                ("mono", "  `- Comprovantes"),
+                ("sp", ""),
+                ("mono", "Planejamento"),
+                ("mono", "  |- Despesas Fixas"),
+                ("mono", "  |- Entradas Fixas"),
+                ("mono", "  |- Reservas"),
+                ("mono", "  `- Veiculos"),
+                ("sp", ""),
+                ("mono", "Cartoes"),
+                ("mono", "  `- Faturas e limites"),
+            ],
+        },
+        {
+            "title": "2) Dashboard - Operacao e leitura",
+            "items": [
+                ("h2", "Objetivo"),
+                ("p", "Visao executiva consolidada da saude financeira no periodo filtrado."),
+                ("h2", "Indicadores e formulas"),
+                ("li", "Receitas: soma das entradas do periodo"),
+                ("li", "Despesas: soma das saidas do periodo"),
+                ("li", "Saldo Atual: Receitas - Despesas"),
+                ("li", "Taxa de Poupanca: (Saldo / Receitas) * 100"),
+                ("li", "Burn Rate: Despesas / dias decorridos"),
+                ("li", "Runway: saldo disponivel / burn diario"),
+                ("li", "Tendencias: comparacao com periodo anterior equivalente"),
+                ("concept", "Conceito: Burn Rate", "Mede velocidade de consumo do dinheiro. Quanto maior, maior a pressao no saldo."),
+                ("tip", "Dica", "Sempre confirme o filtro de periodo antes de comparar percentuais."),
+            ],
+        },
+        {
+            "title": "2.1) Donuts e graficos do Dashboard",
+            "items": [
+                ("li", "Comprometimento Fixo: despesas fixas / entradas fixas"),
+                ("li", "Cobertura de Fixas: quanto da fixa e coberta por renda fixa"),
+                ("li", "Peso nas Saidas: participacao das fixas nas despesas"),
+                ("li", "Reserva para Fixas: meses de cobertura da reserva"),
+                ("li", "Contas Fixas Pagas: pago/total e pago/restante"),
+                ("li", "Peso Veiculos: impacto do custo veicular no total"),
+                ("li", "Resumo de Movimentacoes: hoje, 7 dias, 30 dias"),
+                ("li", "Desempenho por Categoria: distribuicao dos gastos"),
+                ("li", "Gastos por Dia da Semana: barras + calendario"),
+                ("li", "Top 5 Maiores Gastos: ranking de maior impacto"),
+                ("alert", "Atencao", "Nao interprete taxa de poupanca isoladamente sem analisar comprometimento fixo."),
+            ],
+        },
+        {
+            "title": "3) Movimentacoes",
+            "items": [
+                ("h2", "Objetivo"),
+                ("p", "Controle detalhado de entradas e despesas com auditoria por comprovante."),
+                ("h2", "O que fazer no modulo"),
+                ("li", "Editar lancamentos"),
+                ("li", "Excluir lancamentos"),
+                ("li", "Anexar/remover comprovante por item"),
+                ("li", "Filtrar por mes"),
+                ("h2", "Como analisar"),
+                ("li", "Volume alto + ticket baixo: dispersao operacional"),
+                ("li", "Poucas categorias concentradas: risco de dependencia"),
+                ("li", "Use comprovantes para conciliacao e rastreabilidade"),
+            ],
+        },
+        {
+            "title": "4) Planejamento (Fixas, Entradas, Reservas, Veiculos)",
+            "items": [
+                ("li", "Despesas Fixas: previsao e status pago/nao pago"),
+                ("li", "Entradas Fixas: base recorrente de receita"),
+                ("li", "Reservas: colchao para emergencia e metas"),
+                ("li", "Veiculos: custo total de propriedade"),
+                ("h2", "Boas praticas"),
+                ("li", "Cadastrar fixas no inicio do mes"),
+                ("li", "Revisar pago/nao pago semanalmente"),
+                ("li", "Separar custos essenciais de variaveis"),
+                ("tip", "Dica", "Se os donuts de planejamento estiverem inconsistentes, revise dados recorrentes primeiro."),
+            ],
+        },
+        {
+            "title": "5) Cartoes de Credito",
+            "items": [
+                ("li", "Cadastro: nome, final, limite, fechamento, vencimento, pontos/USD"),
+                ("li", "Herdar cartao: consolidacao por limite/fatura"),
+                ("h2", "Regra de competencia"),
+                ("p", "Compra entra no mes da fatura que fecha, nao no mes da compra."),
+                ("li", "Exemplo: fechamento 14 e vencimento 20"),
+                ("li", "Compras de 15/01 a 14/02 pertencem a fatura de fevereiro"),
+                ("h2", "Pontos estimados"),
+                ("p", "Formula: (gasto BRL / cotacao USD-BRL) * pontos por dolar"),
+                ("li", "Uso de limite > 70%: alerta de pressao financeira"),
+            ],
+        },
+        {
+            "title": "6) FAQ do produto",
+            "items": [
+                ("q", "Por que gastos de cartao aparecem em outro mes?"),
+                ("p", "Porque o GenFin usa competencia da fatura."),
+                ("q", "Por que a projecao de fim de mes muda ao longo do mes?"),
+                ("p", "Porque burn rate e recalculado dinamicamente pelos dias decorridos."),
+                ("q", "Como melhorar rapido os indicadores?"),
+                ("p", "Atacar top 5 gastos, revisar fixas e reduzir uso de limite."),
+                ("q", "Por que um percentual piorou sem mudar receita?"),
+                ("p", "Possivel aumento de despesas ou alteracao de mix de gastos."),
+            ],
+        },
+        {
+            "title": "7) Glossario do GenFin",
+            "items": [
+                ("mono", "Burn Rate             Consumo medio diario"),
+                ("mono", "Runway                Quanto tempo o saldo dura"),
+                ("mono", "Comprometimento fixo  Percentual da renda em fixos"),
+                ("mono", "Cobertura de fixas    Quanto da fixa e coberta por renda fixa"),
+                ("mono", "IEF                   Indice de Eficiencia Financeira"),
+                ("mono", "IRF                   Indice de Resiliencia Financeira"),
+                ("mono", "Pressao financeira    Compromissos / receita"),
+                ("mono", "Volatilidade          Variacao dos gastos no tempo"),
+            ],
+        },
+        {
+            "title": "8) Roteiro tecnico + Checklist final",
+            "items": [
+                ("h2", "Roteiro tecnico recomendado"),
+                ("li", "Layout dark premium"),
+                ("li", "Titulos hierarquicos"),
+                ("li", "Caixas visuais: conceito, alerta, dica"),
+                ("li", "Cabecalho com nome e versao"),
+                ("li", "Rodape com pagina e data de geracao"),
+                ("li", "FAQ e glossario obrigatorios"),
+                ("h2", "Checklist de qualidade"),
+                ("li", "Capa profissional"),
+                ("li", "Sumario"),
+                ("li", "Padrao por modulo"),
+                ("li", "Exemplos praticos"),
+                ("li", "Linguagem de produto"),
+                ("q", f"Documento gerado em {generated_at}"),
+            ],
+        },
     ]
 
     objects = []
@@ -263,14 +238,73 @@ def build_manual_pdf_bytes():
     font_obj = add_obj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
     page_obj_ids = []
     content_obj_ids = []
+    total_pages = len(pages)
 
-    for lines in pages:
-        cmds = ["BT", "/F1 18 Tf", "50 800 Td", f"({_pdf_escape(lines[0])}) Tj", "/F1 11 Tf"]
-        y = 770
-        for line in lines[1:]:
-            cmds.append(f"1 0 0 1 50 {y} Tm ({_pdf_escape(line)}) Tj")
-            y -= 18
+    for idx, page in enumerate(pages, start=1):
+        title = page.get("title", "")
+        subtitle = page.get("subtitle", "")
+        items = page.get("items", [])
+        is_cover = bool(page.get("cover"))
+
+        cmds = []
+        cmds.append("0.04 0.07 0.12 rg 0 0 595 842 re f")
+        if not is_cover:
+            cmds.append("0.58 0.76 1 rg 40 816 515 1 re f")
+            cmds.append("BT /F1 9 Tf 0.75 0.82 0.95 rg 42 824 Td (GenFin - Manual Oficial) Tj ET")
+            cmds.append(f"BT /F1 9 Tf 0.75 0.82 0.95 rg 425 824 Td (Versao {_pdf_escape(version)}) Tj ET")
+
+        cmds.append("BT")
+        cmds.append("/F1 22 Tf")
+        cmds.append("0.91 0.94 0.98 rg")
+        cmds.append(f"1 0 0 1 50 782 Tm ({_pdf_escape(title)}) Tj")
+        if subtitle:
+            cmds.append("/F1 12 Tf")
+            cmds.append("0.58 0.73 0.94 rg")
+            cmds.append(f"1 0 0 1 50 758 Tm ({_pdf_escape(subtitle)}) Tj")
         cmds.append("ET")
+
+        y = 728 if subtitle else 744
+        for item in items:
+            kind = item[0]
+            if kind == "sp":
+                y -= 8
+                continue
+            if kind == "h2":
+                cmds.append("BT /F1 13 Tf 0.72 0.86 1 rg")
+                cmds.append(f"1 0 0 1 50 {y} Tm ({_pdf_escape(item[1])}) Tj ET")
+                y -= 18
+                continue
+            if kind in {"concept", "alert", "tip"}:
+                stroke = {"concept": "0.25 0.68 1", "alert": "0.95 0.35 0.35", "tip": "0.30 0.82 0.52"}[kind]
+                title_box = item[1]
+                body_box = item[2]
+                cmds.append(f"{stroke} RG 50 {y-40} 495 46 re S")
+                cmds.append("BT /F1 10 Tf 0.90 0.93 0.98 rg")
+                cmds.append(f"1 0 0 1 58 {y-16} Tm ({_pdf_escape(title_box)}) Tj")
+                yy = y - 30
+                for part in textwrap.wrap(body_box, width=90)[:2]:
+                    cmds.append(f"1 0 0 1 58 {yy} Tm ({_pdf_escape(part)}) Tj")
+                    yy -= 12
+                cmds.append("ET")
+                y -= 54
+                continue
+
+            text = item[1]
+            if kind == "li":
+                text = f"- {text}"
+            if kind == "q":
+                text = f'"{text}"'
+            wrap_width = 92 if kind == "mono" else 96
+            color = "0.82 0.88 0.95" if kind == "mono" else "0.90 0.93 0.98"
+            size = 10 if kind == "mono" else 11
+            for part in textwrap.wrap(text, width=wrap_width):
+                cmds.append(f"BT /F1 {size} Tf {color} rg 1 0 0 1 50 {y} Tm ({_pdf_escape(part)}) Tj ET")
+                y -= 14
+
+        cmds.append("0.58 0.76 1 rg 40 28 515 1 re f")
+        footer = f"Pagina {idx}/{total_pages} | Gerado em {generated_at}"
+        cmds.append(f"BT /F1 9 Tf 0.75 0.82 0.95 rg 50 14 Td ({_pdf_escape(footer)}) Tj ET")
+
         stream = "\n".join(cmds)
         stream_len = len(stream.encode("latin-1", errors="ignore"))
         content_obj_id = add_obj(f"<< /Length {stream_len} >>\nstream\n{stream}\nendstream")
@@ -279,22 +313,19 @@ def build_manual_pdf_bytes():
 
     kids = " ".join(f"{pid} 0 R" for pid in page_obj_ids)
     pages_obj = add_obj(f"<< /Type /Pages /Kids [{kids}] /Count {len(page_obj_ids)} >>")
-
-    for idx, page_obj_id in enumerate(page_obj_ids):
-        content_id = content_obj_ids[idx]
+    for i, page_obj_id in enumerate(page_obj_ids):
+        content_id = content_obj_ids[i]
         objects[page_obj_id - 1] = (
             f"<< /Type /Page /Parent {pages_obj} 0 R /MediaBox [0 0 595 842] "
             f"/Resources << /Font << /F1 {font_obj} 0 R >> >> /Contents {content_id} 0 R >>"
         )
 
     catalog_obj = add_obj(f"<< /Type /Catalog /Pages {pages_obj} 0 R >>")
-
     result = bytearray(b"%PDF-1.4\n")
     offsets = [0]
     for i, obj in enumerate(objects, start=1):
         offsets.append(len(result))
         result.extend(f"{i} 0 obj\n{obj}\nendobj\n".encode("latin-1", errors="ignore"))
-
     xref_pos = len(result)
     result.extend(f"xref\n0 {len(objects)+1}\n".encode("latin-1"))
     result.extend(b"0000000000 65535 f \n")
