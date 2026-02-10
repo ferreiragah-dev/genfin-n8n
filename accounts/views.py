@@ -29,6 +29,7 @@ from .models import (
     PlannedReserve,
     UserAccount,
     Vehicle,
+    VehicleFrequentDestination,
     VehicleExpense,
 )
 
@@ -1255,6 +1256,8 @@ class VehicleListView(APIView):
                     "licensing_cost": v.licensing_cost,
                     "financing_remaining_installments": v.financing_remaining_installments,
                     "financing_installment_value": v.financing_installment_value,
+                    "fuel_km_per_liter": v.fuel_km_per_liter,
+                    "fuel_price_per_liter": v.fuel_price_per_liter,
                 }
                 for v in data
             ]
@@ -1285,6 +1288,8 @@ class VehicleCreateView(APIView):
             licensing_cost=request.data.get("licensing_cost") or 0,
             financing_remaining_installments=request.data.get("financing_remaining_installments") or 0,
             financing_installment_value=request.data.get("financing_installment_value") or 0,
+            fuel_km_per_liter=request.data.get("fuel_km_per_liter") or 0,
+            fuel_price_per_liter=request.data.get("fuel_price_per_liter") or 0,
         )
         return Response({"message": "Veiculo criado", "id": vehicle.id}, status=status.HTTP_201_CREATED)
 
@@ -1315,6 +1320,8 @@ class VehicleDetailView(APIView):
         vehicle.licensing_cost = request.data.get("licensing_cost") or 0
         vehicle.financing_remaining_installments = request.data.get("financing_remaining_installments") or 0
         vehicle.financing_installment_value = request.data.get("financing_installment_value") or 0
+        vehicle.fuel_km_per_liter = request.data.get("fuel_km_per_liter") or 0
+        vehicle.fuel_price_per_liter = request.data.get("fuel_price_per_liter") or 0
         vehicle.save()
         return Response({"message": "Veiculo atualizado"}, status=status.HTTP_200_OK)
 
@@ -1433,6 +1440,116 @@ class VehicleExpenseDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def destination_occurrences_per_month(periodicity):
+    periodicity_map = {
+        "DIARIO": 30.0,
+        "SEMANAL": 4.33,
+        "QUINZENAL": 2.0,
+        "MENSAL": 1.0,
+    }
+    return periodicity_map.get(str(periodicity or "").upper(), 1.0)
+
+
+class VehicleDestinationListView(APIView):
+    def get(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = user.vehicle_destinations.select_related("vehicle").all().order_by("-created_at")
+        vehicle_id = request.query_params.get("vehicle_id")
+        if vehicle_id:
+            data = data.filter(vehicle_id=vehicle_id)
+
+        return Response(
+            [
+                {
+                    "id": d.id,
+                    "vehicle_id": d.vehicle_id,
+                    "vehicle_name": d.vehicle.name,
+                    "name": d.name,
+                    "periodicity": d.periodicity,
+                    "distance_km": d.distance_km,
+                }
+                for d in data
+            ]
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleDestinationCreateView(APIView):
+    def post(self, request):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        vehicle_id = request.data.get("vehicle_id")
+        name = str(request.data.get("name", "")).strip()
+        periodicity = str(request.data.get("periodicity", "SEMANAL")).upper()
+        distance_km = request.data.get("distance_km")
+        if not vehicle_id or not name or distance_km in (None, ""):
+            return Response({"error": "vehicle_id, name e distance_km sao obrigatorios"}, status=status.HTTP_400_BAD_REQUEST)
+        if periodicity not in {"DIARIO", "SEMANAL", "QUINZENAL", "MENSAL"}:
+            return Response({"error": "periodicity invalida"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            vehicle = user.vehicles.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        item = VehicleFrequentDestination.objects.create(
+            user=user,
+            vehicle=vehicle,
+            name=name,
+            periodicity=periodicity,
+            distance_km=distance_km,
+        )
+        return Response({"message": "Destino frequente criado", "id": item.id}, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VehicleDestinationDetailView(APIView):
+    def put(self, request, destination_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            item = user.vehicle_destinations.get(id=destination_id)
+        except VehicleFrequentDestination.DoesNotExist:
+            return Response({"error": "Destino nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        vehicle_id = request.data.get("vehicle_id")
+        if vehicle_id:
+            try:
+                item.vehicle = user.vehicles.get(id=vehicle_id)
+            except Vehicle.DoesNotExist:
+                return Response({"error": "Veiculo nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        name = str(request.data.get("name", item.name)).strip()
+        periodicity = str(request.data.get("periodicity", item.periodicity)).upper()
+        distance_km = request.data.get("distance_km", item.distance_km)
+        if not name or distance_km in (None, ""):
+            return Response({"error": "name e distance_km sao obrigatorios"}, status=status.HTTP_400_BAD_REQUEST)
+        if periodicity not in {"DIARIO", "SEMANAL", "QUINZENAL", "MENSAL"}:
+            return Response({"error": "periodicity invalida"}, status=status.HTTP_400_BAD_REQUEST)
+
+        item.name = name
+        item.periodicity = periodicity
+        item.distance_km = distance_km
+        item.save()
+        return Response({"message": "Destino atualizado"}, status=status.HTTP_200_OK)
+
+    def delete(self, request, destination_id):
+        user = get_logged_user(request)
+        if not user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            item = user.vehicle_destinations.get(id=destination_id)
+        except VehicleFrequentDestination.DoesNotExist:
+            return Response({"error": "Destino nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class VehicleSummaryView(APIView):
     def get(self, request):
         user = get_logged_user(request)
@@ -1460,6 +1577,7 @@ class VehicleSummaryView(APIView):
             "PEDAGIO": 0,
             "ESTACIONAMENTO": 0,
             "OUTRO": 0,
+            "DESLOCAMENTO": 0,
             "DOCUMENTACAO": 0,
             "IPVA": 0,
             "LICENCIAMENTO": 0,
@@ -1476,14 +1594,22 @@ class VehicleSummaryView(APIView):
 
             recurrent_total = sum(float(e.amount or 0) for e in recurring_expenses.filter(vehicle=v))
             month_total = sum(float(e.amount or 0) for e in month_expenses.filter(vehicle=v))
+            destinations = user.vehicle_destinations.filter(vehicle=v)
+            monthly_km = 0.0
+            for d in destinations:
+                monthly_km += float(d.distance_km or 0) * destination_occurrences_per_month(d.periodicity)
+            fuel_km_per_liter = float(v.fuel_km_per_liter or 0)
+            fuel_price_per_liter = float(v.fuel_price_per_liter or 0)
+            commute_monthly_cost = (monthly_km / fuel_km_per_liter) * fuel_price_per_liter if fuel_km_per_liter > 0 else 0.0
 
-            vehicle_monthly_total = base_doc + base_ipva + base_lic + financing + recurrent_total + month_total
+            vehicle_monthly_total = base_doc + base_ipva + base_lic + financing + recurrent_total + month_total + commute_monthly_cost
             monthly_total += vehicle_monthly_total
 
             by_category["DOCUMENTACAO"] += base_doc
             by_category["IPVA"] += base_ipva
             by_category["LICENCIAMENTO"] += base_lic
             by_category["FINANCIAMENTO"] += financing
+            by_category["DESLOCAMENTO"] += commute_monthly_cost
             for e in recurring_expenses.filter(vehicle=v):
                 by_category[e.expense_type] += float(e.amount or 0)
             for e in month_expenses.filter(vehicle=v):
@@ -1494,6 +1620,8 @@ class VehicleSummaryView(APIView):
                     "vehicle_id": v.id,
                     "name": v.name,
                     "monthly_cost": round(vehicle_monthly_total, 2),
+                    "commute_monthly_cost": round(commute_monthly_cost, 2),
+                    "monthly_km": round(monthly_km, 2),
                     "fipe_value": float(v.fipe_value or 0),
                     "fipe_variation_percent": float(v.fipe_variation_percent or 0),
                     "financing_remaining_installments": int(v.financing_remaining_installments or 0),
@@ -1507,12 +1635,14 @@ class VehicleSummaryView(APIView):
         ]
         category_rows.sort(key=lambda x: x["total"], reverse=True)
         vehicle_totals.sort(key=lambda x: x["monthly_cost"], reverse=True)
+        commute_total = sum(v["commute_monthly_cost"] for v in vehicle_totals)
 
         return Response(
             {
                 "month": month,
                 "year": year,
                 "monthly_total": round(monthly_total, 2),
+                "commute_monthly_cost": round(commute_total, 2),
                 "vehicle_count": len(vehicles),
                 "by_category": category_rows,
                 "vehicle_totals": vehicle_totals,

@@ -136,6 +136,8 @@ class Vehicle(models.Model):
     licensing_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     financing_remaining_installments = models.PositiveIntegerField(default=0)
     financing_installment_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fuel_km_per_liter = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    fuel_price_per_liter = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -170,6 +172,33 @@ class VehicleExpense(models.Model):
 
     def __str__(self):
         return f"{self.vehicle.name} - {self.expense_type} - {self.amount}"
+
+
+class VehicleFrequentDestination(models.Model):
+    PERIODICITY_CHOICES = (
+        ("DIARIO", "Diario"),
+        ("SEMANAL", "Semanal"),
+        ("QUINZENAL", "Quinzenal"),
+        ("MENSAL", "Mensal"),
+    )
+
+    user = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="vehicle_destinations"
+    )
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name="frequent_destinations"
+    )
+    name = models.CharField(max_length=120)
+    periodicity = models.CharField(max_length=12, choices=PERIODICITY_CHOICES, default="SEMANAL")
+    distance_km = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vehicle.name} - {self.name}"
 
 
 class CreditCard(models.Model):

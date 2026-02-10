@@ -1473,7 +1473,7 @@ async function load(){
     let fixedIncomes = [];
     let reserves = [];
     let creditCardExpenses = [];
-    let vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
+    let vehicleSummaryData = {monthly_total:0, commute_monthly_cost:0, by_category:[], vehicle_count:0};
     let creditCards = [];
     let creditCardSummaryData = {by_card:[], total_limit:0, total_spent:0};
     try{
@@ -1508,7 +1508,7 @@ async function load(){
         vehicleSummaryData = await fetchJson(`/api/vehicles/summary/?month=${month}&year=${year}`);
       } catch (vehicleError){
         console.error("Falha ao carregar resumo de veículos:", vehicleError);
-        vehicleSummaryData = {monthly_total:0, by_category:[], vehicle_count:0};
+        vehicleSummaryData = {monthly_total:0, commute_monthly_cost:0, by_category:[], vehicle_count:0};
       }
     }
     async function loadCreditCardSummary(month, year){
@@ -1953,7 +1953,9 @@ async function load(){
       document.getElementById("fixedPaidCount").innerText = `${fixedPaidCount}/${fixedTotalCount} pagas`;
 
       const vehicleMonthlyCost = Number(vehicleSummaryData.monthly_total || 0);
+      const commuteCost = Number(vehicleSummaryData.commute_monthly_cost || 0);
       document.getElementById("vehicle_monthly_cost").innerText = formatCurrency(vehicleMonthlyCost);
+      document.getElementById("commute_cost").innerText = formatCurrency(commuteCost);
       const vehicleCostPct = despesaPeriodo > 0 ? (vehicleMonthlyCost / despesaPeriodo) * 100 : 0;
       renderMiniDonut(
         "vehicleCostDonut",
@@ -2562,6 +2564,10 @@ document.addEventListener("DOMContentLoaded", load);
               <div class="mini-card">
                 <h5>Custo Mensal Veículo</h5>
                 <strong class="blue" id="vehicle_monthly_cost">R$ 0</strong>
+              </div>
+              <div class="mini-card">
+                <h5>Custo Deslocamento</h5>
+                <strong class="blue" id="commute_cost">R$ 0</strong>
               </div>
               <div class="mini-card">
                 <h5>Tendência Saldo</h5>
