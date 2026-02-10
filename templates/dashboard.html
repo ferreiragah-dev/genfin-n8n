@@ -1983,9 +1983,9 @@ async function load(){
         const save10 = largestRecurring.amountNumber * 0.1;
         lines.push(`Seu maior gasto recorrente é ${largestRecurring.category} (${formatCurrency(largestRecurring.amountNumber)}). Reduzir 10% gera economia de ${formatCurrency(save10)}/mes.`);
       }
-      lines.push(`r`no periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
+      lines.push(`No periodo ${period}, voce gastou ${formatCurrency(despesaPeriodo)} e recebeu ${formatCurrency(receitaPeriodo)}.`);
       if(runwayDays > 0){
-        lines.push(`r`no ritmo atual, seu dinheiro dura aproximadamente ${runwayDays} dias.`);
+        lines.push(`No ritmo atual, seu dinheiro dura aproximadamente ${runwayDays} dias.`);
       }
       lines.forEach((text)=>{
         const p = document.createElement("p");
