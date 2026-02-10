@@ -827,11 +827,19 @@ async function load(){
     return response.json();
   }
   try{
-    const [dash, entries, cats] = await Promise.all([
-      fetchJson("/api/dashboard/"),
-      fetchJson("/api/entries/?limit=500"),
-      fetchJson("/api/dashboard/categories/")
-    ]);
+    const dash = await fetchJson("/api/dashboard/").catch(()=>{
+      return {
+        total_receita: 0,
+        total_despesa: 0,
+        saldo: 0,
+        phone_number: "",
+      };
+    });
+    const entriesRaw = await fetchJson("/api/entries/?limit=500")
+      .catch(()=>fetchJson("/api/entries/"))
+      .catch(()=>[]);
+    const cats = await fetchJson("/api/dashboard/categories/").catch(()=>[]);
+    const entries = Array.isArray(entriesRaw) ? entriesRaw : (entriesRaw && Array.isArray(entriesRaw.results) ? entriesRaw.results : []);
     document.getElementById("receita").innerText = formatCurrency(dash.total_receita);
     document.getElementById("despesa").innerText = formatCurrency(dash.total_despesa);
     document.getElementById("saldo").innerText = formatCurrency(dash.saldo);
