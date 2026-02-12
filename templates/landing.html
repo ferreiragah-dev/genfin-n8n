@@ -2,454 +2,389 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>GenFin | Plataforma Financeira</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  <meta charset="UTF-8">
+  <title>GenFin | Landing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+  <style>
+    :root{
+      --bg:#f3f4f6;
+      --card:#e5e7eb;
+      --line:#b8bec7;
+      --text:#1e293b;
+      --muted:#475569;
+      --green:#22a74e;
+      --red:#ef4444;
+      --orange:#f97316;
+      --blue:#0891b2;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,Segoe UI,Arial,sans-serif;
+    }
+    .wrap{max-width:1160px;margin:0 auto;padding:14px}
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#dde2e8;
+    }
+    .logo{font-weight:800}
+    .actions{display:flex;gap:10px}
+    .btn{
+      text-decoration:none;font-size:14px;font-weight:700;color:var(--text);
+      border:1px solid var(--line);padding:8px 12px;border-radius:10px;background:#eceff3;
+    }
+    .btn.primary{background:#d8eef3;color:#0f172a}
+    .panel{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:var(--card);
+      padding:14px;
+    }
+    .panel h2,.panel h3{margin:0 0 10px}
+    .panel h2{font-size:26px}
+    .panel h3{font-size:33px}
+    .sub{margin:0;color:var(--muted)}
+    .hero{padding:20px}
 
-:root{
-  --bg:#05070d;
-  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
-  --panel:#0b1224;
-  --border:rgba(56,189,248,.15);
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --green:#22c55e;
-  --red:#ef4444;
-  --blue:#38bdf8;
-  --yellow:#eab308;
-}
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi{
+      border:1px solid var(--line);border-radius:13px;padding:10px;background:#e1e3e7;
+    }
+    .kpi span{display:block;color:#64748b;font-size:28px}
+    .kpi strong{display:block;font-size:40px;line-height:1.2}
+    .green{color:#1f8f46}.orange{color:#c96b09}
 
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,Arial,sans-serif;
-  background:var(--bg-grad);
-  color:var(--text);
-}
+    .triplet{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .period-card{
+      border:1px solid var(--line);border-radius:14px;padding:10px;background:#e1e3e7;margin-top:10px;
+    }
+    .period-head{display:flex;justify-content:space-between;color:#475569;font-weight:700;margin-bottom:8px}
+    .line{display:grid;grid-template-columns:74px 1fr 40px;align-items:center;gap:8px;margin:6px 0}
+    .track{height:11px;background:#cbd2dc;border-radius:999px;overflow:hidden}
+    .fill{height:100%;border-radius:999px}
+    .fill.income{background:#21a74d}
+    .fill.expense{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+    .mini{
+      border:1px solid var(--line);border-radius:11px;padding:8px;background:#dde1e6;
+    }
+    .mini span{display:block;color:#64748b;font-size:22px}
+    .mini strong{font-size:31px}
 
-.wrap{max-width:1200px;margin:0 auto;padding:14px}
+    .section-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .pill{
+      display:inline-block;padding:6px 10px;border-radius:999px;
+      border:1px solid #b7c5d8;background:#dce5ef;color:#334155;font-size:12px;
+      font-family:Consolas,monospace;
+    }
+    .donut-row{display:flex;gap:12px;align-items:center}
+    .donut{
+      --pct:0;
+      width:112px;height:112px;border-radius:50%;
+      background:conic-gradient(var(--orange) calc(var(--pct)*1%), #cdd4de 0);
+      position:relative;flex-shrink:0;
+    }
+    .donut::after{
+      content:"";position:absolute;inset:14px;background:#e5e7eb;border-radius:50%;
+    }
+    .donut b{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      z-index:1;font-size:20px;
+    }
+    .metric-stack span{display:block;color:#64748b}
+    .metric-stack strong{font-size:39px}
 
-.topbar{
-  position:sticky;top:10px;z-index:10;
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  background:linear-gradient(180deg, #0b1224, #070b18);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px 14px;
-}
-.logo{font-weight:700;letter-spacing:.08em;color:#bae6fd}
-.actions{display:flex;gap:10px}
-.btn{
-  text-decoration:none;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:8px 12px;
-  color:#cbd5e1;
-  font-size:13px;
-}
-.btn.primary{background:#38bdf8;color:#04111d;font-weight:700}
+    .bars .row{display:grid;grid-template-columns:95px 1fr auto;gap:8px;align-items:center;margin:6px 0}
+    .bars .track{height:12px}
+    .bars strong{font-size:28px}
 
-.hero{
-  margin-top:14px;
-  background:linear-gradient(140deg,#0b1224,#020617 60%);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:24px;
-}
-.hero h1{margin:0 0 8px;font-size:32px;line-height:1.1}
-.hero p{margin:0;color:var(--muted);max-width:760px}
+    .thermo{
+      height:14px;border-radius:999px;overflow:hidden;border:1px solid var(--line);
+      background:linear-gradient(90deg,#22c55e 0 35%, #eab308 35% 70%, #ef4444 70% 100%);
+      position:relative;margin:8px 0 12px;
+    }
+    .pin{
+      width:8px;height:24px;border-radius:6px;background:#0f172a;
+      position:absolute;top:-5px;left:0;transform:translateX(-50%);
+    }
 
-.panel{
-  margin-top:14px;
-  background:linear-gradient(180deg,#070b18,#020617);
-  border-radius:18px;
-  padding:18px;
-  border:1px solid var(--border);
-}
-.panel h3{
-  margin:0 0 12px;
-  font-size:13px;
-  color:#94a3b8;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-}
+    .screen{
+      border:1px solid var(--line);border-radius:14px;background:#dfe2e7;overflow:hidden;
+    }
+    .screen-head{
+      display:flex;gap:7px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);color:#64748b;
+    }
+    .dot{width:9px;height:9px;border-radius:999px;background:#bcc6d3}
+    .screen-body{padding:10px;display:grid;gap:8px}
+    .item{
+      border:1px solid var(--line);border-radius:11px;background:#e8ebef;padding:9px;
+      display:flex;justify-content:space-between;align-items:center;font-size:14px;
+    }
+    .status{
+      border-radius:999px;padding:4px 8px;font-weight:700;font-size:12px;background:#d8eef3;color:#0e7490;
+    }
+    .status.warn{background:#fde8c8;color:#b45309}
 
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.card{
-  background:linear-gradient(180deg,#0b1224,#020617);
-  border-radius:16px;
-  padding:14px;
-  border:1px solid var(--border);
-}
-.card span{color:var(--muted);font-size:12px}
-.card strong{font-size:22px;display:block;margin-top:8px}
-.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
+    .foot{text-align:center;color:#64748b;font-size:12px;margin-top:12px}
 
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.stat-card{
-  background:linear-gradient(180deg,#060b1a,#020617);
-  border-radius:18px;
-  padding:16px;
-  border:1px solid rgba(56,189,248,.14);
-  box-shadow:0 0 18px rgba(56,189,248,.08);
-}
-.stat-card h4{margin:0 0 10px;color:#38bdf8;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
-.metric{
-  display:flex;
-  justify-content:space-between;
-  padding:6px 0;
-  border-bottom:1px dashed rgba(255,255,255,.06);
-  font-size:12px;
-}
-.metric b{font-size:13px}
-.stat-card canvas{margin-top:10px;max-height:120px}
-
-.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.gauge{
-  background:linear-gradient(180deg,#0b1224,#020617);
-  border-radius:14px;
-  padding:12px;
-  text-align:center;
-  border:1px solid var(--border);
-}
-.gauge canvas{max-height:90px}
-.gauge small{display:block;margin-top:6px;color:#94a3b8}
-
-.split{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
-.week-box,.calendar-box{
-  background:linear-gradient(180deg,#0b1224,#020617);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:10px;
-}
-.top5-inline h3{margin:10px 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:#9ca3af}
-.bar-bg{flex:1;height:8px;background:#020617;border-radius:10px;overflow:hidden}
-.bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#db2777)}
-
-.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.step{
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:12px;
-  background:linear-gradient(180deg,#0b1224,#020617);
-}
-.step strong{display:block;margin-bottom:5px}
-
-@media (max-width:980px){
-  .cards,.stats,.gauges{grid-template-columns:1fr 1fr}
-  .split,.flow{grid-template-columns:1fr}
-}
-@media (max-width:640px){
-  .cards,.stats,.gauges{grid-template-columns:1fr}
-  .hero h1{font-size:28px}
-}
-</style>
+    @media (max-width:960px){
+      .triplet,.section-grid{grid-template-columns:1fr}
+      .kpi-grid{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="topbar">
-    <div class="logo">GF | GenFin</div>
-    <div class="actions">
-      <a class="btn" href="/login/">Entrar</a>
-      <a class="btn primary" href="/login/">Criar conta</a>
-    </div>
-  </header>
-
-  <section class="hero">
-    <h1>Veja o que realmente existe no app</h1>
-    <p>Painel com estatisticas financeiras, leitura por periodo, distribuicao por categoria, custos de veiculo, uso de cartao e ranking dos maiores gastos em um unico lugar.</p>
-  </section>
-
-  <section class="panel">
-    <h3>Cards principais do dashboard</h3>
-    <div class="cards">
-      <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0,00</strong></div>
-      <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0,00</strong></div>
-      <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0,00</strong></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h3>Resumo de movimentacoes</h3>
-    <div class="stats">
-      <div class="stat-card">
-        <h4>Hoje</h4>
-        <div class="metric">Entrou: <b id="d_in">R$ 0,00</b></div>
-        <div class="metric">Saiu: <b id="d_out">R$ 0,00</b></div>
-        <div class="metric">Movimentacoes: <b id="d_mov">0</b></div>
-        <div class="metric">Entrada %: <b id="d_in_p">0%</b></div>
-        <div class="metric">Saida %: <b id="d_out_p">0%</b></div>
-        <canvas id="chartDaily"></canvas>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="logo">GF | GenFin</div>
+      <div class="actions">
+        <a class="btn" href="/login/">Entrar</a>
+        <a class="btn primary" href="/login/">Criar conta</a>
       </div>
-      <div class="stat-card">
-        <h4>Ultimos 7 dias</h4>
-        <div class="metric">Entrou: <b id="w_in">R$ 0,00</b></div>
-        <div class="metric">Saiu: <b id="w_out">R$ 0,00</b></div>
-        <div class="metric">Movimentacoes: <b id="w_mov">0</b></div>
-        <div class="metric">Entrada %: <b id="w_in_p">0%</b></div>
-        <div class="metric">Saida %: <b id="w_out_p">0%</b></div>
-        <canvas id="chartWeekly"></canvas>
+    </header>
+
+    <section class="panel hero">
+      <h3>Painel de exemplo do GenFin</h3>
+      <div class="kpi-grid">
+        <div class="kpi"><span>Receitas</span><strong id="heroReceita">R$ 0,00</strong></div>
+        <div class="kpi"><span>Despesas</span><strong id="heroDespesa">R$ 0,00</strong></div>
+        <div class="kpi"><span>Saldo atual</span><strong id="heroSaldo" class="green">R$ 0,00</strong></div>
+        <div class="kpi"><span>Taxa de poupanca</span><strong id="heroPoupanca">0%</strong></div>
+        <div class="kpi"><span>Burn rate diario</span><strong id="heroBurn" class="orange">R$ 0,00</strong></div>
+        <div class="kpi"><span>Runway</span><strong id="heroRunway">0 dias</strong></div>
       </div>
-      <div class="stat-card">
-        <h4>Ultimos 30 dias</h4>
-        <div class="metric">Entrou: <b id="m_in">R$ 0,00</b></div>
-        <div class="metric">Saiu: <b id="m_out">R$ 0,00</b></div>
-        <div class="metric">Movimentacoes: <b id="m_mov">0</b></div>
-        <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
-        <div class="metric">Saida %: <b id="m_out_p">0%</b></div>
-        <canvas id="chartMonthly"></canvas>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel">
-    <h3>Desempenho por categoria e indicadores</h3>
-    <div class="gauges">
-      <div class="gauge"><canvas id="g1"></canvas><small id="g1Label">Categoria 1</small></div>
-      <div class="gauge"><canvas id="g2"></canvas><small id="g2Label">Categoria 2</small></div>
-      <div class="gauge"><canvas id="g3"></canvas><small id="g3Label">Categoria 3</small></div>
-      <div class="gauge"><canvas id="g4"></canvas><small id="g4Label">Categoria 4</small></div>
-    </div>
-  </section>
+    <section class="panel">
+      <div id="periodList"></div>
+    </section>
 
-  <section class="panel">
-    <h3>Cartoes e custo de veiculos</h3>
-    <div class="gauges">
-      <div class="gauge"><canvas id="cardUsageChart"></canvas><small id="cardUsageLabel">Uso de limite</small></div>
-      <div class="gauge"><canvas id="vehicleWeightChart"></canvas><small id="vehicleWeightLabel">Peso veiculos no mes</small></div>
-      <div class="gauge"><canvas id="incomeExpenseRatioChart"></canvas><small id="incomeExpenseLabel">Receita x despesa</small></div>
-      <div class="gauge"><canvas id="savingsChart"></canvas><small id="savingsLabel">Taxa de poupanca</small></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h3>Gastos por dia da semana e top 5 maiores gastos</h3>
-    <div class="split">
-      <div class="week-box">
-        <canvas id="heatmapWeek"></canvas>
-        <div class="top5-inline">
-          <h3>Top 5 maiores gastos</h3>
-          <div id="top5"></div>
+    <section class="section-grid" style="margin-top:12px">
+      <article class="panel">
+        <h2>Uso de limite no cartao</h2>
+        <span class="pill">GET /api/credit-cards/summary/</span>
+        <div class="donut-row" style="margin-top:10px">
+          <div id="cardDonut" class="donut"><b id="cardPct">0%</b></div>
+          <div class="metric-stack">
+            <span>Uso total</span>
+            <strong id="cardUsed">R$ 0,00</strong>
+            <span id="cardLimit">de R$ 0,00</span>
+          </div>
         </div>
-      </div>
-      <div class="calendar-box">
-        <div class="metric"><span>Custo mensal de veiculo</span><b id="vehicleMonthlyCost">R$ 0,00</b></div>
-        <div class="metric"><span>Custo de deslocamento</span><b id="vehicleCommuteCost">R$ 0,00</b></div>
-        <div class="metric"><span>Uso de limite no cartao</span><b id="cardUsageText">0%</b></div>
-        <div class="metric"><span>Movimentacoes registradas</span><b id="entriesCount">0</b></div>
-      </div>
-    </div>
-  </section>
+        <div class="mini-grid">
+          <div class="mini"><span>Cartoes</span><strong id="cardCount">0</strong></div>
+          <div class="mini"><span>Pontos</span><strong id="cardPoints">0</strong></div>
+          <div class="mini"><span>Cotacao USD</span><strong id="cardUsd">-</strong></div>
+        </div>
+      </article>
 
-  <section class="panel">
-    <h3>Como funciona no app</h3>
-    <div class="flow">
-      <div class="step"><strong>1. Lancamentos</strong>Registre entradas e despesas no dia a dia.</div>
-      <div class="step"><strong>2. Planejamento</strong>Acompanhe fixas, reservas e cobertura do mes.</div>
-      <div class="step"><strong>3. Analise</strong>Leia os graficos e cards para identificar tendencias.</div>
-      <div class="step"><strong>4. Decisao</strong>Ajuste custos, cartoes e metas com base nos indicadores.</div>
-    </div>
-  </section>
-</div>
+      <article class="panel">
+        <h2>Despesas por categoria</h2>
+        <span class="pill">GET /api/dashboard/categories/</span>
+        <div id="categoryBars" class="bars" style="margin-top:10px"></div>
+      </article>
 
-<script>
-const chartStore = {};
-const weekNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sab"];
+      <article class="panel">
+        <h2>Resumo de veiculos</h2>
+        <span class="pill">GET /api/vehicles/summary/</span>
+        <div id="vehicleBars" class="bars" style="margin-top:10px"></div>
+        <div class="mini-grid">
+          <div class="mini"><span>Custo mensal</span><strong id="vehicleMonthly">R$ 0,00</strong></div>
+          <div class="mini"><span>Deslocamento</span><strong id="vehicleCommute">R$ 0,00</strong></div>
+          <div class="mini"><span>Veiculos</span><strong id="vehicleCount">0</strong></div>
+        </div>
+      </article>
+    </section>
 
-const demo = {
-  daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
-  weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
-  monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 },
-  dashboard: { total_receita: 15015.85, total_despesa: 486.45, saldo: 14529.4 },
-  categories: [
-    { category: "Moradia", total: 2100 },
-    { category: "Cartao", total: 1450 },
-    { category: "Alimentacao", total: 890 },
-    { category: "Transporte", total: 520 },
-    { category: "Lazer", total: 280 }
-  ],
-  vehicle: { monthly_total: 1890.4, commute_monthly_cost: 612.2, vehicle_count: 2 },
-  card: { usage_percent: 67.3, total_spent: 4212.5, total_limit: 6260.0 },
-  entries: [
-    { id:1, date:"10/02/2026", category:"Mercado", entry_type:"DESPESA", amount:350.9 },
-    { id:2, date:"10/02/2026", category:"Combustivel", entry_type:"DESPESA", amount:190.2 },
-    { id:3, date:"09/02/2026", category:"Salario", entry_type:"RECEITA", amount:6900 },
-    { id:4, date:"08/02/2026", category:"Internet", entry_type:"DESPESA", amount:129.9 },
-    { id:5, date:"07/02/2026", category:"Restaurante", entry_type:"DESPESA", amount:140.0 },
-    { id:6, date:"06/02/2026", category:"Freela", entry_type:"RECEITA", amount:1200.0 },
-    { id:7, date:"05/02/2026", category:"Farmacia", entry_type:"DESPESA", amount:98.5 }
-  ]
-};
+    <section class="section-grid" style="margin-top:12px">
+      <article class="panel">
+        <h2>Movimentacoes + comprovante</h2>
+        <span class="pill">POST /api/financial-entry/ | GET /api/entries/</span>
+        <div class="screen" style="margin-top:10px">
+          <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Lancamentos</div>
+          <div class="screen-body">
+            <div class="item"><b>10/02/2026 · Alimentacao</b><span>R$ 58,90</span></div>
+            <div class="item"><span>Tipo: DESPESA</span><span class="status">Comprovante anexado</span></div>
+            <div class="item"><span>09/02/2026 · Salario</span><span>R$ 6.900,00</span></div>
+          </div>
+        </div>
+      </article>
 
-function formatCurrency(value){
-  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(value || 0));
-}
-function percent(a,b){
-  const n = Number(b || 0);
-  if(n <= 0) return 0;
-  return Math.round((Number(a || 0) / n) * 100);
-}
-async function getJson(url, fallback){
-  try{
-    const res = await fetch(url, { credentials:"same-origin" });
-    if(!res.ok) return fallback;
-    return await res.json();
-  }catch(_error){
-    return fallback;
-  }
-}
-function setText(id, value){
-  const el = document.getElementById(id);
-  if(el) el.textContent = value;
-}
-function drawChart(key, id, type, data, options){
-  const canvas = document.getElementById(id);
-  if(!canvas) return;
-  if(chartStore[key]) chartStore[key].destroy();
-  chartStore[key] = new Chart(canvas.getContext("2d"), { type, data, options });
-}
+      <article class="panel">
+        <h2>Planejamento de fixas</h2>
+        <span class="pill">GET /api/planner/ | /api/fixed-incomes/ | /api/reserves/</span>
+        <div class="screen" style="margin-top:10px">
+          <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Planejamento</div>
+          <div class="screen-body">
+            <div class="item"><b>Internet</b><span>R$ 129,90</span></div>
+            <div class="item"><span>Status</span><span class="status">Paga</span></div>
+            <div class="item"><b>Aluguel</b><span>R$ 2.100,00</span></div>
+            <div class="item"><span>Status</span><span class="status warn">Nao paga</span></div>
+          </div>
+        </div>
+      </article>
 
-function renderSummaryCard(prefix, payload){
-  setText(prefix + "_in", formatCurrency(payload.total_receita));
-  setText(prefix + "_out", formatCurrency(payload.total_despesa));
-  setText(prefix + "_mov", String(payload.movimentacoes || 0));
-  setText(prefix + "_in_p", `${Math.round(payload.percent_receita || 0)}%`);
-  setText(prefix + "_out_p", `${Math.round(payload.percent_despesa || 0)}%`);
-}
+      <article class="panel">
+        <h2>Termometro de viagem</h2>
+        <span class="pill">POST /api/trips/evaluate/</span>
+        <p class="sub" style="margin:8px 0">Campos usados no backend: trip_total_cost, commitment_pct_balance, runway_days_after, risk_level e recommendation.</p>
+        <div class="thermo"><div id="tripPin" class="pin"></div></div>
+        <div class="mini-grid">
+          <div class="mini"><span>Recomendacao</span><strong id="tripReco">Atenção</strong></div>
+          <div class="mini"><span>Compromete saldo</span><strong id="tripCommit">0%</strong></div>
+          <div class="mini"><span>Runway apos</span><strong id="tripRunway">0 dias</strong></div>
+        </div>
+      </article>
+    </section>
 
-function renderTop5(entries){
-  const top5Box = document.getElementById("top5");
-  const expenses = (entries || [])
-    .filter((e)=>String(e.entry_type || "").toUpperCase() === "DESPESA")
-    .sort((a,b)=>Number(b.amount || 0) - Number(a.amount || 0))
-    .slice(0,5);
-  if(!expenses.length){
-    top5Box.innerHTML = '<div class="bar-row"><span>Sem gastos registrados</span></div>';
-    return;
-  }
-  const max = Math.max(...expenses.map((e)=>Number(e.amount || 0)), 1);
-  top5Box.innerHTML = expenses.map((e)=>{
-    const val = Number(e.amount || 0);
-    const p = (val / max) * 100;
-    return `<div class="bar-row"><span>${e.category}: ${formatCurrency(val)}</span><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div></div>`;
-  }).join("");
-}
+    <div class="foot">GenFin • exemplos visuais reais do app</div>
+  </div>
 
-function renderWeekChart(entries){
-  const sum = [0,0,0,0,0,0,0];
-  (entries || []).forEach((e)=>{
-    if(String(e.entry_type || "").toUpperCase() !== "DESPESA") return;
-    const parts = String(e.date || "").split("/");
-    if(parts.length !== 3) return;
-    const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-    if(Number.isNaN(d.getTime())) return;
-    sum[d.getDay()] += Number(e.amount || 0);
-  });
-  drawChart("week","heatmapWeek","bar",{
-    labels: weekNames,
-    datasets:[{
-      label:"Gastos",
-      data: sum,
-      backgroundColor:"#db2777",
-      borderRadius:6
-    }]
-  },{
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{ticks:{color:"#94a3b8"},grid:{color:"rgba(148,163,184,.16)"}},
-      y:{ticks:{color:"#94a3b8"},grid:{color:"rgba(148,163,184,.16)"}}
+  <script>
+    const fallback = {
+      daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
+      weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
+      monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 },
+      categories: [
+        { category: "Moradia", total: 2100 },
+        { category: "Alimentacao", total: 890 },
+        { category: "Transporte", total: 520 },
+        { category: "Lazer", total: 280 },
+        { category: "Saude", total: 170 }
+      ],
+      vehicle: {
+        monthly_total: 1890.4,
+        commute_monthly_cost: 612.2,
+        vehicle_count: 2,
+        by_category: [
+          { category: "COMBUSTIVEL", total: 870.1 },
+          { category: "MANUTENCAO", total: 310.0 },
+          { category: "PEDAGIO", total: 180.0 },
+          { category: "ESTACIONAMENTO", total: 132.1 },
+          { category: "FINANCIAMENTO", total: 398.2 }
+        ]
+      },
+      card: {
+        card_count: 3,
+        total_spent: 6212.85,
+        total_limit: 6260.0,
+        usage_percent: 99.2,
+        estimated_points: 1147,
+        usd_brl_rate: 5.42
+      },
+      trip: {
+        recommendation: "Atenção",
+        commitment_pct_balance: 18.4,
+        runway_days_after: 84
+      }
+    };
+
+    function brl(v){
+      return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v || 0));
     }
-  });
-}
+    async function getJson(url, fb){
+      try{
+        const r = await fetch(url, { credentials:"same-origin" });
+        if(!r.ok) return fb;
+        return await r.json();
+      }catch(_e){
+        return fb;
+      }
+    }
+    function setText(id, value){
+      const el = document.getElementById(id);
+      if(el) el.textContent = value;
+    }
+    function periodTemplate(title, label, data){
+      return `
+      <div class="period-card">
+        <div class="period-head"><span>${title}</span><span>${label}</span></div>
+        <div class="line">
+          <span>Receita</span>
+          <div class="track"><div class="fill income" style="width:${Math.max(0,Math.min(100,Number(data.percent_receita||0)))}%"></div></div>
+          <b>${Math.round(Number(data.percent_receita||0))}%</b>
+        </div>
+        <div class="line">
+          <span>Despesa</span>
+          <div class="track"><div class="fill expense" style="width:${Math.max(0,Math.min(100,Number(data.percent_despesa||0)))}%"></div></div>
+          <b>${Math.round(Number(data.percent_despesa||0))}%</b>
+        </div>
+        <div class="mini-grid">
+          <div class="mini"><span>Receita</span><strong>${brl(data.total_receita)}</strong></div>
+          <div class="mini"><span>Despesa</span><strong>${brl(data.total_despesa)}</strong></div>
+          <div class="mini"><span>Movimentacoes</span><strong>${Number(data.movimentacoes||0)}</strong></div>
+        </div>
+      </div>`;
+    }
+    function renderBars(containerId, rows){
+      const box = document.getElementById(containerId);
+      const list = (rows || []).slice(0,5);
+      const max = Math.max(...list.map((i)=>Number(i.total || 0)), 1);
+      box.innerHTML = list.map((item)=>{
+        const pct = (Number(item.total || 0) / max) * 100;
+        const name = String(item.category || "").slice(0,12);
+        return `<div class="row"><span>${name}</span><div class="track"><div class="fill income" style="width:${pct}%"></div></div><strong>${brl(item.total)}</strong></div>`;
+      }).join("");
+    }
 
-async function initLanding(){
-  const [daily, weekly, monthly, dashboard, categories, vehicle, card, entries] = await Promise.all([
-    getJson("/api/stats/daily/", demo.daily),
-    getJson("/api/stats/weekly/", demo.weekly),
-    getJson("/api/stats/monthly/", demo.monthly),
-    getJson("/api/dashboard/", demo.dashboard),
-    getJson("/api/dashboard/categories/", demo.categories),
-    getJson("/api/vehicles/summary/", demo.vehicle),
-    getJson("/api/credit-cards/summary/", demo.card),
-    getJson("/api/entries/?limit=80", demo.entries)
-  ]);
+    async function init(){
+      const [daily, weekly, monthly, categories, vehicle, card] = await Promise.all([
+        getJson("/api/stats/daily/", fallback.daily),
+        getJson("/api/stats/weekly/", fallback.weekly),
+        getJson("/api/stats/monthly/", fallback.monthly),
+        getJson("/api/dashboard/categories/", fallback.categories),
+        getJson("/api/vehicles/summary/", fallback.vehicle),
+        getJson("/api/credit-cards/summary/", fallback.card)
+      ]);
 
-  setText("receita", formatCurrency(dashboard.total_receita || monthly.total_receita));
-  setText("despesa", formatCurrency(dashboard.total_despesa || monthly.total_despesa));
-  setText("saldo", formatCurrency(dashboard.saldo || ((monthly.total_receita || 0) - (monthly.total_despesa || 0))));
+      const saldo = Number(monthly.total_receita || 0) - Number(monthly.total_despesa || 0);
+      const burn = Number(monthly.total_despesa || 0) / 10;
+      const runway = burn > 0 ? Math.round(saldo / burn) : 0;
+      const poupanca = Number(monthly.total_receita || 0) > 0
+        ? Math.round((saldo / Number(monthly.total_receita || 0)) * 100)
+        : 0;
 
-  renderSummaryCard("d", daily);
-  renderSummaryCard("w", weekly);
-  renderSummaryCard("m", monthly);
+      setText("heroReceita", brl(monthly.total_receita));
+      setText("heroDespesa", brl(monthly.total_despesa));
+      setText("heroSaldo", brl(saldo));
+      setText("heroPoupanca", `${poupanca}%`);
+      setText("heroBurn", brl(burn));
+      setText("heroRunway", `${runway} dias`);
 
-  drawChart("daily","chartDaily","doughnut",{
-    labels:["Entrada","Saida"],
-    datasets:[{ data:[daily.percent_receita || 0, daily.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
-  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
-  drawChart("weekly","chartWeekly","doughnut",{
-    labels:["Entrada","Saida"],
-    datasets:[{ data:[weekly.percent_receita || 0, weekly.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
-  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
-  drawChart("monthly","chartMonthly","doughnut",{
-    labels:["Entrada","Saida"],
-    datasets:[{ data:[monthly.percent_receita || 0, monthly.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
-  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
+      document.getElementById("periodList").innerHTML = [
+        periodTemplate("Diario", "/api/stats/daily/", daily),
+        periodTemplate("Semanal", "/api/stats/weekly/", weekly),
+        periodTemplate("Mensal", "/api/stats/monthly/", monthly)
+      ].join("");
 
-  const topCategories = (categories || []).slice(0,4);
-  for(let i=0;i<4;i++){
-    const item = topCategories[i] || { category:`Categoria ${i+1}`, total:0 };
-    const totalExpense = Number(monthly.total_despesa || 0) || 1;
-    const p = Math.max(0, Math.min(100, (Number(item.total || 0) / totalExpense) * 100));
-    setText(`g${i+1}Label`, `${item.category} (${Math.round(p)}%)`);
-    drawChart(`g${i+1}`,`g${i+1}`,"doughnut",{
-      labels:["Peso","Restante"],
-      datasets:[{ data:[p, 100 - p], backgroundColor:["#38bdf8","#1e293b"], borderWidth:0 }]
-    },{plugins:{legend:{display:false}}});
-  }
+      const usage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
+      document.getElementById("cardDonut").style.setProperty("--pct", usage.toFixed(2));
+      setText("cardPct", `${usage.toFixed(1)}%`);
+      setText("cardUsed", brl(card.total_spent));
+      setText("cardLimit", `de ${brl(card.total_limit)}`);
+      setText("cardCount", Number(card.card_count || 0));
+      setText("cardPoints", Math.round(Number(card.estimated_points || 0)));
+      setText("cardUsd", card.usd_brl_rate ? Number(card.usd_brl_rate).toFixed(2) : "-");
 
-  const cardUsage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
-  drawChart("cardUsage","cardUsageChart","doughnut",{
-    labels:["Usado","Livre"],
-    datasets:[{ data:[cardUsage, 100 - cardUsage], backgroundColor:["#f97316","#1e293b"], borderWidth:0 }]
-  },{plugins:{legend:{display:false}}});
-  setText("cardUsageLabel", `${formatCurrency(card.total_spent || 0)} de ${formatCurrency(card.total_limit || 0)} (${cardUsage.toFixed(1)}%)`);
-  setText("cardUsageText", `${cardUsage.toFixed(1)}%`);
+      renderBars("categoryBars", categories);
+      renderBars("vehicleBars", vehicle.by_category || fallback.vehicle.by_category);
 
-  const vehicleWeight = percent(vehicle.monthly_total || 0, monthly.total_despesa || 1);
-  drawChart("vehicleWeight","vehicleWeightChart","doughnut",{
-    labels:["Veiculos","Outros"],
-    datasets:[{ data:[vehicleWeight, 100 - vehicleWeight], backgroundColor:["#0ea5e9","#1e293b"], borderWidth:0 }]
-  },{plugins:{legend:{display:false}}});
-  setText("vehicleWeightLabel", `${vehicleWeight}% das despesas do periodo`);
+      setText("vehicleMonthly", brl(vehicle.monthly_total));
+      setText("vehicleCommute", brl(vehicle.commute_monthly_cost));
+      setText("vehicleCount", Number(vehicle.vehicle_count || 0));
 
-  const incomeExpense = percent(monthly.total_despesa || 0, monthly.total_receita || 1);
-  drawChart("incomeExpense","incomeExpenseRatioChart","doughnut",{
-    labels:["Despesa/Receita","Folga"],
-    datasets:[{ data:[incomeExpense, 100 - incomeExpense], backgroundColor:["#ef4444","#1e293b"], borderWidth:0 }]
-  },{plugins:{legend:{display:false}}});
-  setText("incomeExpenseLabel", `${incomeExpense}% da receita comprometida`);
-
-  const savings = percent((monthly.total_receita || 0) - (monthly.total_despesa || 0), monthly.total_receita || 1);
-  drawChart("savings","savingsChart","doughnut",{
-    labels:["Poupado","Nao poupado"],
-    datasets:[{ data:[savings, 100 - savings], backgroundColor:["#22c55e","#1e293b"], borderWidth:0 }]
-  },{plugins:{legend:{display:false}}});
-  setText("savingsLabel", `${savings}% de taxa de poupanca`);
-
-  renderWeekChart(entries);
-  renderTop5(entries);
-
-  setText("vehicleMonthlyCost", formatCurrency(vehicle.monthly_total || 0));
-  setText("vehicleCommuteCost", formatCurrency(vehicle.commute_monthly_cost || 0));
-  setText("entriesCount", String((entries || []).length));
-}
-
-initLanding();
-</script>
+      const trip = fallback.trip;
+      const pinPos = Math.max(5, Math.min(95, Number(trip.commitment_pct_balance || 0)));
+      document.getElementById("tripPin").style.left = `${pinPos}%`;
+      setText("tripReco", trip.recommendation);
+      setText("tripCommit", `${Number(trip.commitment_pct_balance || 0).toFixed(1)}%`);
+      setText("tripRunway", `${Number(trip.runway_days_after || 0).toFixed(0)} dias`);
+    }
+    init();
+  </script>
 </body>
 </html>
