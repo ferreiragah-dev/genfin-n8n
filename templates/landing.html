@@ -18,7 +18,6 @@
             --brand:#0f766e;
             --brand-2:#0891b2;
             --card:#ffffff;
-            --accent:#fb7185;
             --ok:#15803d;
             --warn:#b45309;
         }
@@ -67,7 +66,7 @@
         section{margin:28px 0}
         .section-title{font-size:24px;margin:0 0 8px}
         .section-sub{margin:0 0 14px;color:var(--muted)}
-        .module-grid,.stats-grid,.examples-grid{
+        .module-grid,.examples-grid,.visual-stats-grid{
             display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
         }
         .card{
@@ -81,38 +80,68 @@
             display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;
             background:#ecfeff;color:#155e75;font-size:12px;font-weight:700;
         }
-        .mono{
-            margin-top:10px;
-            font-family:"IBM Plex Mono",monospace;
-            background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px;
-            font-size:12px;line-height:1.5;overflow:auto;
-        }
         .wide{
             background:linear-gradient(135deg,#ffffff,#f8fafc);
             border:1px solid var(--line);border-radius:20px;padding:16px;
         }
+        .span-2{grid-column:span 2}
+        .api-chip{
+            display:inline-block;
+            margin:0 0 10px;
+            padding:4px 8px;
+            border-radius:999px;
+            border:1px solid #cbd5e1;
+            background:#f8fafc;
+            color:#0f172a;
+            font-size:11px;
+            font-family:"IBM Plex Mono",monospace;
+        }
+        .period-list{display:grid;gap:10px}
+        .period-item{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+        .period-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:8px;color:var(--muted)}
+        .period-bars{display:grid;gap:6px}
+        .bar-line{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;font-size:12px}
+        .bar-track{width:100%;height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}
+        .bar-fill{height:100%;display:block;border-radius:999px}
+        .bar-fill.income{background:linear-gradient(90deg,#16a34a,#22c55e)}
+        .bar-fill.expense{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+        .kpi-mini{margin-top:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+        .kpi-mini div{border:1px solid var(--line);border-radius:10px;padding:8px;background:#f8fafc;font-size:12px}
+        .kpi-mini span{display:block;color:var(--muted)}
+        .kpi-mini strong{font-size:13px}
+        .h-bars{display:grid;gap:8px;margin-top:6px}
+        .h-row{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:12px}
+        .h-row .bar-track{height:10px}
+        .donut-wrap{display:flex;align-items:center;gap:14px}
+        .donut{--pct:0;width:112px;height:112px;border-radius:50%;background:conic-gradient(#f97316 calc(var(--pct) * 1%), #e2e8f0 0);position:relative}
+        .donut::after{content:"";position:absolute;inset:13px;border-radius:50%;background:#fff}
+        .donut-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;z-index:1}
+        .thermo{height:14px;border-radius:999px;border:1px solid var(--line);background:linear-gradient(90deg,#22c55e 0 35%, #eab308 35% 70%, #ef4444 70% 100%);position:relative}
+        .thermo-pin{position:absolute;top:-4px;width:8px;height:22px;border-radius:6px;background:#0f172a;transform:translateX(-50%)}
+        .json-box{margin-top:10px;border-radius:12px;border:1px solid #1e293b;padding:10px;background:#0f172a;color:#cbd5e1;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+        .screen{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+        .screen-head{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:#f8fafc;font-size:12px;color:var(--muted)}
+        .dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+        .screen-body{padding:10px;display:grid;gap:8px}
+        .line-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px;background:#fff}
+        .line-item strong{font-size:12px}
+        .pill{font-size:11px;font-weight:700;border-radius:999px;padding:3px 7px;background:#ecfeff;color:#155e75}
         .flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-        .step{
-            border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;
-        }
+        .step{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
         .step strong{display:block;margin-bottom:6px}
-        .footer{
-            margin:34px 0 8px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:20px;
-            display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
-        }
+        .footer{margin:34px 0 8px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
         .footer p{margin:0;color:var(--muted)}
-        @keyframes rise{
-            from{opacity:0;transform:translateY(10px)}
-            to{opacity:1;transform:translateY(0)}
-        }
+        @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @media (max-width: 980px){
             .hero{grid-template-columns:1fr}
-            .module-grid,.stats-grid,.examples-grid{grid-template-columns:1fr 1fr}
+            .module-grid,.examples-grid,.visual-stats-grid{grid-template-columns:1fr 1fr}
+            .span-2{grid-column:span 1}
             .flow{grid-template-columns:1fr 1fr}
         }
         @media (max-width: 640px){
-            .module-grid,.stats-grid,.examples-grid,.flow{grid-template-columns:1fr}
+            .module-grid,.examples-grid,.visual-stats-grid,.flow{grid-template-columns:1fr}
             .topbar{position:static}
+            .h-row{grid-template-columns:76px 1fr auto}
         }
     </style>
 </head>
@@ -129,10 +158,10 @@
         <section class="hero">
             <div>
                 <h1>Seu app financeiro completo para analisar, planejar e decidir melhor.</h1>
-                <p>O GenFin une controle de movimentações, planejamento fixo, gestão de veículos, simulação de viagens e cartões de crédito com inteligência de dados em um único painel.</p>
+                <p>O GenFin une controle de movimentacoes, planejamento fixo, gestao de veiculos, simulacao de viagens e cartoes de credito com inteligencia de dados em um unico painel.</p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
-                    <a class="btn primary" href="/login/">Começar agora</a>
-                    <a class="btn" href="/login/">Ver demonstração no app</a>
+                    <a class="btn primary" href="/login/">Comecar agora</a>
+                    <a class="btn" href="/login/">Ver demonstracao no app</a>
                 </div>
             </div>
             <aside class="hero-panel">
@@ -141,8 +170,8 @@
                     <div class="kpi"><span>Receitas</span><strong>R$ 15.015,85</strong></div>
                     <div class="kpi"><span>Despesas</span><strong>R$ 486,45</strong></div>
                     <div class="kpi"><span>Saldo atual</span><strong class="ok">R$ 14.529,40</strong></div>
-                    <div class="kpi"><span>Taxa de poupança</span><strong>97%</strong></div>
-                    <div class="kpi"><span>Burn rate diário</span><strong class="warn">R$ 48,64</strong></div>
+                    <div class="kpi"><span>Taxa de poupanca</span><strong>97%</strong></div>
+                    <div class="kpi"><span>Burn rate diario</span><strong class="warn">R$ 48,64</strong></div>
                     <div class="kpi"><span>Runway</span><strong>902 dias</strong></div>
                 </div>
             </aside>
@@ -150,79 +179,132 @@
 
         <section>
             <h2 class="section-title">Tudo que existe no seu app</h2>
-            <p class="section-sub">Cada módulo com objetivos claros, dados conectados e leitura prática para tomada de decisão.</p>
+            <p class="section-sub">Cada modulo com objetivos claros, dados conectados e leitura pratica para tomada de decisao.</p>
             <div class="module-grid">
-                <article class="card"><h3>Dashboard Inteligente</h3><p>Consolidação de receitas, despesas, saldo, tendências, eficiência financeira, risco e segurança em tempo real.</p><span class="tag">Visão executiva</span></article>
-                <article class="card"><h3>Movimentações</h3><p>Cadastro e edição de entradas/saídas, categorização e anexos de comprovantes para auditoria financeira.</p><span class="tag">Controle diário</span></article>
-                <article class="card"><h3>Despesas Fixas</h3><p>Planejamento mensal com status pago/não pago, recorrência e acompanhamento do comprometimento fixo.</p><span class="tag">Planejamento</span></article>
-                <article class="card"><h3>Entradas Fixas</h3><p>Base de receitas recorrentes para medir cobertura das contas fixas e previsibilidade do mês.</p><span class="tag">Previsão</span></article>
-                <article class="card"><h3>Reservas</h3><p>Gestão do colchão financeiro para emergências, metas e leitura do índice de resiliência.</p><span class="tag">Segurança</span></article>
-                <article class="card"><h3>Veículos</h3><p>Custo de propriedade, combustível, documentação, IPVA, destinos frequentes e deslocamento mensal estimado.</p><span class="tag">Mobilidade</span></article>
-                <article class="card"><h3>Viagem</h3><p>Simulador de viagem com combustível, pedágios, hospedagem e termômetro de viabilidade financeira.</p><span class="tag">Decisão guiada</span></article>
-                <article class="card"><h3>Cartões de Crédito</h3><p>Faturas por competência, uso de limite por cartão/família, pontos por dólar e contas futuras.</p><span class="tag">Controle de crédito</span></article>
-                <article class="card"><h3>Perfil e Manual PDF</h3><p>Dados do usuário, ambiente do sistema e exportação do manual oficial para onboarding e operação.</p><span class="tag">Governança</span></article>
+                <article class="card"><h3>Dashboard Inteligente</h3><p>Consolidacao de receitas, despesas, saldo, tendencias, eficiencia financeira, risco e seguranca em tempo real.</p><span class="tag">Visao executiva</span></article>
+                <article class="card"><h3>Movimentacoes</h3><p>Cadastro e edicao de entradas/saidas, categorizacao e anexos de comprovantes para auditoria financeira.</p><span class="tag">Controle diario</span></article>
+                <article class="card"><h3>Despesas Fixas</h3><p>Planejamento mensal com status pago ou nao pago, recorrencia e acompanhamento do comprometimento fixo.</p><span class="tag">Planejamento</span></article>
+                <article class="card"><h3>Entradas Fixas</h3><p>Base de receitas recorrentes para medir cobertura das contas fixas e previsibilidade do mes.</p><span class="tag">Previsao</span></article>
+                <article class="card"><h3>Reservas</h3><p>Gestao do colchao financeiro para emergencias, metas e leitura do indice de resiliencia.</p><span class="tag">Seguranca</span></article>
+                <article class="card"><h3>Veiculos</h3><p>Custo de propriedade, combustivel, documentacao, IPVA, destinos frequentes e deslocamento mensal estimado.</p><span class="tag">Mobilidade</span></article>
+                <article class="card"><h3>Viagem</h3><p>Simulador de viagem com combustivel, pedagios, hospedagem e termometro de viabilidade financeira.</p><span class="tag">Decisao guiada</span></article>
+                <article class="card"><h3>Cartoes de Credito</h3><p>Faturas por competencia, uso de limite por cartao ou familia, pontos por dolar e contas futuras.</p><span class="tag">Controle de credito</span></article>
+                <article class="card"><h3>Perfil e Manual PDF</h3><p>Dados do usuario, ambiente do sistema e exportacao do manual oficial para onboarding e operacao.</p><span class="tag">Governanca</span></article>
             </div>
         </section>
 
         <section>
-            <h2 class="section-title">Exemplos de estatísticas (como aparecem no GenFin)</h2>
-            <p class="section-sub">Indicadores de curto e longo prazo, com leitura diária, semanal, mensal e por competência.</p>
-            <div class="stats-grid">
-                <article class="card">
-                    <h3>Resumo diário (API `/api/stats/daily/`)</h3>
-                    <div class="mono">{ "total_receita": 3500, "total_despesa": 420, "movimentacoes": 8, "percent_receita": 89, "percent_despesa": 11 }</div>
+            <h2 class="section-title">Estatisticas reais do projeto (visual)</h2>
+            <p class="section-sub">Graficos baseados nas APIs reais do GenFin. Quando voce esta logado, os cards tentam buscar dados vivos; sem sessao, exibem dados de demonstracao no mesmo formato.</p>
+            <div class="visual-stats-grid">
+                <article class="card span-2">
+                    <h3>Resumo diario, semanal e mensal</h3>
+                    <span class="api-chip">GET /api/stats/daily/ | /api/stats/weekly/ | /api/stats/monthly/</span>
+                    <div id="periodList" class="period-list"></div>
                 </article>
+
                 <article class="card">
-                    <h3>Resumo semanal (API `/api/stats/weekly/`)</h3>
-                    <div class="mono">{ "total_receita": 7900, "total_despesa": 1820, "movimentacoes": 27, "percent_receita": 81, "percent_despesa": 19 }</div>
+                    <h3>Uso de limite no cartao</h3>
+                    <span class="api-chip">GET /api/credit-cards/summary/</span>
+                    <div class="donut-wrap">
+                        <div class="donut" id="cardDonut" style="--pct: 0;">
+                            <div class="donut-label" id="cardUsageLabel">0%</div>
+                        </div>
+                        <div>
+                            <div style="font-size:13px;color:var(--muted)">Uso total</div>
+                            <div style="font-weight:800;font-size:20px" id="cardUsed">R$ 0,00</div>
+                            <div style="font-size:12px;color:var(--muted)" id="cardLimit">de R$ 0,00</div>
+                        </div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div><span>Cartoes</span><strong id="cardCount">0</strong></div>
+                        <div><span>Pontos</span><strong id="cardPoints">0</strong></div>
+                        <div><span>Cotacao USD</span><strong id="cardUsd">-</strong></div>
+                    </div>
                 </article>
+
                 <article class="card">
-                    <h3>Resumo mensal (API `/api/stats/monthly/`)</h3>
-                    <div class="mono">{ "total_receita": 15015.85, "total_despesa": 486.45, "movimentacoes": 36, "percent_receita": 97, "percent_despesa": 3 }</div>
+                    <h3>Despesas por categoria</h3>
+                    <span class="api-chip">GET /api/dashboard/categories/</span>
+                    <div id="categoryBars" class="h-bars"></div>
                 </article>
+
                 <article class="card">
-                    <h3>Eficiência financeira</h3>
-                    <p>Taxa de poupança, burn rate mensal, runway pessoal, volatilidade e previsibilidade dos gastos.</p>
-                    <div class="mono">Taxa de poupanca = (Saldo / Receitas) * 100 = 96.76%</div>
+                    <h3>Resumo de veiculos</h3>
+                    <span class="api-chip">GET /api/vehicles/summary/</span>
+                    <div id="vehicleBars" class="h-bars"></div>
+                    <div class="kpi-mini">
+                        <div><span>Custo mensal</span><strong id="vehicleMonthly">R$ 0,00</strong></div>
+                        <div><span>Deslocamento</span><strong id="vehicleCommute">R$ 0,00</strong></div>
+                        <div><span>Veiculos</span><strong id="vehicleCount">0</strong></div>
+                    </div>
                 </article>
+
                 <article class="card">
-                    <h3>Risco financeiro</h3>
-                    <p>Pressão financeira, probabilidade de saldo negativo, semáforo de colapso e gauge de risco.</p>
-                    <div class="mono">Pressao = compromissos / receita = 38% (zona de atencao)</div>
+                    <h3>Termometro de viagem</h3>
+                    <span class="api-chip">POST /api/trips/evaluate/</span>
+                    <p style="margin-bottom:10px;color:var(--muted)">Campos usados no backend: <code>trip_total_cost</code>, <code>commitment_pct_balance</code>, <code>runway_days_after</code>, <code>risk_level</code> e <code>recommendation</code>.</p>
+                    <div class="thermo">
+                        <div id="tripPin" class="thermo-pin" style="left: 30%;"></div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div><span>Recomendacao</span><strong id="tripReco">-</strong></div>
+                        <div><span>Compromete saldo</span><strong id="tripCommit">0%</strong></div>
+                        <div><span>Runway apos</span><strong id="tripRunway">0 dias</strong></div>
+                    </div>
                 </article>
-                <article class="card">
-                    <h3>Cartões e competência</h3>
-                    <p>Uso total de limite, distribuição por cartão e projeção de faturas futuras com fechamento.</p>
-                    <div class="mono">Limite usado: R$ 6.212,85 / R$ 6.260,00 = 99,2%</div>
+
+                <article class="card span-2">
+                    <h3>Exemplo visual de payloads reais</h3>
+                    <span class="api-chip">Schemas reais das respostas do backend</span>
+                    <div id="jsonDump" class="json-box"></div>
                 </article>
             </div>
         </section>
 
         <section class="wide">
-            <h2 class="section-title">Exemplos do próprio app em uso</h2>
-            <p class="section-sub">Cenários típicos para mostrar a operação ponta a ponta.</p>
+            <h2 class="section-title">Exemplos do app em uso (visual de tela)</h2>
+            <p class="section-sub">Os cenarios abaixo representam exatamente os tipos de registros aceitos nas rotas atuais do projeto.</p>
             <div class="examples-grid">
                 <article class="card">
-                    <h3>Exemplo 1: Registro de despesa + comprovante</h3>
-                    <div class="mono">Data: 10/02/2026
-Categoria: Alimentacao
-Tipo: DESPESA
-Valor: R$ 58,90
-Comprovante: anexado</div>
+                    <h3>Movimentacoes + comprovante</h3>
+                    <span class="api-chip">POST /api/financial-entry/ | GET /api/entries/</span>
+                    <div class="screen">
+                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Lancamentos</div>
+                        <div class="screen-body">
+                            <div class="line-item"><strong>10/02/2026 · Alimentacao</strong><span>R$ 58,90</span></div>
+                            <div class="line-item"><span>Tipo: DESPESA</span><span class="pill">Comprovante anexado</span></div>
+                            <div class="line-item"><span>09/02/2026 · Salario</span><span>R$ 6.900,00</span></div>
+                        </div>
+                    </div>
                 </article>
+
                 <article class="card">
-                    <h3>Exemplo 2: Planejamento de fixas</h3>
-                    <div class="mono">Internet: R$ 129,90 (paga)
-Aluguel: R$ 2.100,00 (nao pago)
-Energia: R$ 240,70 (nao pago)</div>
+                    <h3>Planejamento de fixas</h3>
+                    <span class="api-chip">GET /api/planner/ | /api/fixed-incomes/ | /api/reserves/</span>
+                    <div class="screen">
+                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Planejamento</div>
+                        <div class="screen-body">
+                            <div class="line-item"><strong>Internet</strong><span>R$ 129,90</span></div>
+                            <div class="line-item"><span>Status</span><span class="pill">Paga</span></div>
+                            <div class="line-item"><strong>Aluguel</strong><span>R$ 2.100,00</span></div>
+                            <div class="line-item"><span>Status</span><span class="pill" style="background:#fff7ed;color:#b45309">Nao paga</span></div>
+                        </div>
+                    </div>
                 </article>
+
                 <article class="card">
-                    <h3>Exemplo 3: Simulação de viagem</h3>
-                    <div class="mono">Distancia total: 840 km
-Combustivel: R$ 612,20
-Pedagios: R$ 139,00
-Hospedagem: R$ 460,00
-Termometro: ATENCAO</div>
+                    <h3>Simulacao de viagem</h3>
+                    <span class="api-chip">POST /api/trips/evaluate/</span>
+                    <div class="screen">
+                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Viagem</div>
+                        <div class="screen-body">
+                            <div class="line-item"><strong>Distancia total</strong><span>840 km</span></div>
+                            <div class="line-item"><strong>Custo combustivel</strong><span>R$ 612,20</span></div>
+                            <div class="line-item"><strong>Pedagios + hospedagem</strong><span>R$ 599,00</span></div>
+                            <div class="line-item"><strong>Termometro</strong><span class="pill" style="background:#fef3c7;color:#92400e">Atencao</span></div>
+                        </div>
+                    </div>
                 </article>
             </div>
         </section>
@@ -231,17 +313,172 @@ Termometro: ATENCAO</div>
             <h2 class="section-title">Como funciona no dia a dia</h2>
             <p class="section-sub">Fluxo recomendado para manter previsibilidade e controle financeiro.</p>
             <div class="flow">
-                <div class="step"><strong>1. Entradas e saídas</strong>Cadastre movimentações e anexe comprovantes ao longo do mês.</div>
+                <div class="step"><strong>1. Entradas e saidas</strong>Cadastre movimentacoes e anexe comprovantes ao longo do mes.</div>
                 <div class="step"><strong>2. Planejamento fixo</strong>Revise despesas, entradas e reservas para medir cobertura real.</div>
-                <div class="step"><strong>3. Leitura dos indicadores</strong>Use taxa de poupança, burn rate, runway e risco para ajustes rápidos.</div>
-                <div class="step"><strong>4. Decisões estratégicas</strong>Simule viagens, acompanhe cartões e priorize cortes no Top 5 gastos.</div>
+                <div class="step"><strong>3. Leitura dos indicadores</strong>Use taxa de poupanca, burn rate, runway e risco para ajustes rapidos.</div>
+                <div class="step"><strong>4. Decisoes estrategicas</strong>Simule viagens, acompanhe cartoes e priorize cortes no Top 5 gastos.</div>
             </div>
         </section>
 
         <footer class="footer">
-            <p>GenFin centraliza operação, estatística e decisão financeira em uma plataforma única.</p>
+            <p>GenFin centraliza operacao, estatistica e decisao financeira em uma plataforma unica.</p>
             <a class="btn primary" href="/login/">Acessar o GenFin</a>
         </footer>
     </div>
+
+    <script>
+        const fallbackStats = {
+            daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
+            weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
+            monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 }
+        };
+        const fallbackCategories = [
+            { category: "Moradia", total: 2100 },
+            { category: "Alimentacao", total: 890 },
+            { category: "Transporte", total: 520 },
+            { category: "Lazer", total: 280 },
+            { category: "Saude", total: 170 }
+        ];
+        const fallbackVehicle = {
+            monthly_total: 1890.4,
+            commute_monthly_cost: 612.2,
+            vehicle_count: 2,
+            by_category: [
+                { category: "COMBUSTIVEL", total: 870.1 },
+                { category: "MANUTENCAO", total: 310.0 },
+                { category: "PEDAGIO", total: 180.0 },
+                { category: "ESTACIONAMENTO", total: 132.1 },
+                { category: "FINANCIAMENTO", total: 398.2 }
+            ]
+        };
+        const fallbackCard = {
+            card_count: 3,
+            total_spent: 6212.85,
+            total_limit: 6260.0,
+            usage_percent: 99.2,
+            usd_brl_rate: 5.42,
+            estimated_points: 1146.8
+        };
+        const fallbackTrip = {
+            trip_total_cost: 1211.2,
+            commitment_pct_balance: 18.4,
+            runway_days_after: 84.0,
+            recommendation: "Atencao",
+            risk_level: "medio"
+        };
+
+        function brl(value){
+            const v = Number(value || 0);
+            return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+        }
+
+        async function getJson(url, fallback){
+            try{
+                const res = await fetch(url, { credentials: "same-origin" });
+                if(!res.ok) return fallback;
+                return await res.json();
+            }catch(_err){
+                return fallback;
+            }
+        }
+
+        function makePeriodItem(label, endpoint, data){
+            const incomePct = Math.max(0, Math.min(100, Number(data.percent_receita || 0)));
+            const expensePct = Math.max(0, Math.min(100, Number(data.percent_despesa || 0)));
+            return `
+                <div class="period-item">
+                    <div class="period-head">
+                        <strong>${label}</strong>
+                        <span>${endpoint}</span>
+                    </div>
+                    <div class="period-bars">
+                        <div class="bar-line">
+                            <span>Receita</span>
+                            <div class="bar-track"><span class="bar-fill income" style="width:${incomePct}%"></span></div>
+                            <strong>${incomePct}%</strong>
+                        </div>
+                        <div class="bar-line">
+                            <span>Despesa</span>
+                            <div class="bar-track"><span class="bar-fill expense" style="width:${expensePct}%"></span></div>
+                            <strong>${expensePct}%</strong>
+                        </div>
+                    </div>
+                    <div class="kpi-mini">
+                        <div><span>Receita</span><strong>${brl(data.total_receita)}</strong></div>
+                        <div><span>Despesa</span><strong>${brl(data.total_despesa)}</strong></div>
+                        <div><span>Movimentacoes</span><strong>${Number(data.movimentacoes || 0)}</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBars(containerId, rows, keyName){
+            const container = document.getElementById(containerId);
+            const list = (rows || []).slice(0, 5);
+            const max = Math.max(...list.map(item => Number(item.total || 0)), 1);
+            container.innerHTML = list.map(item => {
+                const pct = (Number(item.total || 0) / max) * 100;
+                return `
+                    <div class="h-row">
+                        <span>${String(item[keyName] || "").slice(0, 12)}</span>
+                        <div class="bar-track"><span class="bar-fill income" style="width:${pct}%"></span></div>
+                        <strong>${brl(item.total)}</strong>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function initLandingStats(){
+            const [daily, weekly, monthly, categories, vehicles, card] = await Promise.all([
+                getJson("/api/stats/daily/", fallbackStats.daily),
+                getJson("/api/stats/weekly/", fallbackStats.weekly),
+                getJson("/api/stats/monthly/", fallbackStats.monthly),
+                getJson("/api/dashboard/categories/", fallbackCategories),
+                getJson("/api/vehicles/summary/", fallbackVehicle),
+                getJson("/api/credit-cards/summary/", fallbackCard),
+            ]);
+
+            document.getElementById("periodList").innerHTML = [
+                makePeriodItem("Diario", "/api/stats/daily/", daily),
+                makePeriodItem("Semanal", "/api/stats/weekly/", weekly),
+                makePeriodItem("Mensal", "/api/stats/monthly/", monthly),
+            ].join("");
+
+            renderBars("categoryBars", categories, "category");
+            renderBars("vehicleBars", vehicles.by_category || [], "category");
+
+            const usage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
+            document.getElementById("cardDonut").style.setProperty("--pct", usage.toFixed(2));
+            document.getElementById("cardUsageLabel").textContent = `${usage.toFixed(1)}%`;
+            document.getElementById("cardUsed").textContent = brl(card.total_spent);
+            document.getElementById("cardLimit").textContent = `de ${brl(card.total_limit)}`;
+            document.getElementById("cardCount").textContent = Number(card.card_count || 0);
+            document.getElementById("cardPoints").textContent = Number(card.estimated_points || 0).toFixed(0);
+            document.getElementById("cardUsd").textContent = card.usd_brl_rate ? Number(card.usd_brl_rate).toFixed(2) : "-";
+
+            document.getElementById("vehicleMonthly").textContent = brl(vehicles.monthly_total);
+            document.getElementById("vehicleCommute").textContent = brl(vehicles.commute_monthly_cost);
+            document.getElementById("vehicleCount").textContent = Number(vehicles.vehicle_count || 0);
+
+            const tripPos = Math.max(5, Math.min(95, Number(fallbackTrip.commitment_pct_balance || 0)));
+            document.getElementById("tripPin").style.left = `${tripPos}%`;
+            document.getElementById("tripReco").textContent = fallbackTrip.recommendation;
+            document.getElementById("tripCommit").textContent = `${Number(fallbackTrip.commitment_pct_balance || 0).toFixed(1)}%`;
+            document.getElementById("tripRunway").textContent = `${Number(fallbackTrip.runway_days_after || 0).toFixed(0)} dias`;
+
+            const payloadPreview = {
+                stats_daily: daily,
+                stats_weekly: weekly,
+                stats_monthly: monthly,
+                dashboard_categories: categories,
+                vehicle_summary: vehicles,
+                credit_card_summary: card,
+                trip_evaluate: fallbackTrip
+            };
+            document.getElementById("jsonDump").textContent = JSON.stringify(payloadPreview, null, 2);
+        }
+
+        initLandingStats();
+    </script>
 </body>
 </html>
