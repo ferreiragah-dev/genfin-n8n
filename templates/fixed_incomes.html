@@ -151,6 +151,89 @@ body.theme-light .links a,
 body.theme-light .sidebar h4{color:#334155}
 body.theme-light .theme-btn.active{background:#2563eb;color:#fff}
 body.theme-light .icon-link.logout{color:#dc2626}
+/* GenFin soft-light override */
+body.theme-light{
+  --bg:#f3f4f6;
+  --bg-grad:linear-gradient(180deg,#f3f4f6,#eceff3 70%);
+  --border:#b8bec7;
+  --text:#1e293b;
+  --muted:#475569;
+  --blue:#0891b2;
+  --green:#22a74e;
+  --yellow:#c96b09;
+  --red:#ef4444;
+}
+body.theme-light .header,
+body.theme-light .panel,
+body.theme-light .month-wrap,
+body.theme-light .card,
+body.theme-light .sidebar,
+body.theme-light .side-link,
+body.theme-light .theme-switch,
+body.theme-light .visibility-btn,
+body.theme-light .icon-link,
+body.theme-light .month-chip,
+body.theme-light .theme-btn,
+body.theme-light .notif-panel,
+body.theme-light .stat-card,
+body.theme-light .mini-card,
+body.theme-light .gauge,
+body.theme-light .eff-item,
+body.theme-light .risk-item,
+body.theme-light .eff-card,
+body.theme-light .week-box,
+body.theme-light .calendar-box,
+body.theme-light .modal,
+body.theme-light .rule-box,
+body.theme-light .btn-secondary{
+  background:#e5e7eb !important;
+  color:#1e293b !important;
+}
+body.theme-light input,
+body.theme-light textarea,
+body.theme-light select,
+body.theme-light .field input,
+body.theme-light .field textarea,
+body.theme-light .modal-btn.secondary,
+body.theme-light .modal-close,
+body.theme-light .panel-toggle,
+body.theme-light .icon-btn,
+body.theme-light .card-icon-btn{
+  background:#e8ebef !important;
+  color:#1e293b !important;
+  border-color:#b8bec7 !important;
+}
+body.theme-light .month-chip.active,
+body.theme-light .period-btn.active,
+body.theme-light .theme-btn.active{
+  background:#d8eef3 !important;
+  color:#0f172a !important;
+  border-color:#a4bacf !important;
+}
+body.theme-light .bar-bg,
+body.theme-light .cc-bar,
+body.theme-light .track{
+  background:#cbd2dc !important;
+}
+body.theme-light h3,
+body.theme-light h4,
+body.theme-light h5,
+body.theme-light h6,
+body.theme-light label,
+body.theme-light th,
+body.theme-light small,
+body.theme-light .metric,
+body.theme-light .links a,
+body.theme-light .month-head small,
+body.theme-light #selectedMonthLabel,
+body.theme-light .card span,
+body.theme-light .sidebar h4,
+body.theme-light .traffic-label,
+body.theme-light .cc-meta,
+body.theme-light .cc-last4,
+body.theme-light .cc-empty{
+  color:#475569 !important;
+}
 </style>
 <script>
 let editingId = null;
@@ -176,7 +259,7 @@ function initUiPrefs(){
   };
 
   applyHidden(localStorage.getItem("genfin_values_hidden") === "1");
-  applyTheme(localStorage.getItem("genfin_theme_mode") === "light" ? "light" : "dark");
+  applyTheme(localStorage.getItem("genfin_theme_mode") === "dark" ? "dark" : "light");
 
   if(visibilityBtn && !visibilityBtn.dataset.bound){
     visibilityBtn.dataset.bound = "1";
@@ -474,6 +557,7 @@ document.addEventListener("DOMContentLoaded", init);
 </div>
 </body>
 </html>
+
 
 
 
