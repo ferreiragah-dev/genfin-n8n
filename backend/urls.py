@@ -10,6 +10,7 @@ from accounts.views import (
     dashboard_page,
     fixed_expenses_page,
     fixed_incomes_page,
+    landing_page,
     login_page,
     logout_page,
     profile_page,
@@ -22,6 +23,7 @@ from accounts.views import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("accounts.urls")),
+    path("", landing_page),
     path("login/", login_page),
     path("dashboard/", dashboard_page),
     path("logout/", logout_page),
