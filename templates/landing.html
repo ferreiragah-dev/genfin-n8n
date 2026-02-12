@@ -2,483 +2,454 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>GenFin | Plataforma Financeira Completa</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        :root{
-            --bg:#f7f6f2;
-            --ink:#0f172a;
-            --muted:#475569;
-            --line:#d6d3d1;
-            --brand:#0f766e;
-            --brand-2:#0891b2;
-            --card:#ffffff;
-            --ok:#15803d;
-            --warn:#b45309;
-        }
-        *{box-sizing:border-box}
-        html,body{margin:0;padding:0}
-        body{
-            font-family:"Sora",sans-serif;
-            color:var(--ink);
-            background:
-                radial-gradient(circle at 85% 0%, rgba(8,145,178,.16), transparent 32%),
-                radial-gradient(circle at 0% 35%, rgba(15,118,110,.12), transparent 28%),
-                var(--bg);
-        }
-        .wrap{max-width:1180px;margin:0 auto;padding:20px}
-        .topbar{
-            position:sticky;top:12px;z-index:20;
-            display:flex;justify-content:space-between;align-items:center;
-            border:1px solid var(--line);border-radius:16px;padding:12px 14px;
-            background:rgba(255,255,255,.88);backdrop-filter:blur(7px);
-        }
-        .logo{font-weight:800;letter-spacing:.04em}
-        .top-actions{display:flex;gap:10px}
-        .btn{
-            text-decoration:none;border-radius:12px;padding:10px 14px;font-weight:700;
-            border:1px solid var(--line);color:var(--ink);display:inline-block;
-        }
-        .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:0}
-        .hero{
-            display:grid;grid-template-columns:1.3fr 1fr;gap:20px;
-            padding:34px 0 20px;align-items:center;
-        }
-        .hero h1{font-size:clamp(30px,5vw,52px);line-height:1.05;margin:0 0 10px}
-        .hero p{margin:0;color:var(--muted);font-size:16px;max-width:690px}
-        .hero-panel{
-            background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;
-            box-shadow:0 12px 24px rgba(15,23,42,.06);
-            animation:rise .7s ease both;
-        }
-        .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-        .kpi{
-            border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafaf9;
-        }
-        .kpi span{display:block;font-size:12px;color:var(--muted)}
-        .kpi strong{font-size:19px}
-        .ok{color:var(--ok)} .warn{color:var(--warn)}
-        section{margin:28px 0}
-        .section-title{font-size:24px;margin:0 0 8px}
-        .section-sub{margin:0 0 14px;color:var(--muted)}
-        .module-grid,.examples-grid,.visual-stats-grid{
-            display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
-        }
-        .card{
-            background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;
-            box-shadow:0 7px 16px rgba(15,23,42,.05);
-            animation:rise .6s ease both;
-        }
-        .card h3{margin:0 0 8px;font-size:16px}
-        .card p{margin:0;color:var(--muted);font-size:14px}
-        .tag{
-            display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;
-            background:#ecfeff;color:#155e75;font-size:12px;font-weight:700;
-        }
-        .wide{
-            background:linear-gradient(135deg,#ffffff,#f8fafc);
-            border:1px solid var(--line);border-radius:20px;padding:16px;
-        }
-        .span-2{grid-column:span 2}
-        .api-chip{
-            display:inline-block;
-            margin:0 0 10px;
-            padding:4px 8px;
-            border-radius:999px;
-            border:1px solid #cbd5e1;
-            background:#f8fafc;
-            color:#0f172a;
-            font-size:11px;
-            font-family:"IBM Plex Mono",monospace;
-        }
-        .period-list{display:grid;gap:10px}
-        .period-item{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
-        .period-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:8px;color:var(--muted)}
-        .period-bars{display:grid;gap:6px}
-        .bar-line{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;font-size:12px}
-        .bar-track{width:100%;height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}
-        .bar-fill{height:100%;display:block;border-radius:999px}
-        .bar-fill.income{background:linear-gradient(90deg,#16a34a,#22c55e)}
-        .bar-fill.expense{background:linear-gradient(90deg,#f59e0b,#ef4444)}
-        .kpi-mini{margin-top:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-        .kpi-mini div{border:1px solid var(--line);border-radius:10px;padding:8px;background:#f8fafc;font-size:12px}
-        .kpi-mini span{display:block;color:var(--muted)}
-        .kpi-mini strong{font-size:13px}
-        .h-bars{display:grid;gap:8px;margin-top:6px}
-        .h-row{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:12px}
-        .h-row .bar-track{height:10px}
-        .donut-wrap{display:flex;align-items:center;gap:14px}
-        .donut{--pct:0;width:112px;height:112px;border-radius:50%;background:conic-gradient(#f97316 calc(var(--pct) * 1%), #e2e8f0 0);position:relative}
-        .donut::after{content:"";position:absolute;inset:13px;border-radius:50%;background:#fff}
-        .donut-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;z-index:1}
-        .thermo{height:14px;border-radius:999px;border:1px solid var(--line);background:linear-gradient(90deg,#22c55e 0 35%, #eab308 35% 70%, #ef4444 70% 100%);position:relative}
-        .thermo-pin{position:absolute;top:-4px;width:8px;height:22px;border-radius:6px;background:#0f172a;transform:translateX(-50%)}
-        .json-box{margin-top:10px;border-radius:12px;border:1px solid #1e293b;padding:10px;background:#0f172a;color:#cbd5e1;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word}
-        .screen{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
-        .screen-head{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:#f8fafc;font-size:12px;color:var(--muted)}
-        .dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
-        .screen-body{padding:10px;display:grid;gap:8px}
-        .line-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px;background:#fff}
-        .line-item strong{font-size:12px}
-        .pill{font-size:11px;font-weight:700;border-radius:999px;padding:3px 7px;background:#ecfeff;color:#155e75}
-        .flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-        .step{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
-        .step strong{display:block;margin-bottom:6px}
-        .footer{margin:34px 0 8px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
-        .footer p{margin:0;color:var(--muted)}
-        @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @media (max-width: 980px){
-            .hero{grid-template-columns:1fr}
-            .module-grid,.examples-grid,.visual-stats-grid{grid-template-columns:1fr 1fr}
-            .span-2{grid-column:span 1}
-            .flow{grid-template-columns:1fr 1fr}
-        }
-        @media (max-width: 640px){
-            .module-grid,.examples-grid,.visual-stats-grid,.flow{grid-template-columns:1fr}
-            .topbar{position:static}
-            .h-row{grid-template-columns:76px 1fr auto}
-        }
-    </style>
+<meta charset="UTF-8">
+<title>GenFin | Plataforma Financeira</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root{
+  --bg:#05070d;
+  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
+  --panel:#0b1224;
+  --border:rgba(56,189,248,.15);
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --green:#22c55e;
+  --red:#ef4444;
+  --blue:#38bdf8;
+  --yellow:#eab308;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+  background:var(--bg-grad);
+  color:var(--text);
+}
+
+.wrap{max-width:1200px;margin:0 auto;padding:14px}
+
+.topbar{
+  position:sticky;top:10px;z-index:10;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:linear-gradient(180deg, #0b1224, #070b18);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px 14px;
+}
+.logo{font-weight:700;letter-spacing:.08em;color:#bae6fd}
+.actions{display:flex;gap:10px}
+.btn{
+  text-decoration:none;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 12px;
+  color:#cbd5e1;
+  font-size:13px;
+}
+.btn.primary{background:#38bdf8;color:#04111d;font-weight:700}
+
+.hero{
+  margin-top:14px;
+  background:linear-gradient(140deg,#0b1224,#020617 60%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:24px;
+}
+.hero h1{margin:0 0 8px;font-size:32px;line-height:1.1}
+.hero p{margin:0;color:var(--muted);max-width:760px}
+
+.panel{
+  margin-top:14px;
+  background:linear-gradient(180deg,#070b18,#020617);
+  border-radius:18px;
+  padding:18px;
+  border:1px solid var(--border);
+}
+.panel h3{
+  margin:0 0 12px;
+  font-size:13px;
+  color:#94a3b8;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border-radius:16px;
+  padding:14px;
+  border:1px solid var(--border);
+}
+.card span{color:var(--muted);font-size:12px}
+.card strong{font-size:22px;display:block;margin-top:8px}
+.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .blue{color:var(--blue)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stat-card{
+  background:linear-gradient(180deg,#060b1a,#020617);
+  border-radius:18px;
+  padding:16px;
+  border:1px solid rgba(56,189,248,.14);
+  box-shadow:0 0 18px rgba(56,189,248,.08);
+}
+.stat-card h4{margin:0 0 10px;color:#38bdf8;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.metric{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px dashed rgba(255,255,255,.06);
+  font-size:12px;
+}
+.metric b{font-size:13px}
+.stat-card canvas{margin-top:10px;max-height:120px}
+
+.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.gauge{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border-radius:14px;
+  padding:12px;
+  text-align:center;
+  border:1px solid var(--border);
+}
+.gauge canvas{max-height:90px}
+.gauge small{display:block;margin-top:6px;color:#94a3b8}
+
+.split{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
+.week-box,.calendar-box{
+  background:linear-gradient(180deg,#0b1224,#020617);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+}
+.top5-inline h3{margin:10px 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;color:#9ca3af}
+.bar-bg{flex:1;height:8px;background:#020617;border-radius:10px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#db2777)}
+
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.step{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  background:linear-gradient(180deg,#0b1224,#020617);
+}
+.step strong{display:block;margin-bottom:5px}
+
+@media (max-width:980px){
+  .cards,.stats,.gauges{grid-template-columns:1fr 1fr}
+  .split,.flow{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .cards,.stats,.gauges{grid-template-columns:1fr}
+  .hero h1{font-size:28px}
+}
+</style>
 </head>
 <body>
-    <div class="wrap">
-        <header class="topbar">
-            <div class="logo">GF | GenFin</div>
-            <div class="top-actions">
-                <a class="btn" href="/login/">Entrar</a>
-                <a class="btn primary" href="/login/">Criar conta</a>
-            </div>
-        </header>
-
-        <section class="hero">
-            <div>
-                <h1>Seu app financeiro completo para analisar, planejar e decidir melhor.</h1>
-                <p>O GenFin une controle de movimentacoes, planejamento fixo, gestao de veiculos, simulacao de viagens e cartoes de credito com inteligencia de dados em um unico painel.</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
-                    <a class="btn primary" href="/login/">Comecar agora</a>
-                    <a class="btn" href="/login/">Ver demonstracao no app</a>
-                </div>
-            </div>
-            <aside class="hero-panel">
-                <strong>Painel de exemplo do GenFin</strong>
-                <div class="kpi-grid">
-                    <div class="kpi"><span>Receitas</span><strong>R$ 15.015,85</strong></div>
-                    <div class="kpi"><span>Despesas</span><strong>R$ 486,45</strong></div>
-                    <div class="kpi"><span>Saldo atual</span><strong class="ok">R$ 14.529,40</strong></div>
-                    <div class="kpi"><span>Taxa de poupanca</span><strong>97%</strong></div>
-                    <div class="kpi"><span>Burn rate diario</span><strong class="warn">R$ 48,64</strong></div>
-                    <div class="kpi"><span>Runway</span><strong>902 dias</strong></div>
-                </div>
-            </aside>
-        </section>
-
-        <section>
-            <h2 class="section-title">Tudo que existe no seu app</h2>
-            <p class="section-sub">Cada modulo com objetivos claros, dados conectados e leitura pratica para tomada de decisao.</p>
-            <div class="module-grid">
-                <article class="card"><h3>Dashboard Inteligente</h3><p>Consolidacao de receitas, despesas, saldo, tendencias, eficiencia financeira, risco e seguranca em tempo real.</p><span class="tag">Visao executiva</span></article>
-                <article class="card"><h3>Movimentacoes</h3><p>Cadastro e edicao de entradas/saidas, categorizacao e anexos de comprovantes para auditoria financeira.</p><span class="tag">Controle diario</span></article>
-                <article class="card"><h3>Despesas Fixas</h3><p>Planejamento mensal com status pago ou nao pago, recorrencia e acompanhamento do comprometimento fixo.</p><span class="tag">Planejamento</span></article>
-                <article class="card"><h3>Entradas Fixas</h3><p>Base de receitas recorrentes para medir cobertura das contas fixas e previsibilidade do mes.</p><span class="tag">Previsao</span></article>
-                <article class="card"><h3>Reservas</h3><p>Gestao do colchao financeiro para emergencias, metas e leitura do indice de resiliencia.</p><span class="tag">Seguranca</span></article>
-                <article class="card"><h3>Veiculos</h3><p>Custo de propriedade, combustivel, documentacao, IPVA, destinos frequentes e deslocamento mensal estimado.</p><span class="tag">Mobilidade</span></article>
-                <article class="card"><h3>Viagem</h3><p>Simulador de viagem com combustivel, pedagios, hospedagem e termometro de viabilidade financeira.</p><span class="tag">Decisao guiada</span></article>
-                <article class="card"><h3>Cartoes de Credito</h3><p>Faturas por competencia, uso de limite por cartao ou familia, pontos por dolar e contas futuras.</p><span class="tag">Controle de credito</span></article>
-                <article class="card"><h3>Perfil e Manual PDF</h3><p>Dados do usuario, ambiente do sistema e exportacao do manual oficial para onboarding e operacao.</p><span class="tag">Governanca</span></article>
-            </div>
-        </section>
-
-        <section>
-            <h2 class="section-title">Estatisticas reais do projeto (visual)</h2>
-            <p class="section-sub">Graficos baseados nas APIs reais do GenFin. Quando voce esta logado, os cards tentam buscar dados vivos; sem sessao, exibem dados de demonstracao no mesmo formato.</p>
-            <div class="visual-stats-grid">
-                <article class="card span-2">
-                    <h3>Resumo diario, semanal e mensal</h3>
-                    <span class="api-chip">GET /api/stats/daily/ | /api/stats/weekly/ | /api/stats/monthly/</span>
-                    <div id="periodList" class="period-list"></div>
-                </article>
-
-                <article class="card">
-                    <h3>Uso de limite no cartao</h3>
-                    <span class="api-chip">GET /api/credit-cards/summary/</span>
-                    <div class="donut-wrap">
-                        <div class="donut" id="cardDonut" style="--pct: 0;">
-                            <div class="donut-label" id="cardUsageLabel">0%</div>
-                        </div>
-                        <div>
-                            <div style="font-size:13px;color:var(--muted)">Uso total</div>
-                            <div style="font-weight:800;font-size:20px" id="cardUsed">R$ 0,00</div>
-                            <div style="font-size:12px;color:var(--muted)" id="cardLimit">de R$ 0,00</div>
-                        </div>
-                    </div>
-                    <div class="kpi-mini">
-                        <div><span>Cartoes</span><strong id="cardCount">0</strong></div>
-                        <div><span>Pontos</span><strong id="cardPoints">0</strong></div>
-                        <div><span>Cotacao USD</span><strong id="cardUsd">-</strong></div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <h3>Despesas por categoria</h3>
-                    <span class="api-chip">GET /api/dashboard/categories/</span>
-                    <div id="categoryBars" class="h-bars"></div>
-                </article>
-
-                <article class="card">
-                    <h3>Resumo de veiculos</h3>
-                    <span class="api-chip">GET /api/vehicles/summary/</span>
-                    <div id="vehicleBars" class="h-bars"></div>
-                    <div class="kpi-mini">
-                        <div><span>Custo mensal</span><strong id="vehicleMonthly">R$ 0,00</strong></div>
-                        <div><span>Deslocamento</span><strong id="vehicleCommute">R$ 0,00</strong></div>
-                        <div><span>Veiculos</span><strong id="vehicleCount">0</strong></div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <h3>Termometro de viagem</h3>
-                    <span class="api-chip">POST /api/trips/evaluate/</span>
-                    <p style="margin-bottom:10px;color:var(--muted)">Campos usados no backend: <code>trip_total_cost</code>, <code>commitment_pct_balance</code>, <code>runway_days_after</code>, <code>risk_level</code> e <code>recommendation</code>.</p>
-                    <div class="thermo">
-                        <div id="tripPin" class="thermo-pin" style="left: 30%;"></div>
-                    </div>
-                    <div class="kpi-mini">
-                        <div><span>Recomendacao</span><strong id="tripReco">-</strong></div>
-                        <div><span>Compromete saldo</span><strong id="tripCommit">0%</strong></div>
-                        <div><span>Runway apos</span><strong id="tripRunway">0 dias</strong></div>
-                    </div>
-                </article>
-
-                <article class="card span-2">
-                    <h3>Exemplo visual de payloads reais</h3>
-                    <span class="api-chip">Schemas reais das respostas do backend</span>
-                    <div id="jsonDump" class="json-box"></div>
-                </article>
-            </div>
-        </section>
-
-        <section class="wide">
-            <h2 class="section-title">Exemplos do app em uso (visual de tela)</h2>
-            <p class="section-sub">Os cenarios abaixo representam exatamente os tipos de registros aceitos nas rotas atuais do projeto.</p>
-            <div class="examples-grid">
-                <article class="card">
-                    <h3>Movimentacoes + comprovante</h3>
-                    <span class="api-chip">POST /api/financial-entry/ | GET /api/entries/</span>
-                    <div class="screen">
-                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Lancamentos</div>
-                        <div class="screen-body">
-                            <div class="line-item"><strong>10/02/2026 · Alimentacao</strong><span>R$ 58,90</span></div>
-                            <div class="line-item"><span>Tipo: DESPESA</span><span class="pill">Comprovante anexado</span></div>
-                            <div class="line-item"><span>09/02/2026 · Salario</span><span>R$ 6.900,00</span></div>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <h3>Planejamento de fixas</h3>
-                    <span class="api-chip">GET /api/planner/ | /api/fixed-incomes/ | /api/reserves/</span>
-                    <div class="screen">
-                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Planejamento</div>
-                        <div class="screen-body">
-                            <div class="line-item"><strong>Internet</strong><span>R$ 129,90</span></div>
-                            <div class="line-item"><span>Status</span><span class="pill">Paga</span></div>
-                            <div class="line-item"><strong>Aluguel</strong><span>R$ 2.100,00</span></div>
-                            <div class="line-item"><span>Status</span><span class="pill" style="background:#fff7ed;color:#b45309">Nao paga</span></div>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <h3>Simulacao de viagem</h3>
-                    <span class="api-chip">POST /api/trips/evaluate/</span>
-                    <div class="screen">
-                        <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Viagem</div>
-                        <div class="screen-body">
-                            <div class="line-item"><strong>Distancia total</strong><span>840 km</span></div>
-                            <div class="line-item"><strong>Custo combustivel</strong><span>R$ 612,20</span></div>
-                            <div class="line-item"><strong>Pedagios + hospedagem</strong><span>R$ 599,00</span></div>
-                            <div class="line-item"><strong>Termometro</strong><span class="pill" style="background:#fef3c7;color:#92400e">Atencao</span></div>
-                        </div>
-                    </div>
-                </article>
-            </div>
-        </section>
-
-        <section>
-            <h2 class="section-title">Como funciona no dia a dia</h2>
-            <p class="section-sub">Fluxo recomendado para manter previsibilidade e controle financeiro.</p>
-            <div class="flow">
-                <div class="step"><strong>1. Entradas e saidas</strong>Cadastre movimentacoes e anexe comprovantes ao longo do mes.</div>
-                <div class="step"><strong>2. Planejamento fixo</strong>Revise despesas, entradas e reservas para medir cobertura real.</div>
-                <div class="step"><strong>3. Leitura dos indicadores</strong>Use taxa de poupanca, burn rate, runway e risco para ajustes rapidos.</div>
-                <div class="step"><strong>4. Decisoes estrategicas</strong>Simule viagens, acompanhe cartoes e priorize cortes no Top 5 gastos.</div>
-            </div>
-        </section>
-
-        <footer class="footer">
-            <p>GenFin centraliza operacao, estatistica e decisao financeira em uma plataforma unica.</p>
-            <a class="btn primary" href="/login/">Acessar o GenFin</a>
-        </footer>
+<div class="wrap">
+  <header class="topbar">
+    <div class="logo">GF | GenFin</div>
+    <div class="actions">
+      <a class="btn" href="/login/">Entrar</a>
+      <a class="btn primary" href="/login/">Criar conta</a>
     </div>
+  </header>
 
-    <script>
-        const fallbackStats = {
-            daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
-            weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
-            monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 }
-        };
-        const fallbackCategories = [
-            { category: "Moradia", total: 2100 },
-            { category: "Alimentacao", total: 890 },
-            { category: "Transporte", total: 520 },
-            { category: "Lazer", total: 280 },
-            { category: "Saude", total: 170 }
-        ];
-        const fallbackVehicle = {
-            monthly_total: 1890.4,
-            commute_monthly_cost: 612.2,
-            vehicle_count: 2,
-            by_category: [
-                { category: "COMBUSTIVEL", total: 870.1 },
-                { category: "MANUTENCAO", total: 310.0 },
-                { category: "PEDAGIO", total: 180.0 },
-                { category: "ESTACIONAMENTO", total: 132.1 },
-                { category: "FINANCIAMENTO", total: 398.2 }
-            ]
-        };
-        const fallbackCard = {
-            card_count: 3,
-            total_spent: 6212.85,
-            total_limit: 6260.0,
-            usage_percent: 99.2,
-            usd_brl_rate: 5.42,
-            estimated_points: 1146.8
-        };
-        const fallbackTrip = {
-            trip_total_cost: 1211.2,
-            commitment_pct_balance: 18.4,
-            runway_days_after: 84.0,
-            recommendation: "Atencao",
-            risk_level: "medio"
-        };
+  <section class="hero">
+    <h1>Veja o que realmente existe no app</h1>
+    <p>Painel com estatisticas financeiras, leitura por periodo, distribuicao por categoria, custos de veiculo, uso de cartao e ranking dos maiores gastos em um unico lugar.</p>
+  </section>
 
-        function brl(value){
-            const v = Number(value || 0);
-            return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-        }
+  <section class="panel">
+    <h3>Cards principais do dashboard</h3>
+    <div class="cards">
+      <div class="card"><span>Receitas</span><strong class="green" id="receita">R$ 0,00</strong></div>
+      <div class="card"><span>Despesas</span><strong class="red" id="despesa">R$ 0,00</strong></div>
+      <div class="card"><span>Saldo Atual</span><strong class="yellow" id="saldo">R$ 0,00</strong></div>
+    </div>
+  </section>
 
-        async function getJson(url, fallback){
-            try{
-                const res = await fetch(url, { credentials: "same-origin" });
-                if(!res.ok) return fallback;
-                return await res.json();
-            }catch(_err){
-                return fallback;
-            }
-        }
+  <section class="panel">
+    <h3>Resumo de movimentacoes</h3>
+    <div class="stats">
+      <div class="stat-card">
+        <h4>Hoje</h4>
+        <div class="metric">Entrou: <b id="d_in">R$ 0,00</b></div>
+        <div class="metric">Saiu: <b id="d_out">R$ 0,00</b></div>
+        <div class="metric">Movimentacoes: <b id="d_mov">0</b></div>
+        <div class="metric">Entrada %: <b id="d_in_p">0%</b></div>
+        <div class="metric">Saida %: <b id="d_out_p">0%</b></div>
+        <canvas id="chartDaily"></canvas>
+      </div>
+      <div class="stat-card">
+        <h4>Ultimos 7 dias</h4>
+        <div class="metric">Entrou: <b id="w_in">R$ 0,00</b></div>
+        <div class="metric">Saiu: <b id="w_out">R$ 0,00</b></div>
+        <div class="metric">Movimentacoes: <b id="w_mov">0</b></div>
+        <div class="metric">Entrada %: <b id="w_in_p">0%</b></div>
+        <div class="metric">Saida %: <b id="w_out_p">0%</b></div>
+        <canvas id="chartWeekly"></canvas>
+      </div>
+      <div class="stat-card">
+        <h4>Ultimos 30 dias</h4>
+        <div class="metric">Entrou: <b id="m_in">R$ 0,00</b></div>
+        <div class="metric">Saiu: <b id="m_out">R$ 0,00</b></div>
+        <div class="metric">Movimentacoes: <b id="m_mov">0</b></div>
+        <div class="metric">Entrada %: <b id="m_in_p">0%</b></div>
+        <div class="metric">Saida %: <b id="m_out_p">0%</b></div>
+        <canvas id="chartMonthly"></canvas>
+      </div>
+    </div>
+  </section>
 
-        function makePeriodItem(label, endpoint, data){
-            const incomePct = Math.max(0, Math.min(100, Number(data.percent_receita || 0)));
-            const expensePct = Math.max(0, Math.min(100, Number(data.percent_despesa || 0)));
-            return `
-                <div class="period-item">
-                    <div class="period-head">
-                        <strong>${label}</strong>
-                        <span>${endpoint}</span>
-                    </div>
-                    <div class="period-bars">
-                        <div class="bar-line">
-                            <span>Receita</span>
-                            <div class="bar-track"><span class="bar-fill income" style="width:${incomePct}%"></span></div>
-                            <strong>${incomePct}%</strong>
-                        </div>
-                        <div class="bar-line">
-                            <span>Despesa</span>
-                            <div class="bar-track"><span class="bar-fill expense" style="width:${expensePct}%"></span></div>
-                            <strong>${expensePct}%</strong>
-                        </div>
-                    </div>
-                    <div class="kpi-mini">
-                        <div><span>Receita</span><strong>${brl(data.total_receita)}</strong></div>
-                        <div><span>Despesa</span><strong>${brl(data.total_despesa)}</strong></div>
-                        <div><span>Movimentacoes</span><strong>${Number(data.movimentacoes || 0)}</strong></div>
-                    </div>
-                </div>
-            `;
-        }
+  <section class="panel">
+    <h3>Desempenho por categoria e indicadores</h3>
+    <div class="gauges">
+      <div class="gauge"><canvas id="g1"></canvas><small id="g1Label">Categoria 1</small></div>
+      <div class="gauge"><canvas id="g2"></canvas><small id="g2Label">Categoria 2</small></div>
+      <div class="gauge"><canvas id="g3"></canvas><small id="g3Label">Categoria 3</small></div>
+      <div class="gauge"><canvas id="g4"></canvas><small id="g4Label">Categoria 4</small></div>
+    </div>
+  </section>
 
-        function renderBars(containerId, rows, keyName){
-            const container = document.getElementById(containerId);
-            const list = (rows || []).slice(0, 5);
-            const max = Math.max(...list.map(item => Number(item.total || 0)), 1);
-            container.innerHTML = list.map(item => {
-                const pct = (Number(item.total || 0) / max) * 100;
-                return `
-                    <div class="h-row">
-                        <span>${String(item[keyName] || "").slice(0, 12)}</span>
-                        <div class="bar-track"><span class="bar-fill income" style="width:${pct}%"></span></div>
-                        <strong>${brl(item.total)}</strong>
-                    </div>
-                `;
-            }).join("");
-        }
+  <section class="panel">
+    <h3>Cartoes e custo de veiculos</h3>
+    <div class="gauges">
+      <div class="gauge"><canvas id="cardUsageChart"></canvas><small id="cardUsageLabel">Uso de limite</small></div>
+      <div class="gauge"><canvas id="vehicleWeightChart"></canvas><small id="vehicleWeightLabel">Peso veiculos no mes</small></div>
+      <div class="gauge"><canvas id="incomeExpenseRatioChart"></canvas><small id="incomeExpenseLabel">Receita x despesa</small></div>
+      <div class="gauge"><canvas id="savingsChart"></canvas><small id="savingsLabel">Taxa de poupanca</small></div>
+    </div>
+  </section>
 
-        async function initLandingStats(){
-            const [daily, weekly, monthly, categories, vehicles, card] = await Promise.all([
-                getJson("/api/stats/daily/", fallbackStats.daily),
-                getJson("/api/stats/weekly/", fallbackStats.weekly),
-                getJson("/api/stats/monthly/", fallbackStats.monthly),
-                getJson("/api/dashboard/categories/", fallbackCategories),
-                getJson("/api/vehicles/summary/", fallbackVehicle),
-                getJson("/api/credit-cards/summary/", fallbackCard),
-            ]);
+  <section class="panel">
+    <h3>Gastos por dia da semana e top 5 maiores gastos</h3>
+    <div class="split">
+      <div class="week-box">
+        <canvas id="heatmapWeek"></canvas>
+        <div class="top5-inline">
+          <h3>Top 5 maiores gastos</h3>
+          <div id="top5"></div>
+        </div>
+      </div>
+      <div class="calendar-box">
+        <div class="metric"><span>Custo mensal de veiculo</span><b id="vehicleMonthlyCost">R$ 0,00</b></div>
+        <div class="metric"><span>Custo de deslocamento</span><b id="vehicleCommuteCost">R$ 0,00</b></div>
+        <div class="metric"><span>Uso de limite no cartao</span><b id="cardUsageText">0%</b></div>
+        <div class="metric"><span>Movimentacoes registradas</span><b id="entriesCount">0</b></div>
+      </div>
+    </div>
+  </section>
 
-            document.getElementById("periodList").innerHTML = [
-                makePeriodItem("Diario", "/api/stats/daily/", daily),
-                makePeriodItem("Semanal", "/api/stats/weekly/", weekly),
-                makePeriodItem("Mensal", "/api/stats/monthly/", monthly),
-            ].join("");
+  <section class="panel">
+    <h3>Como funciona no app</h3>
+    <div class="flow">
+      <div class="step"><strong>1. Lancamentos</strong>Registre entradas e despesas no dia a dia.</div>
+      <div class="step"><strong>2. Planejamento</strong>Acompanhe fixas, reservas e cobertura do mes.</div>
+      <div class="step"><strong>3. Analise</strong>Leia os graficos e cards para identificar tendencias.</div>
+      <div class="step"><strong>4. Decisao</strong>Ajuste custos, cartoes e metas com base nos indicadores.</div>
+    </div>
+  </section>
+</div>
 
-            renderBars("categoryBars", categories, "category");
-            renderBars("vehicleBars", vehicles.by_category || [], "category");
+<script>
+const chartStore = {};
+const weekNames = ["Dom","Seg","Ter","Qua","Qui","Sex","Sab"];
 
-            const usage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
-            document.getElementById("cardDonut").style.setProperty("--pct", usage.toFixed(2));
-            document.getElementById("cardUsageLabel").textContent = `${usage.toFixed(1)}%`;
-            document.getElementById("cardUsed").textContent = brl(card.total_spent);
-            document.getElementById("cardLimit").textContent = `de ${brl(card.total_limit)}`;
-            document.getElementById("cardCount").textContent = Number(card.card_count || 0);
-            document.getElementById("cardPoints").textContent = Number(card.estimated_points || 0).toFixed(0);
-            document.getElementById("cardUsd").textContent = card.usd_brl_rate ? Number(card.usd_brl_rate).toFixed(2) : "-";
+const demo = {
+  daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
+  weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
+  monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 },
+  dashboard: { total_receita: 15015.85, total_despesa: 486.45, saldo: 14529.4 },
+  categories: [
+    { category: "Moradia", total: 2100 },
+    { category: "Cartao", total: 1450 },
+    { category: "Alimentacao", total: 890 },
+    { category: "Transporte", total: 520 },
+    { category: "Lazer", total: 280 }
+  ],
+  vehicle: { monthly_total: 1890.4, commute_monthly_cost: 612.2, vehicle_count: 2 },
+  card: { usage_percent: 67.3, total_spent: 4212.5, total_limit: 6260.0 },
+  entries: [
+    { id:1, date:"10/02/2026", category:"Mercado", entry_type:"DESPESA", amount:350.9 },
+    { id:2, date:"10/02/2026", category:"Combustivel", entry_type:"DESPESA", amount:190.2 },
+    { id:3, date:"09/02/2026", category:"Salario", entry_type:"RECEITA", amount:6900 },
+    { id:4, date:"08/02/2026", category:"Internet", entry_type:"DESPESA", amount:129.9 },
+    { id:5, date:"07/02/2026", category:"Restaurante", entry_type:"DESPESA", amount:140.0 },
+    { id:6, date:"06/02/2026", category:"Freela", entry_type:"RECEITA", amount:1200.0 },
+    { id:7, date:"05/02/2026", category:"Farmacia", entry_type:"DESPESA", amount:98.5 }
+  ]
+};
 
-            document.getElementById("vehicleMonthly").textContent = brl(vehicles.monthly_total);
-            document.getElementById("vehicleCommute").textContent = brl(vehicles.commute_monthly_cost);
-            document.getElementById("vehicleCount").textContent = Number(vehicles.vehicle_count || 0);
+function formatCurrency(value){
+  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(value || 0));
+}
+function percent(a,b){
+  const n = Number(b || 0);
+  if(n <= 0) return 0;
+  return Math.round((Number(a || 0) / n) * 100);
+}
+async function getJson(url, fallback){
+  try{
+    const res = await fetch(url, { credentials:"same-origin" });
+    if(!res.ok) return fallback;
+    return await res.json();
+  }catch(_error){
+    return fallback;
+  }
+}
+function setText(id, value){
+  const el = document.getElementById(id);
+  if(el) el.textContent = value;
+}
+function drawChart(key, id, type, data, options){
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  if(chartStore[key]) chartStore[key].destroy();
+  chartStore[key] = new Chart(canvas.getContext("2d"), { type, data, options });
+}
 
-            const tripPos = Math.max(5, Math.min(95, Number(fallbackTrip.commitment_pct_balance || 0)));
-            document.getElementById("tripPin").style.left = `${tripPos}%`;
-            document.getElementById("tripReco").textContent = fallbackTrip.recommendation;
-            document.getElementById("tripCommit").textContent = `${Number(fallbackTrip.commitment_pct_balance || 0).toFixed(1)}%`;
-            document.getElementById("tripRunway").textContent = `${Number(fallbackTrip.runway_days_after || 0).toFixed(0)} dias`;
+function renderSummaryCard(prefix, payload){
+  setText(prefix + "_in", formatCurrency(payload.total_receita));
+  setText(prefix + "_out", formatCurrency(payload.total_despesa));
+  setText(prefix + "_mov", String(payload.movimentacoes || 0));
+  setText(prefix + "_in_p", `${Math.round(payload.percent_receita || 0)}%`);
+  setText(prefix + "_out_p", `${Math.round(payload.percent_despesa || 0)}%`);
+}
 
-            const payloadPreview = {
-                stats_daily: daily,
-                stats_weekly: weekly,
-                stats_monthly: monthly,
-                dashboard_categories: categories,
-                vehicle_summary: vehicles,
-                credit_card_summary: card,
-                trip_evaluate: fallbackTrip
-            };
-            document.getElementById("jsonDump").textContent = JSON.stringify(payloadPreview, null, 2);
-        }
+function renderTop5(entries){
+  const top5Box = document.getElementById("top5");
+  const expenses = (entries || [])
+    .filter((e)=>String(e.entry_type || "").toUpperCase() === "DESPESA")
+    .sort((a,b)=>Number(b.amount || 0) - Number(a.amount || 0))
+    .slice(0,5);
+  if(!expenses.length){
+    top5Box.innerHTML = '<div class="bar-row"><span>Sem gastos registrados</span></div>';
+    return;
+  }
+  const max = Math.max(...expenses.map((e)=>Number(e.amount || 0)), 1);
+  top5Box.innerHTML = expenses.map((e)=>{
+    const val = Number(e.amount || 0);
+    const p = (val / max) * 100;
+    return `<div class="bar-row"><span>${e.category}: ${formatCurrency(val)}</span><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div></div>`;
+  }).join("");
+}
 
-        initLandingStats();
-    </script>
+function renderWeekChart(entries){
+  const sum = [0,0,0,0,0,0,0];
+  (entries || []).forEach((e)=>{
+    if(String(e.entry_type || "").toUpperCase() !== "DESPESA") return;
+    const parts = String(e.date || "").split("/");
+    if(parts.length !== 3) return;
+    const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    if(Number.isNaN(d.getTime())) return;
+    sum[d.getDay()] += Number(e.amount || 0);
+  });
+  drawChart("week","heatmapWeek","bar",{
+    labels: weekNames,
+    datasets:[{
+      label:"Gastos",
+      data: sum,
+      backgroundColor:"#db2777",
+      borderRadius:6
+    }]
+  },{
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:"#94a3b8"},grid:{color:"rgba(148,163,184,.16)"}},
+      y:{ticks:{color:"#94a3b8"},grid:{color:"rgba(148,163,184,.16)"}}
+    }
+  });
+}
+
+async function initLanding(){
+  const [daily, weekly, monthly, dashboard, categories, vehicle, card, entries] = await Promise.all([
+    getJson("/api/stats/daily/", demo.daily),
+    getJson("/api/stats/weekly/", demo.weekly),
+    getJson("/api/stats/monthly/", demo.monthly),
+    getJson("/api/dashboard/", demo.dashboard),
+    getJson("/api/dashboard/categories/", demo.categories),
+    getJson("/api/vehicles/summary/", demo.vehicle),
+    getJson("/api/credit-cards/summary/", demo.card),
+    getJson("/api/entries/?limit=80", demo.entries)
+  ]);
+
+  setText("receita", formatCurrency(dashboard.total_receita || monthly.total_receita));
+  setText("despesa", formatCurrency(dashboard.total_despesa || monthly.total_despesa));
+  setText("saldo", formatCurrency(dashboard.saldo || ((monthly.total_receita || 0) - (monthly.total_despesa || 0))));
+
+  renderSummaryCard("d", daily);
+  renderSummaryCard("w", weekly);
+  renderSummaryCard("m", monthly);
+
+  drawChart("daily","chartDaily","doughnut",{
+    labels:["Entrada","Saida"],
+    datasets:[{ data:[daily.percent_receita || 0, daily.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
+  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
+  drawChart("weekly","chartWeekly","doughnut",{
+    labels:["Entrada","Saida"],
+    datasets:[{ data:[weekly.percent_receita || 0, weekly.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
+  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
+  drawChart("monthly","chartMonthly","doughnut",{
+    labels:["Entrada","Saida"],
+    datasets:[{ data:[monthly.percent_receita || 0, monthly.percent_despesa || 0], backgroundColor:["#22c55e","#ef4444"], borderWidth:0 }]
+  },{plugins:{legend:{labels:{color:"#cbd5e1"}}}});
+
+  const topCategories = (categories || []).slice(0,4);
+  for(let i=0;i<4;i++){
+    const item = topCategories[i] || { category:`Categoria ${i+1}`, total:0 };
+    const totalExpense = Number(monthly.total_despesa || 0) || 1;
+    const p = Math.max(0, Math.min(100, (Number(item.total || 0) / totalExpense) * 100));
+    setText(`g${i+1}Label`, `${item.category} (${Math.round(p)}%)`);
+    drawChart(`g${i+1}`,`g${i+1}`,"doughnut",{
+      labels:["Peso","Restante"],
+      datasets:[{ data:[p, 100 - p], backgroundColor:["#38bdf8","#1e293b"], borderWidth:0 }]
+    },{plugins:{legend:{display:false}}});
+  }
+
+  const cardUsage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
+  drawChart("cardUsage","cardUsageChart","doughnut",{
+    labels:["Usado","Livre"],
+    datasets:[{ data:[cardUsage, 100 - cardUsage], backgroundColor:["#f97316","#1e293b"], borderWidth:0 }]
+  },{plugins:{legend:{display:false}}});
+  setText("cardUsageLabel", `${formatCurrency(card.total_spent || 0)} de ${formatCurrency(card.total_limit || 0)} (${cardUsage.toFixed(1)}%)`);
+  setText("cardUsageText", `${cardUsage.toFixed(1)}%`);
+
+  const vehicleWeight = percent(vehicle.monthly_total || 0, monthly.total_despesa || 1);
+  drawChart("vehicleWeight","vehicleWeightChart","doughnut",{
+    labels:["Veiculos","Outros"],
+    datasets:[{ data:[vehicleWeight, 100 - vehicleWeight], backgroundColor:["#0ea5e9","#1e293b"], borderWidth:0 }]
+  },{plugins:{legend:{display:false}}});
+  setText("vehicleWeightLabel", `${vehicleWeight}% das despesas do periodo`);
+
+  const incomeExpense = percent(monthly.total_despesa || 0, monthly.total_receita || 1);
+  drawChart("incomeExpense","incomeExpenseRatioChart","doughnut",{
+    labels:["Despesa/Receita","Folga"],
+    datasets:[{ data:[incomeExpense, 100 - incomeExpense], backgroundColor:["#ef4444","#1e293b"], borderWidth:0 }]
+  },{plugins:{legend:{display:false}}});
+  setText("incomeExpenseLabel", `${incomeExpense}% da receita comprometida`);
+
+  const savings = percent((monthly.total_receita || 0) - (monthly.total_despesa || 0), monthly.total_receita || 1);
+  drawChart("savings","savingsChart","doughnut",{
+    labels:["Poupado","Nao poupado"],
+    datasets:[{ data:[savings, 100 - savings], backgroundColor:["#22c55e","#1e293b"], borderWidth:0 }]
+  },{plugins:{legend:{display:false}}});
+  setText("savingsLabel", `${savings}% de taxa de poupanca`);
+
+  renderWeekChart(entries);
+  renderTop5(entries);
+
+  setText("vehicleMonthlyCost", formatCurrency(vehicle.monthly_total || 0));
+  setText("vehicleCommuteCost", formatCurrency(vehicle.commute_monthly_cost || 0));
+  setText("entriesCount", String((entries || []).length));
+}
+
+initLanding();
+</script>
 </body>
 </html>
