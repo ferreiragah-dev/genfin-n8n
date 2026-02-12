@@ -1,0 +1,247 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>GenFin | Plataforma Financeira Completa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#f7f6f2;
+            --ink:#0f172a;
+            --muted:#475569;
+            --line:#d6d3d1;
+            --brand:#0f766e;
+            --brand-2:#0891b2;
+            --card:#ffffff;
+            --accent:#fb7185;
+            --ok:#15803d;
+            --warn:#b45309;
+        }
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0}
+        body{
+            font-family:"Sora",sans-serif;
+            color:var(--ink);
+            background:
+                radial-gradient(circle at 85% 0%, rgba(8,145,178,.16), transparent 32%),
+                radial-gradient(circle at 0% 35%, rgba(15,118,110,.12), transparent 28%),
+                var(--bg);
+        }
+        .wrap{max-width:1180px;margin:0 auto;padding:20px}
+        .topbar{
+            position:sticky;top:12px;z-index:20;
+            display:flex;justify-content:space-between;align-items:center;
+            border:1px solid var(--line);border-radius:16px;padding:12px 14px;
+            background:rgba(255,255,255,.88);backdrop-filter:blur(7px);
+        }
+        .logo{font-weight:800;letter-spacing:.04em}
+        .top-actions{display:flex;gap:10px}
+        .btn{
+            text-decoration:none;border-radius:12px;padding:10px 14px;font-weight:700;
+            border:1px solid var(--line);color:var(--ink);display:inline-block;
+        }
+        .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;border:0}
+        .hero{
+            display:grid;grid-template-columns:1.3fr 1fr;gap:20px;
+            padding:34px 0 20px;align-items:center;
+        }
+        .hero h1{font-size:clamp(30px,5vw,52px);line-height:1.05;margin:0 0 10px}
+        .hero p{margin:0;color:var(--muted);font-size:16px;max-width:690px}
+        .hero-panel{
+            background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;
+            box-shadow:0 12px 24px rgba(15,23,42,.06);
+            animation:rise .7s ease both;
+        }
+        .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+        .kpi{
+            border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafaf9;
+        }
+        .kpi span{display:block;font-size:12px;color:var(--muted)}
+        .kpi strong{font-size:19px}
+        .ok{color:var(--ok)} .warn{color:var(--warn)}
+        section{margin:28px 0}
+        .section-title{font-size:24px;margin:0 0 8px}
+        .section-sub{margin:0 0 14px;color:var(--muted)}
+        .module-grid,.stats-grid,.examples-grid{
+            display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
+        }
+        .card{
+            background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;
+            box-shadow:0 7px 16px rgba(15,23,42,.05);
+            animation:rise .6s ease both;
+        }
+        .card h3{margin:0 0 8px;font-size:16px}
+        .card p{margin:0;color:var(--muted);font-size:14px}
+        .tag{
+            display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;
+            background:#ecfeff;color:#155e75;font-size:12px;font-weight:700;
+        }
+        .mono{
+            margin-top:10px;
+            font-family:"IBM Plex Mono",monospace;
+            background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px;
+            font-size:12px;line-height:1.5;overflow:auto;
+        }
+        .wide{
+            background:linear-gradient(135deg,#ffffff,#f8fafc);
+            border:1px solid var(--line);border-radius:20px;padding:16px;
+        }
+        .flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+        .step{
+            border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;
+        }
+        .step strong{display:block;margin-bottom:6px}
+        .footer{
+            margin:34px 0 8px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:20px;
+            display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+        }
+        .footer p{margin:0;color:var(--muted)}
+        @keyframes rise{
+            from{opacity:0;transform:translateY(10px)}
+            to{opacity:1;transform:translateY(0)}
+        }
+        @media (max-width: 980px){
+            .hero{grid-template-columns:1fr}
+            .module-grid,.stats-grid,.examples-grid{grid-template-columns:1fr 1fr}
+            .flow{grid-template-columns:1fr 1fr}
+        }
+        @media (max-width: 640px){
+            .module-grid,.stats-grid,.examples-grid,.flow{grid-template-columns:1fr}
+            .topbar{position:static}
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div class="logo">GF | GenFin</div>
+            <div class="top-actions">
+                <a class="btn" href="/login/">Entrar</a>
+                <a class="btn primary" href="/login/">Criar conta</a>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div>
+                <h1>Seu app financeiro completo para analisar, planejar e decidir melhor.</h1>
+                <p>O GenFin une controle de movimentações, planejamento fixo, gestão de veículos, simulação de viagens e cartões de crédito com inteligência de dados em um único painel.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+                    <a class="btn primary" href="/login/">Começar agora</a>
+                    <a class="btn" href="/login/">Ver demonstração no app</a>
+                </div>
+            </div>
+            <aside class="hero-panel">
+                <strong>Painel de exemplo do GenFin</strong>
+                <div class="kpi-grid">
+                    <div class="kpi"><span>Receitas</span><strong>R$ 15.015,85</strong></div>
+                    <div class="kpi"><span>Despesas</span><strong>R$ 486,45</strong></div>
+                    <div class="kpi"><span>Saldo atual</span><strong class="ok">R$ 14.529,40</strong></div>
+                    <div class="kpi"><span>Taxa de poupança</span><strong>97%</strong></div>
+                    <div class="kpi"><span>Burn rate diário</span><strong class="warn">R$ 48,64</strong></div>
+                    <div class="kpi"><span>Runway</span><strong>902 dias</strong></div>
+                </div>
+            </aside>
+        </section>
+
+        <section>
+            <h2 class="section-title">Tudo que existe no seu app</h2>
+            <p class="section-sub">Cada módulo com objetivos claros, dados conectados e leitura prática para tomada de decisão.</p>
+            <div class="module-grid">
+                <article class="card"><h3>Dashboard Inteligente</h3><p>Consolidação de receitas, despesas, saldo, tendências, eficiência financeira, risco e segurança em tempo real.</p><span class="tag">Visão executiva</span></article>
+                <article class="card"><h3>Movimentações</h3><p>Cadastro e edição de entradas/saídas, categorização e anexos de comprovantes para auditoria financeira.</p><span class="tag">Controle diário</span></article>
+                <article class="card"><h3>Despesas Fixas</h3><p>Planejamento mensal com status pago/não pago, recorrência e acompanhamento do comprometimento fixo.</p><span class="tag">Planejamento</span></article>
+                <article class="card"><h3>Entradas Fixas</h3><p>Base de receitas recorrentes para medir cobertura das contas fixas e previsibilidade do mês.</p><span class="tag">Previsão</span></article>
+                <article class="card"><h3>Reservas</h3><p>Gestão do colchão financeiro para emergências, metas e leitura do índice de resiliência.</p><span class="tag">Segurança</span></article>
+                <article class="card"><h3>Veículos</h3><p>Custo de propriedade, combustível, documentação, IPVA, destinos frequentes e deslocamento mensal estimado.</p><span class="tag">Mobilidade</span></article>
+                <article class="card"><h3>Viagem</h3><p>Simulador de viagem com combustível, pedágios, hospedagem e termômetro de viabilidade financeira.</p><span class="tag">Decisão guiada</span></article>
+                <article class="card"><h3>Cartões de Crédito</h3><p>Faturas por competência, uso de limite por cartão/família, pontos por dólar e contas futuras.</p><span class="tag">Controle de crédito</span></article>
+                <article class="card"><h3>Perfil e Manual PDF</h3><p>Dados do usuário, ambiente do sistema e exportação do manual oficial para onboarding e operação.</p><span class="tag">Governança</span></article>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-title">Exemplos de estatísticas (como aparecem no GenFin)</h2>
+            <p class="section-sub">Indicadores de curto e longo prazo, com leitura diária, semanal, mensal e por competência.</p>
+            <div class="stats-grid">
+                <article class="card">
+                    <h3>Resumo diário (API `/api/stats/daily/`)</h3>
+                    <div class="mono">{ "total_receita": 3500, "total_despesa": 420, "movimentacoes": 8, "percent_receita": 89, "percent_despesa": 11 }</div>
+                </article>
+                <article class="card">
+                    <h3>Resumo semanal (API `/api/stats/weekly/`)</h3>
+                    <div class="mono">{ "total_receita": 7900, "total_despesa": 1820, "movimentacoes": 27, "percent_receita": 81, "percent_despesa": 19 }</div>
+                </article>
+                <article class="card">
+                    <h3>Resumo mensal (API `/api/stats/monthly/`)</h3>
+                    <div class="mono">{ "total_receita": 15015.85, "total_despesa": 486.45, "movimentacoes": 36, "percent_receita": 97, "percent_despesa": 3 }</div>
+                </article>
+                <article class="card">
+                    <h3>Eficiência financeira</h3>
+                    <p>Taxa de poupança, burn rate mensal, runway pessoal, volatilidade e previsibilidade dos gastos.</p>
+                    <div class="mono">Taxa de poupanca = (Saldo / Receitas) * 100 = 96.76%</div>
+                </article>
+                <article class="card">
+                    <h3>Risco financeiro</h3>
+                    <p>Pressão financeira, probabilidade de saldo negativo, semáforo de colapso e gauge de risco.</p>
+                    <div class="mono">Pressao = compromissos / receita = 38% (zona de atencao)</div>
+                </article>
+                <article class="card">
+                    <h3>Cartões e competência</h3>
+                    <p>Uso total de limite, distribuição por cartão e projeção de faturas futuras com fechamento.</p>
+                    <div class="mono">Limite usado: R$ 6.212,85 / R$ 6.260,00 = 99,2%</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="wide">
+            <h2 class="section-title">Exemplos do próprio app em uso</h2>
+            <p class="section-sub">Cenários típicos para mostrar a operação ponta a ponta.</p>
+            <div class="examples-grid">
+                <article class="card">
+                    <h3>Exemplo 1: Registro de despesa + comprovante</h3>
+                    <div class="mono">Data: 10/02/2026
+Categoria: Alimentacao
+Tipo: DESPESA
+Valor: R$ 58,90
+Comprovante: anexado</div>
+                </article>
+                <article class="card">
+                    <h3>Exemplo 2: Planejamento de fixas</h3>
+                    <div class="mono">Internet: R$ 129,90 (paga)
+Aluguel: R$ 2.100,00 (nao pago)
+Energia: R$ 240,70 (nao pago)</div>
+                </article>
+                <article class="card">
+                    <h3>Exemplo 3: Simulação de viagem</h3>
+                    <div class="mono">Distancia total: 840 km
+Combustivel: R$ 612,20
+Pedagios: R$ 139,00
+Hospedagem: R$ 460,00
+Termometro: ATENCAO</div>
+                </article>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-title">Como funciona no dia a dia</h2>
+            <p class="section-sub">Fluxo recomendado para manter previsibilidade e controle financeiro.</p>
+            <div class="flow">
+                <div class="step"><strong>1. Entradas e saídas</strong>Cadastre movimentações e anexe comprovantes ao longo do mês.</div>
+                <div class="step"><strong>2. Planejamento fixo</strong>Revise despesas, entradas e reservas para medir cobertura real.</div>
+                <div class="step"><strong>3. Leitura dos indicadores</strong>Use taxa de poupança, burn rate, runway e risco para ajustes rápidos.</div>
+                <div class="step"><strong>4. Decisões estratégicas</strong>Simule viagens, acompanhe cartões e priorize cortes no Top 5 gastos.</div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>GenFin centraliza operação, estatística e decisão financeira em uma plataforma única.</p>
+            <a class="btn primary" href="/login/">Acessar o GenFin</a>
+        </footer>
+    </div>
+</body>
+</html>

@@ -963,6 +963,13 @@ class DashboardView(APIView):
 
 
 @ensure_csrf_cookie
+def landing_page(request):
+    if request.session.get("user_phone"):
+        return redirect("/dashboard/")
+    return render(request, "landing.html")
+
+
+@ensure_csrf_cookie
 def login_page(request):
     return render(request, "login.html")
 
