@@ -1,174 +1,547 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>GenFin | Cartoes de Credito</title>
+<title>GenFin | Cartões de Crédito</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Gerencie cartões, gastos, faturas e pontos no GenFin.">
 <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 :root{
-  --bg:#05070d;
-  --bg-grad: radial-gradient(circle at top, #0a1020, #02030a 65%);
-  --panel:#0b1224;
-  --border:rgba(56,189,248,.15);
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --blue:#38bdf8;
-  --red:#ef4444;
-  --green:#22c55e;
-  --yellow:#eab308;
+  --bg:#07110d;
+  --panel:#0d1c16;
+  --panel-2:#10251c;
+  --border:rgba(255,255,255,.09);
+  --text:#f7fbf8;
+  --muted:#9eb0a6;
+  --primary:#22c55e;
+  --primary-2:#4ade80;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --purple:#8b5cf6;
+  --shadow:0 22px 70px rgba(2,12,7,.20);
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg-grad);color:var(--text)}
-.app-shell{display:grid;grid-template-columns:220px 1fr;gap:14px;min-height:100vh;padding:14px}
-.sidebar{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:14px;display:grid;align-content:start;gap:10px}
-.sidebar h4{margin:2px 0 8px;color:#94a3b8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.side-link{text-decoration:none;color:#cbd5e1;border:1px solid rgba(56,189,248,.2);background:linear-gradient(180deg,#0b1224,#020617);border-radius:12px;padding:10px 12px;font-size:13px}
-.container{padding:20px;display:grid;gap:20px}
-.header{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
-.header-right{display:flex;align-items:center;gap:10px}
-.theme-switch{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px;background:linear-gradient(180deg,#0b1224,#020617)}
-.theme-btn{border:0;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;background:transparent;color:#cbd5e1}
-.theme-btn.active{background:#38bdf8;color:#04111d}
-.visibility-btn,.icon-link{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:linear-gradient(180deg,#0b1224,#020617);color:#cbd5e1;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none}
-.visibility-btn.active{border-color:rgba(234,179,8,.55);color:#fde68a}
-.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.35)}
-.month-wrap{background:linear-gradient(180deg,#0b1224,#070b18);border:1px solid var(--border);border-radius:16px;padding:12px}
-.month-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.month-head small{color:#94a3b8}
-.month-bar{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
-.month-chip{border:1px solid var(--border);background:#0b1224;color:#cbd5e1;border-radius:999px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
-.month-chip.active{background:#38bdf8;color:#04111d}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.card{background:linear-gradient(180deg,#0b1224,#020617);border:1px solid var(--border);border-radius:16px;padding:16px}
-.card span{color:var(--muted);font-size:12px}
-.card strong{display:block;font-size:22px;margin-top:6px}
-.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:20px}
-.panel{background:linear-gradient(180deg,#070b18,#020617);border:1px solid var(--border);border-radius:18px;padding:18px}
-h3{margin:0 0 12px;font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 6px}
-input,textarea,select{width:100%;background:#0b1224;color:var(--text);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:10px;font:inherit}
-textarea{resize:vertical;min-height:62px}
-.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
-.btn-primary{background:var(--blue);color:#04111d}
-.btn-secondary{background:#1e293b;color:#cbd5e1}
-.btn-danger{background:var(--red);color:#fff}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;vertical-align:top}
-th{color:#9ca3af;text-align:left}
-.row-actions{display:flex;gap:8px}
-.message{font-size:12px;color:var(--green);margin-top:8px;min-height:16px}
+html{min-height:100%}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left,rgba(34,197,94,.10),transparent 30%),
+    linear-gradient(135deg,#06100c,#0a1711 55%,#07110d);
+}
+button,input,textarea,select{font:inherit}
+.app-shell{min-height:100vh;display:grid;grid-template-columns:260px minmax(0,1fr)}
+.sidebar{
+  position:sticky;top:0;height:100vh;padding:28px 18px;border-right:1px solid var(--border);
+  background:rgba(7,17,13,.88);backdrop-filter:blur(18px);overflow:auto
+}
+.brand{display:flex;align-items:center;gap:11px;padding:0 10px 28px;color:inherit;text-decoration:none}
+.brand-mark{
+  width:42px;height:42px;border-radius:14px;display:grid;place-items:center;color:#062610;
+  background:linear-gradient(135deg,var(--primary),#86efac);font-weight:900;
+  box-shadow:0 12px 28px rgba(34,197,94,.22)
+}
+.brand-copy strong{display:block;font-size:18px;letter-spacing:-.03em}
+.brand-copy span{display:block;margin-top:2px;color:var(--muted);font-size:10px;letter-spacing:.13em;text-transform:uppercase}
+.nav-group{margin-bottom:24px}
+.nav-label{padding:0 12px 9px;color:#718179;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.side-link{
+  position:relative;display:flex;align-items:center;gap:11px;min-height:44px;margin:3px 0;padding:10px 12px;
+  border-radius:12px;color:#b9c8bf;text-decoration:none;font-size:13px;font-weight:600;transition:.2s ease
+}
+.side-link:hover{color:#fff;background:rgba(255,255,255,.045)}
+.side-link.active{
+  color:#d9ffe6;background:linear-gradient(90deg,rgba(34,197,94,.16),rgba(34,197,94,.06));
+  box-shadow:inset 0 0 0 1px rgba(34,197,94,.14)
+}
+.side-link.active::before{
+  content:"";position:absolute;left:0;width:3px;height:22px;border-radius:999px;background:var(--primary)
+}
+.nav-icon{width:22px;display:grid;place-items:center;font-size:15px}
+.main{min-width:0;padding:24px}
+.topbar{
+  min-height:72px;margin-bottom:22px;padding:14px 18px 14px 22px;display:flex;align-items:center;
+  justify-content:space-between;gap:18px;border:1px solid var(--border);border-radius:20px;
+  background:rgba(13,28,22,.72);backdrop-filter:blur(18px);box-shadow:0 16px 46px rgba(2,12,7,.12)
+}
+.page-title span{display:block;margin-bottom:3px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
+.page-title strong{display:block;font-size:20px;letter-spacing:-.03em}
+.top-actions{display:flex;align-items:center;gap:8px}
+.theme-switch{display:flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.035)}
+.theme-btn{
+  min-height:34px;border:0;border-radius:999px;padding:7px 11px;cursor:pointer;background:transparent;
+  color:var(--muted);font-size:11px;font-weight:700
+}
+.theme-btn.active{color:#062610;background:var(--primary)}
+.visibility-btn,.icon-link{
+  width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--border);border-radius:12px;
+  background:rgba(255,255,255,.035);color:#c9d7cf;text-decoration:none;cursor:pointer;transition:.2s ease
+}
+.visibility-btn:hover,.icon-link:hover{color:#fff;border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.08)}
+.visibility-btn.active{color:#fde68a;border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08)}
+.icon-link.logout{color:#fecaca;border-color:rgba(239,68,68,.18)}
+.content{display:grid;gap:20px}
+.hero{
+  position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;
+  padding:26px;border:1px solid var(--border);border-radius:24px;
+  background:
+    radial-gradient(circle at right top,rgba(139,92,246,.18),transparent 36%),
+    linear-gradient(145deg,rgba(14,34,25,.96),rgba(9,24,17,.98));
+  box-shadow:var(--shadow)
+}
+.hero-copy .eyebrow{
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#ddd6fe;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase
+}
+.hero-copy .eyebrow::before{
+  content:"";width:7px;height:7px;border-radius:50%;background:var(--purple);box-shadow:0 0 12px rgba(139,92,246,.75)
+}
+.hero h1{margin:0;max-width:760px;font-size:clamp(28px,4vw,44px);line-height:1.06;letter-spacing:-.045em}
+.hero h1 span{color:#c4b5fd}
+.hero p{max-width:720px;margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.7}
+.hero-icon{
+  width:100px;height:72px;display:grid;place-items:center;border:1px solid rgba(139,92,246,.20);
+  border-radius:20px;color:#ddd6fe;background:linear-gradient(135deg,rgba(139,92,246,.22),rgba(34,197,94,.10));
+  font-size:30px;transform:rotate(-5deg)
+}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.summary-card{
+  padding:18px;border:1px solid var(--border);border-radius:18px;
+  background:linear-gradient(180deg,rgba(13,28,22,.96),rgba(8,21,15,.96));
+  box-shadow:0 14px 42px rgba(2,12,7,.10)
+}
+.summary-card span{display:block;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.summary-card strong{display:block;margin-top:12px;font-size:22px;letter-spacing:-.035em}
+.summary-card small{display:block;margin-top:5px;color:#74847b;font-size:10px;line-height:1.45}
+.month-panel{padding:16px;border:1px solid var(--border);border-radius:20px;background:rgba(13,28,22,.82)}
+.month-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.month-head strong{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.month-head small{color:var(--muted);font-size:11px}
+.month-bar{display:flex;gap:8px;overflow:auto;padding-bottom:2px}
+.month-chip{
+  min-width:54px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;cursor:pointer;
+  color:#b8c7be;background:rgba(255,255,255,.03);font-size:11px;font-weight:700;transition:.2s ease
+}
+.month-chip:hover{border-color:rgba(139,92,246,.28);color:#fff}
+.month-chip.active{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--purple),#7c3aed)}
+.section-grid{
+  display:grid;grid-template-columns:minmax(330px,.78fr) minmax(0,1.42fr);gap:20px;align-items:start
+}
+.panel{
+  border:1px solid var(--border);border-radius:22px;
+  background:linear-gradient(180deg,rgba(13,28,22,.96),rgba(8,21,15,.96));
+  box-shadow:0 18px 54px rgba(2,12,7,.12)
+}
+.panel-head{padding:21px 21px 0}
+.panel-head h2{margin:0;font-size:17px;letter-spacing:-.025em}
+.panel-head p{margin:7px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
+.panel-body{padding:21px}
+.form-section{
+  margin:18px 0 12px;color:#cfe0d6;font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase
+}
+.field{display:grid;gap:7px;margin-bottom:14px}
+.field label{color:#aebdb4;font-size:11px;font-weight:700}
+.field input,.field textarea,.field select{
+  width:100%;min-height:44px;border:1px solid rgba(255,255,255,.10);border-radius:12px;
+  outline:none;padding:10px 12px;color:var(--text);background:rgba(255,255,255,.035)
+}
+.field textarea{min-height:78px;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--purple);box-shadow:0 0 0 4px rgba(139,92,246,.10)
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.btn-primary,.btn-secondary,.btn-danger{
+  min-height:42px;border-radius:12px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;cursor:pointer;font-size:11px;font-weight:800;transition:.2s ease
+}
+.btn-primary{
+  border:0;color:#fff;background:linear-gradient(135deg,var(--purple),#7c3aed);
+  box-shadow:0 12px 24px rgba(139,92,246,.20)
+}
+.btn-secondary{border:1px solid var(--border);color:#d0ded6;background:rgba(255,255,255,.035)}
+.btn-danger{border:1px solid rgba(239,68,68,.20);color:#fecaca;background:rgba(239,68,68,.08)}
+.message{min-height:18px;margin-top:12px;border-radius:12px;font-size:11px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:780px}
+th,td{padding:13px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle;font-size:11px}
+th{
+  color:#819087;background:rgba(255,255,255,.02);font-size:9px;font-weight:800;letter-spacing:.10em;text-transform:uppercase
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:rgba(255,255,255,.022)}
+.row-actions{display:flex;gap:7px;flex-wrap:wrap}
+.row-actions .btn-secondary,.row-actions .btn-danger{min-height:32px;padding:7px 10px;font-size:9px}
+.bill-section{
+  margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025)
+}
+.bill-section h3{margin:0 0 10px;font-size:13px}
 .list-box{display:grid;gap:8px}
-.bill-item{font-size:12px;padding:8px;border:1px dashed rgba(148,163,184,.25);border-radius:10px}
+.bill-item{
+  padding:11px 12px;border:1px dashed rgba(148,163,184,.25);border-radius:11px;
+  color:#d6e2db;font-size:10px;line-height:1.5;background:rgba(255,255,255,.018)
+}
 .rule-box{
-  background:linear-gradient(180deg,#0b1224,#020617);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-  font-size:12px;
-  color:#cbd5e1;
-  line-height:1.5;
+  margin-top:14px;padding:13px;border:1px solid rgba(139,92,246,.16);border-radius:14px;
+  color:#d7d0eb;background:rgba(139,92,246,.06);font-size:10px;line-height:1.6
 }
-.rule-box strong{color:#e2e8f0}
-body.values-hidden .card strong, body.values-hidden tbody td:nth-child(4), body.values-hidden .bill-item{filter:blur(6px);user-select:none}
-body.theme-light{--bg:#f3f7ff;--bg-grad: radial-gradient(circle at top, #ffffff, #eef4ff 68%);--border:rgba(30,64,175,.16);--text:#0f172a;--muted:#475569;--genfin-blue:#0b5ed7;--genfin-green:#22c55e;--genfin-dark:#05070d;--genfin-panel:#0b1224;--blue:var(--genfin-blue);--green:var(--genfin-green);--red:#dc2626;--yellow:#ca8a04}
-body.theme-light .header,body.theme-light .panel,body.theme-light .month-wrap,body.theme-light .card,body.theme-light .sidebar,body.theme-light .side-link,body.theme-light .theme-switch,body.theme-light .visibility-btn,body.theme-light .icon-link,body.theme-light input,body.theme-light textarea,body.theme-light select,body.theme-light .btn-secondary,body.theme-light .theme-btn,body.theme-light .month-chip{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#0f172a}
-body.theme-light h3,body.theme-light label,body.theme-light th,body.theme-light .month-head small,body.theme-light #selectedMonthLabel,body.theme-light .card span,body.theme-light .sidebar h4{color:#334155}
-body.theme-light .month-head strong{color:#334155 !important}
-body.theme-light .month-chip.active,body.theme-light .theme-btn.active{background:var(--genfin-blue);color:#fff}
-body.theme-light .icon-link.logout{color:#dc2626}
-body.theme-light .rule-box{background:linear-gradient(180deg,#ffffff,#f8fbff);color:#334155}
-body.theme-light .rule-box strong{color:#0f172a}
-@media(max-width:1100px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
-@media(max-width:780px){.app-shell{grid-template-columns:1fr;padding:10px;gap:10px}.sidebar{grid-auto-flow:column;grid-auto-columns:max-content;overflow:auto;align-content:center}.sidebar h4{display:none}.container{padding:12px;gap:12px}.header{flex-direction:column;align-items:flex-start;gap:10px;padding:12px}.header-right{width:100%;flex-wrap:wrap;gap:8px}.panel{padding:12px}.cards{grid-template-columns:1fr}.panel table{display:block;width:100%;overflow-x:auto;white-space:nowrap}}
-@media(max-width:520px){.theme-btn{padding:5px 8px;font-size:11px}.visibility-btn,.icon-link{width:32px;height:32px}th,td{font-size:11px;padding:7px 6px}.month-chip{padding:6px 10px;font-size:11px}.card strong{font-size:18px}}
-/* GenFin soft-light override */
+.rule-box strong{color:#ede9fe}
+.empty-state{display:none;padding:42px 18px;text-align:center}
+.empty-state.show{display:block}
+.empty-icon{
+  width:54px;height:54px;margin:0 auto 12px;display:grid;place-items:center;border-radius:18px;
+  color:#ddd6fe;background:rgba(139,92,246,.10);font-size:22px
+}
+.empty-state strong{display:block;font-size:13px}
+.empty-state span{display:block;margin-top:5px;color:var(--muted);font-size:10px}
+body.values-hidden .summary-card strong,
+body.values-hidden tbody td:nth-child(6),
+body.values-hidden .bill-item{filter:blur(6px);user-select:none}
 body.theme-light{
-  --bg:#f3f4f6;
-  --bg-grad:linear-gradient(180deg,#f3f4f6,#eceff3 70%);
-  --border:#b8bec7;
-  --text:#1e293b;
-  --muted:#475569;
-  --blue:#0891b2;
-  --green:#22a74e;
-  --yellow:#c96b09;
-  --red:#ef4444;
+  --bg:#eff4f0;--panel:#fff;--panel-2:#f7faf8;--border:#dce6df;--text:#14221a;--muted:#65736b
 }
-body.theme-light .header,
-body.theme-light .panel,
-body.theme-light .month-wrap,
-body.theme-light .card,
+body.theme-light{
+  color:var(--text);
+  background:radial-gradient(circle at top left,rgba(139,92,246,.07),transparent 30%),
+             linear-gradient(135deg,#edf3ef,#f8faf9)
+}
 body.theme-light .sidebar,
-body.theme-light .side-link,
-body.theme-light .theme-switch,
-body.theme-light .visibility-btn,
-body.theme-light .icon-link,
-body.theme-light .month-chip,
-body.theme-light .theme-btn,
-body.theme-light .notif-panel,
-body.theme-light .stat-card,
-body.theme-light .mini-card,
-body.theme-light .gauge,
-body.theme-light .eff-item,
-body.theme-light .risk-item,
-body.theme-light .eff-card,
-body.theme-light .week-box,
-body.theme-light .calendar-box,
-body.theme-light .modal,
-body.theme-light .rule-box,
-body.theme-light .btn-secondary{
-  background:#e5e7eb !important;
-  color:#1e293b !important;
+body.theme-light .topbar,
+body.theme-light .hero,
+body.theme-light .summary-card,
+body.theme-light .month-panel,
+body.theme-light .panel,
+body.theme-light .bill-section{
+  color:var(--text);border-color:var(--border);background:rgba(255,255,255,.94);
+  box-shadow:0 16px 44px rgba(22,50,32,.07)
 }
-body.theme-light input,
-body.theme-light textarea,
-body.theme-light select,
+body.theme-light .side-link,
+body.theme-light .icon-link,
+body.theme-light .visibility-btn,
+body.theme-light .btn-secondary{color:#44554b}
+body.theme-light .side-link:hover,
+body.theme-light tbody tr:hover{background:#f2f7f4;color:#14221a}
+body.theme-light .side-link.active{color:#6d28d9;background:#f1ebff}
+body.theme-light .page-title span,
+body.theme-light .hero p,
+body.theme-light .summary-card span,
+body.theme-light .summary-card small,
+body.theme-light .month-head small,
+body.theme-light .panel-head p,
+body.theme-light .empty-state span{color:#6c7b72}
+body.theme-light .page-title strong,
+body.theme-light .hero h1,
+body.theme-light .summary-card strong,
+body.theme-light .month-head strong,
+body.theme-light .panel-head h2,
+body.theme-light .empty-state strong{color:#14221a}
+body.theme-light .field label{color:#526258}
 body.theme-light .field input,
 body.theme-light .field textarea,
-body.theme-light .modal-btn.secondary,
-body.theme-light .modal-close,
-body.theme-light .panel-toggle,
-body.theme-light .icon-btn,
-body.theme-light .card-icon-btn{
-  background:#e8ebef !important;
-  color:#1e293b !important;
-  border-color:#b8bec7 !important;
+body.theme-light .field select{
+  color:#14221a;border-color:#d6e1da;background:#f8faf9
 }
-body.theme-light .month-chip.active,
-body.theme-light .period-btn.active,
-body.theme-light .theme-btn.active{
-  background:#d8eef3 !important;
-  color:#0f172a !important;
-  border-color:#a4bacf !important;
+body.theme-light .theme-switch,
+body.theme-light .icon-link,
+body.theme-light .visibility-btn,
+body.theme-light .btn-secondary,
+body.theme-light .month-chip{border-color:#dce6df;background:#f7faf8}
+body.theme-light th{background:#f4f8f5;color:#708078}
+body.theme-light .bill-item{color:#44554b;background:#f8faf9}
+body.theme-light .rule-box{color:#5b477c;background:#f5f0ff}
+body.theme-light .rule-box strong{color:#4c1d95}
+@media(max-width:1180px){
+  .summary-grid{grid-template-columns:repeat(2,1fr)}
+  .section-grid{grid-template-columns:1fr}
 }
-body.theme-light .bar-bg,
-body.theme-light .cc-bar,
-body.theme-light .track{
-  background:#cbd2dc !important;
+@media(max-width:820px){
+  .app-shell{grid-template-columns:1fr}
+  .sidebar{
+    position:relative;height:auto;display:flex;align-items:center;gap:8px;padding:12px;
+    border-right:0;border-bottom:1px solid var(--border);overflow-x:auto
+  }
+  .brand{padding:0 10px 0 0;flex:0 0 auto}
+  .brand-copy,.nav-label{display:none}
+  .nav-group{display:flex;margin:0;gap:4px;flex:0 0 auto}
+  .side-link{min-height:40px;margin:0;padding:8px 10px;white-space:nowrap}
+  .side-link.active::before{display:none}
+  .main{padding:14px}
 }
-body.theme-light h3,
-body.theme-light h4,
-body.theme-light h5,
-body.theme-light h6,
-body.theme-light label,
-body.theme-light th,
-body.theme-light small,
-body.theme-light .metric,
-body.theme-light .links a,
-body.theme-light .month-head small,
-body.theme-light #selectedMonthLabel,
-body.theme-light .card span,
-body.theme-light .sidebar h4,
-body.theme-light .traffic-label,
-body.theme-light .cc-meta,
-body.theme-light .cc-last4,
-body.theme-light .cc-empty{
-  color:#475569 !important;
+@media(max-width:640px){
+  .topbar{flex-direction:column;align-items:flex-start}
+  .top-actions{width:100%;justify-content:space-between}
+  .hero{grid-template-columns:1fr}
+  .hero-icon{display:none}
+  .summary-grid,.form-row{grid-template-columns:1fr}
+  .actions{flex-direction:column}
+  .btn-primary,.btn-secondary{width:100%}
 }
 </style>
+
+<link rel="stylesheet" href="{% static 'accounts/genfin-premium.css' %}">
+<script defer src="{% static 'accounts/genfin-premium.js' %}"></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard/" aria-label="GenFin">
+      <span class="brand-mark">G</span>
+      <span class="brand-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></span>
+    </a>
+
+    <div class="nav-group">
+      <div class="nav-label">Visão geral</div>
+      <a class="side-link" href="/dashboard/"><span class="nav-icon">⌂</span>Dashboard</a>
+      <a class="side-link" href="/transactions/"><span class="nav-icon">↔</span>Movimentações</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Planejamento</div>
+      <a class="side-link" href="/fixed-expenses/"><span class="nav-icon">−</span>Despesas Fixas</a>
+      <a class="side-link" href="/fixed-incomes/"><span class="nav-icon">＋</span>Entradas Fixas</a>
+      <a class="side-link" href="/reserves/"><span class="nav-icon">◇</span>Reservas</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Patrimônio</div>
+      <a class="side-link" href="/vehicles/"><span class="nav-icon">◆</span>Veículos</a>
+      <a class="side-link" href="/trips/"><span class="nav-icon">✦</span>Viagem</a>
+      <a class="side-link active" href="/credit-cards/"><span class="nav-icon">▣</span>Cartões</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Conta</div>
+      <a class="side-link" href="/profile/"><span class="nav-icon">●</span>Perfil</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="page-title">
+        <span>Crédito e benefícios</span>
+        <strong>Cartões de crédito</strong>
+      </div>
+      <div class="top-actions">
+        <div class="theme-switch" aria-label="Alternar tema">
+          <button id="themeDayBtn" class="theme-btn" type="button">☀ Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button">☾ Noite</button>
+        </div>
+        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores">👁</button>
+        <a href="/dashboard/" class="icon-link" title="Dashboard">⌂</a>
+        <a href="/logout/" class="icon-link logout" title="Sair">⎋</a>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Controle do crédito</div>
+          <h1>Use seus cartões com mais <span>clareza, estratégia e controle.</span></h1>
+          <p>Acompanhe gastos, uso do limite, fechamento, vencimento, faturas e pontos estimados em um só lugar.</p>
+        </div>
+        <div class="hero-icon">▣</div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="summary-card">
+          <span>Total no cartão</span>
+          <strong id="card_spent">R$ 0,00</strong>
+          <small>Gastos consolidados no mês selecionado.</small>
+        </article>
+        <article class="summary-card">
+          <span>Uso do limite</span>
+          <strong id="card_usage">0%</strong>
+          <small>Percentual do limite total comprometido.</small>
+        </article>
+        <article class="summary-card">
+          <span>Pontos estimados</span>
+          <strong id="card_miles">0</strong>
+          <small id="card_rate">USD/BRL: -</small>
+        </article>
+        <article class="summary-card">
+          <span>Cartões cadastrados</span>
+          <strong id="card_count">0</strong>
+          <small>Quantidade de cartões ativos na plataforma.</small>
+        </article>
+      </section>
+
+      <section class="month-panel">
+        <div class="month-head">
+          <strong>Resumo mensal</strong>
+          <small id="selectedMonthLabel"></small>
+        </div>
+        <div id="monthFilterBar" class="month-bar"></div>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h2 id="card_form_title">Adicionar cartão</h2>
+            <p>Cadastre limite, vencimento, fechamento e programa de pontos.</p>
+          </div>
+          <div class="panel-body">
+            <form id="cardForm">
+              <div class="field">
+                <label for="card_nickname">Nome do cartão</label>
+                <input id="card_nickname" type="text" maxlength="80" placeholder="Ex.: Nubank, C6 Black">
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="card_last4">Últimos 4 números</label>
+                  <input id="card_last4" type="text" maxlength="4" inputmode="numeric" placeholder="0000" required>
+                </div>
+                <div class="field">
+                  <label for="card_parent">Cartão principal</label>
+                  <select id="card_parent"></select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="card_due_day">Dia do vencimento</label>
+                  <input id="card_due_day" type="number" min="1" max="31" required>
+                </div>
+                <div class="field">
+                  <label for="card_closing_day">Dia do fechamento</label>
+                  <input id="card_closing_day" type="number" min="1" max="31" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="card_limit">Limite</label>
+                  <input id="card_limit" type="number" min="0" step="0.01" placeholder="0,00">
+                </div>
+                <div class="field">
+                  <label for="card_miles_per_point">Pontos por dólar</label>
+                  <input id="card_miles_per_point" type="number" min="0" step="0.01" value="1">
+                </div>
+              </div>
+
+              <div class="rule-box">
+                <strong>Cartões adicionais:</strong> selecione um cartão principal para compartilhar limite e fatura.
+                Deixe sem vínculo para manter limite e fechamento independentes.
+              </div>
+
+              <div class="actions">
+                <button type="submit" class="btn-primary">Salvar cartão</button>
+                <button type="button" id="cancelCardEdit" class="btn-secondary" style="display:none">Cancelar edição</button>
+              </div>
+            </form>
+            <div id="cardMessage" class="message"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Cartões cadastrados</h2>
+            <p>Consulte limites, vencimentos, fechamento e pontuação.</p>
+          </div>
+          <div class="panel-body">
+            <div id="cardTableWrap" class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th><th>Final</th><th>Principal</th><th>Vencimento</th>
+                    <th>Fechamento</th><th>Limite</th><th>Pontos/USD</th><th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="cardRows"></tbody>
+              </table>
+            </div>
+            <div id="cardEmptyState" class="empty-state">
+              <div class="empty-icon">▣</div>
+              <strong>Nenhum cartão cadastrado</strong>
+              <span>Adicione seu primeiro cartão utilizando o formulário ao lado.</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h2 id="expense_form_title">Adicionar gasto no cartão</h2>
+            <p>Registre compras para acompanhar a fatura e o uso do limite.</p>
+          </div>
+          <div class="panel-body">
+            <form id="expenseForm">
+              <div class="form-row">
+                <div class="field">
+                  <label for="expense_card_id">Cartão</label>
+                  <select id="expense_card_id" required></select>
+                </div>
+                <div class="field">
+                  <label for="expense_date">Data da compra</label>
+                  <input id="expense_date" type="date" required>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="expense_category">Categoria</label>
+                <input id="expense_category" type="text" maxlength="80" placeholder="Ex.: Alimentação" required>
+              </div>
+
+              <div class="field">
+                <label for="expense_description">Descrição</label>
+                <textarea id="expense_description" placeholder="Detalhes da compra"></textarea>
+              </div>
+
+              <div class="field">
+                <label for="expense_amount">Valor</label>
+                <input id="expense_amount" type="number" min="0" step="0.01" required>
+              </div>
+
+              <div class="actions">
+                <button type="submit" class="btn-primary">Salvar gasto</button>
+                <button type="button" id="cancelExpenseEdit" class="btn-secondary" style="display:none">Cancelar edição</button>
+              </div>
+            </form>
+            <div id="expenseMessage" class="message"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Gastos e faturas</h2>
+            <p>Consulte compras cadastradas e faturas geradas no período.</p>
+          </div>
+          <div class="panel-body">
+            <div id="expenseTableWrap" class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Cartão</th><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="expenseRows"></tbody>
+              </table>
+            </div>
+
+            <div id="expenseEmptyState" class="empty-state">
+              <div class="empty-icon">−</div>
+              <strong>Nenhum gasto cadastrado</strong>
+              <span>Registre uma compra para acompanhar a fatura do cartão.</span>
+            </div>
+
+            <div class="bill-section">
+              <h3>Faturas em despesas fixas</h3>
+              <div id="billList" class="list-box"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</div>
+
 <script>
 let editingCardId = null;
 let editingExpenseId = null;
@@ -198,7 +571,8 @@ function initUiPrefs(){
   const applyHidden = (hidden)=>{
     document.body.classList.toggle("values-hidden", hidden);
     visibilityBtn.classList.toggle("active", hidden);
-    visibilityBtn.textContent = hidden ? "Oc" : "Vis";
+    visibilityBtn.textContent = hidden ? "🙈" : "👁";
+    visibilityBtn.title = hidden ? "Mostrar valores" : "Ocultar valores";
   };
   const applyTheme = (mode)=>{
     const isLight = mode === "light";
@@ -219,7 +593,7 @@ function initUiPrefs(){
 
 async function loadCards(){
   const response = await fetch("/api/credit-cards/", {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar cartoes");
+  if(!response.ok) throw new Error("Falha ao carregar cartões");
   const cards = await response.json();
   const tbody = document.getElementById("cardRows");
   const select = document.getElementById("expense_card_id");
@@ -229,11 +603,10 @@ async function loadCards(){
   parentSelect.textContent = "";
   const noneOpt = document.createElement("option");
   noneOpt.value = "";
-  noneOpt.textContent = "Nao herdar (limite/fatura proprios)";
+  noneOpt.textContent = "Não herdar (limite/fatura próprios)";
   parentSelect.appendChild(noneOpt);
-  if(cards.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8">Sem cartoes cadastrados.</td></tr>';
-  }
+  document.getElementById('cardTableWrap').style.display = cards.length ? 'block' : 'none';
+  document.getElementById('cardEmptyState').classList.toggle('show', cards.length === 0);
   cards.forEach((card)=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -253,18 +626,18 @@ async function loadCards(){
 
     const opt = document.createElement("option");
     opt.value = card.id;
-    opt.textContent = `${card.nickname || "Cartao"} (**** ${card.last4})`;
+    opt.textContent = `${card.nickname || "Cartão"} (**** ${card.last4})`;
     select.appendChild(opt);
     const parentOpt = document.createElement("option");
     parentOpt.value = card.id;
-    parentOpt.textContent = `${card.nickname || "Cartao"} (**** ${card.last4})`;
+    parentOpt.textContent = `${card.nickname || "Cartão"} (**** ${card.last4})`;
     parentSelect.appendChild(parentOpt);
   });
 }
 
 function fillCardForm(card){
   editingCardId = card.id;
-  document.getElementById("card_form_title").textContent = "Editar Cartao";
+  document.getElementById("card_form_title").textContent = "Editar Cartão";
   document.getElementById("card_nickname").value = card.nickname || "";
   document.getElementById("card_last4").value = card.last4 || "";
   document.getElementById("card_parent").value = card.parent_card_id || "";
@@ -276,20 +649,21 @@ function fillCardForm(card){
 }
 function resetCardForm(){
   editingCardId = null;
-  document.getElementById("card_form_title").textContent = "Adicionar Cartao";
+  document.getElementById("card_form_title").textContent = "Adicionar Cartão";
   document.getElementById("cardForm").reset();
+  document.getElementById("card_miles_per_point").value = "1";
   document.getElementById("cancelCardEdit").style.display = "none";
 }
 async function deleteCard(cardId){
-  if(!confirm("Remover este cartao e seus gastos?")) return;
+  if(!confirm("Remover este cartão e seus gastos?")) return;
   const response = await fetch(`/api/credit-cards/${cardId}/`, {
     method:"DELETE", credentials:"same-origin", headers:{"X-CSRFToken": getCsrfToken()}
   });
   if(!response.ok){
-    setMessage("cardMessage", await parseError(response, "Erro ao remover cartao."), true);
+    setMessage("cardMessage", await parseError(response, "Erro ao remover cartão."), true);
     return;
   }
-  setMessage("cardMessage", "Cartao removido.", false);
+  setMessage("cardMessage", "Cartão removido.", false);
   if(editingCardId === cardId) resetCardForm();
   await refreshAll();
 }
@@ -313,23 +687,22 @@ async function submitCardForm(event){
     body: JSON.stringify(payload),
   });
   if(!response.ok){
-    setMessage("cardMessage", await parseError(response, "Erro ao salvar cartao."), true);
+    setMessage("cardMessage", await parseError(response, "Erro ao salvar cartão."), true);
     return;
   }
-  setMessage("cardMessage", editingCardId ? "Cartao atualizado." : "Cartao criado.", false);
+  setMessage("cardMessage", editingCardId ? "Cartão atualizado." : "Cartão criado.", false);
   resetCardForm();
   await refreshAll();
 }
 
 async function loadCardExpenses(){
   const response = await fetch("/api/credit-card-expenses/", {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar gastos no cartao");
+  if(!response.ok) throw new Error("Falha ao carregar gastos no cartão");
   const items = await response.json();
   const tbody = document.getElementById("expenseRows");
   tbody.textContent = "";
-  if(items.length === 0){
-    tbody.innerHTML = '<tr><td colspan="7">Sem gastos cadastrados.</td></tr>';
-  }
+  document.getElementById('expenseTableWrap').style.display = items.length ? 'block' : 'none';
+  document.getElementById('expenseEmptyState').classList.toggle('show', items.length === 0);
   items.forEach((item)=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -348,7 +721,7 @@ async function loadCardExpenses(){
 }
 function fillExpenseForm(item){
   editingExpenseId = item.id;
-  document.getElementById("expense_form_title").textContent = "Editar Gasto no Cartao";
+  document.getElementById("expense_form_title").textContent = "Editar Gasto no Cartão";
   document.getElementById("expense_card_id").value = item.card_id;
   document.getElementById("expense_date").value = item.date;
   document.getElementById("expense_category").value = item.category;
@@ -358,8 +731,9 @@ function fillExpenseForm(item){
 }
 function resetExpenseForm(){
   editingExpenseId = null;
-  document.getElementById("expense_form_title").textContent = "Adicionar Gasto no Cartao";
+  document.getElementById("expense_form_title").textContent = "Adicionar Gasto no Cartão";
   document.getElementById("expenseForm").reset();
+  document.getElementById("expense_date").value = new Date().toISOString().slice(0,10);
   document.getElementById("cancelExpenseEdit").style.display = "none";
 }
 async function deleteExpense(expenseId){
@@ -401,10 +775,10 @@ async function submitExpenseForm(event){
 }
 
 function renderMonthBar(){
-  const monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const monthNamês = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
   const bar = document.getElementById("monthFilterBar");
   bar.textContent = "";
-  monthNames.forEach((name, idx)=>{
+  monthNamês.forEach((name, idx)=>{
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "month-chip";
@@ -418,12 +792,12 @@ function renderMonthBar(){
     });
     bar.appendChild(btn);
   });
-  document.getElementById("selectedMonthLabel").textContent = `Ano ${selectedYear}`;
+  document.getElementById("selectedMonthLabel").textContent = `${monthNames[selectedMonth]} • ${selectedYear}`;
 }
 
 async function loadSummary(){
   const response = await fetch(`/api/credit-cards/summary/?month=${selectedMonth+1}&year=${selectedYear}`, {credentials:"same-origin"});
-  if(!response.ok) throw new Error("Falha ao carregar resumo de cartoes");
+  if(!response.ok) throw new Error("Falha ao carregar resumo de cartões");
   const data = await response.json();
   document.getElementById("card_count").textContent = String(data.card_count || 0);
   document.getElementById("card_spent").textContent = formatCurrency(data.total_spent || 0);
@@ -447,18 +821,18 @@ async function loadSummary(){
   const sourceText = data.usd_brl_source === "fallback" ? " (fallback)" : "";
   const rateText = usdRate > 0
     ? `USD/BRL: ${usdRate.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:4})}${sourceText}`
-    : "USD/BRL indisponivel";
+    : "USD/BRL indisponível";
   document.getElementById("card_rate").textContent = rateText;
 
   const billsBox = document.getElementById("billList");
   billsBox.textContent = "";
   if(!data.upcoming_bills || data.upcoming_bills.length === 0){
-    billsBox.innerHTML = '<div class="bill-item">Sem faturas geradas para o mes selecionado.</div>';
+    billsBox.innerHTML = '<div class="bill-item">Sem faturas geradas para o mês selecionado.</div>';
   } else {
     data.upcoming_bills.forEach((bill)=>{
       const div = document.createElement("div");
       div.className = "bill-item";
-      div.textContent = `${bill.date} | ${bill.category} | ${formatCurrency(bill.amount)} | ${bill.is_paid ? "Paga" : "Nao paga"}`;
+      div.textContent = `${bill.date} | ${bill.category} | ${formatCurrency(bill.amount)} | ${bill.is_paid ? "Paga" : "Não paga"}`;
       billsBox.appendChild(div);
     });
   }
@@ -481,159 +855,11 @@ async function init(){
     await refreshAll();
   } catch (error){
     console.error(error);
-    setMessage("cardMessage", "Erro ao carregar dados de cartoes.", true);
+    setMessage("cardMessage", "Erro ao carregar dados de cartões.", true);
   }
 }
 
 document.addEventListener("DOMContentLoaded", init);
 </script>
-</head>
-<body>
-<div class="app-shell">
-  <aside class="sidebar">
-    <h4>Navegacao</h4>
-    <a class="side-link" href="/dashboard/">Dashboard</a>
-    <a class="side-link" href="/transactions/">Movimentacoes</a>
-    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
-    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
-    <a class="side-link" href="/reserves/">Reservas</a>
-    <a class="side-link" href="/vehicles/">Veiculos</a>
-    <a class="side-link" href="/trips/">Viagem</a>
-    <a class="side-link" href="/credit-cards/">Cartoes</a>
-    <a class="side-link" href="/profile/">Perfil</a>
-  </aside>
-
-  <div class="container">
-    <div class="header">
-      <strong>Cartoes de Credito</strong>
-      <div class="header-right">
-        <div class="theme-switch" aria-label="Alternar tema">
-          <button id="themeDayBtn" class="theme-btn" type="button" title="Tema claro">Dia</button>
-          <button id="themeNightBtn" class="theme-btn active" type="button" title="Tema escuro">Noite</button>
-        </div>
-        <button id="visibilityToggleBtn" class="visibility-btn" type="button" title="Ocultar valores" aria-label="Ocultar valores">Vis</button>
-        <a href="/dashboard/" class="icon-link" title="Notificacoes" aria-label="Notificacoes">Not</a>
-        <a href="/logout/" class="icon-link logout" title="Sair" aria-label="Sair">Sair</a>
-      </div>
-    </div>
-
-    <div class="month-wrap">
-      <div class="month-head">
-        <strong style="font-size:13px;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase">Resumo mensal de Cartoes</strong>
-        <small id="selectedMonthLabel"></small>
-      </div>
-      <div id="monthFilterBar" class="month-bar"></div>
-    </div>
-    <div class="cards">
-      <div class="card"><span>Total no Cartao</span><strong id="card_spent">R$ 0,00</strong></div>
-      <div class="card"><span>Uso de Limite</span><strong id="card_usage">0%</strong></div>
-      <div class="card"><span>Pontos Estimados</span><strong id="card_miles">0</strong><small id="card_rate" style="color:#94a3b8;font-size:11px">USD/BRL: -</small></div>
-      <div class="card"><span>Cartoes Cadastrados</span><strong id="card_count">0</strong></div>
-    </div>
-
-    <div class="grid">
-      <div class="panel">
-        <h3 id="card_form_title">Adicionar Cartao</h3>
-        <form id="cardForm">
-          <label for="card_nickname">Nome do Cartao</label>
-          <input id="card_nickname" type="text" maxlength="80" placeholder="Ex.: Nubank, C6 Black">
-
-          <label for="card_last4">Ultimos 4 numeros</label>
-          <input id="card_last4" type="text" maxlength="4" required>
-
-          <label for="card_parent">Herdar limite/fatura de</label>
-          <select id="card_parent"></select>
-
-          <label for="card_due_day">Dia do vencimento</label>
-          <input id="card_due_day" type="number" min="1" max="31" required>
-
-          <label for="card_closing_day">Dia de fechamento da fatura</label>
-          <input id="card_closing_day" type="number" min="1" max="31" required>
-
-          <label for="card_limit">Limite</label>
-          <input id="card_limit" type="number" min="0" step="0.01">
-
-          <label for="card_miles_per_point">Pontos por dólar</label>
-          <input id="card_miles_per_point" type="number" min="0" step="0.01" value="1">
-
-          <div class="actions">
-            <button type="submit" class="btn-primary">Salvar Cartao</button>
-            <button type="button" id="cancelCardEdit" class="btn-secondary" style="display:none">Cancelar</button>
-          </div>
-        </form>
-        <div id="cardMessage" class="message"></div>
-      </div>
-
-      <div class="panel">
-        <h3>Cartoes Cadastrados</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Final</th>
-              <th>Herdado de</th>
-              <th>Venc.</th>
-              <th>Fechamento</th>
-              <th>Limite</th>
-              <th>Pontos/USD</th>
-              <th>Acoes</th>
-            </tr>
-          </thead>
-          <tbody id="cardRows"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="panel">
-        <h3 id="expense_form_title">Adicionar Gasto no Cartao</h3>
-        <form id="expenseForm">
-          <label for="expense_card_id">Cartao</label>
-          <select id="expense_card_id" required></select>
-
-          <label for="expense_date">Data do gasto</label>
-          <input id="expense_date" type="date" required>
-
-          <label for="expense_category">Categoria</label>
-          <input id="expense_category" type="text" maxlength="80" required>
-
-          <label for="expense_description">Descricao</label>
-          <textarea id="expense_description"></textarea>
-
-          <label for="expense_amount">Valor</label>
-          <input id="expense_amount" type="number" min="0" step="0.01" required>
-
-          <div class="actions">
-            <button type="submit" class="btn-primary">Salvar Gasto</button>
-            <button type="button" id="cancelExpenseEdit" class="btn-secondary" style="display:none">Cancelar</button>
-          </div>
-        </form>
-        <div id="expenseMessage" class="message"></div>
-      </div>
-
-      <div class="panel">
-        <h3>Gastos no Cartao</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Cartao</th>
-              <th>Data</th>
-              <th>Categoria</th>
-              <th>Descricao</th>
-              <th>Valor</th>
-              <th>Acoes</th>
-            </tr>
-          </thead>
-          <tbody id="expenseRows"></tbody>
-        </table>
-        <h3 style="margin-top:16px">Faturas Geradas em Despesas Fixas (mes selecionado)</h3>
-        <div id="billList" class="list-box"></div>
-      </div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
-
-
-

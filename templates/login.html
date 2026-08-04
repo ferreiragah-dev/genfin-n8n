@@ -1,173 +1,917 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>GenFin | Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>GenFin | Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Acesse o GenFin e tenha controle total da sua vida financeira.">
 <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
-    <style>
-        :root{
-            --bg1:#f3f4f6;
-            --bg2:#eceff3;
-            --card:#e5e7eb;
-            --border:#b8bec7;
-            --text:#1e293b;
-            --muted:#475569;
-            --green:#0ea5a8;
-            --green-dark:#0891b2;
-            --error:#f87171;
-        }
-        *{box-sizing:border-box}
-        body{
-            font-family: Inter, Arial, sans-serif;
-            background: linear-gradient(180deg, var(--bg2), var(--bg1));
-            color: var(--text);
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            min-height:100vh;
-            margin:0;
-            padding:14px;
-        }
-        .login-box{
-            background: linear-gradient(180deg, #e5e7eb, #dfe3e8);
-            padding: 26px 24px;
-            border-radius: 18px;
-            width: 100%;
-            max-width: 420px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 22px rgba(15,23,42,.08);
-        }
-        h2{text-align:center;margin:0 0 6px;font-size:28px}
-        .subtitle{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px}
-        .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-        .tab-btn{border:1px solid var(--border);background:#eceff3;color:#334155;border-radius:10px;padding:10px;cursor:pointer}
-        .tab-btn.active{background:linear-gradient(135deg,var(--green),#22d3ee);color:#062326;font-weight:700}
-        .pane{display:none}
-        .pane.active{display:block}
-        input{
-            width:100%;padding:12px 12px;margin-bottom:10px;border-radius:10px;border:1px solid var(--border);
-            background:#eceff3;color:var(--text);font-size:14px;outline:none;
-        }
-        input:focus{border-color: var(--green);box-shadow:0 0 0 2px rgba(34,197,94,.2)}
-        button.action{
-            width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#22d3ee);
-            color:#062326;font-weight:700;border:0;border-radius:12px;cursor:pointer;font-size:15px;
-        }
-        button.action:hover{background:linear-gradient(135deg,var(--green-dark),var(--green))}
-        .error{color:var(--error);text-align:center;margin-top:12px;min-height:18px;font-size:13px}
-    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#07110d;
+    --bg-soft:#0b1712;
+    --panel:#0d1c16;
+    --panel-2:#10251c;
+    --surface:#f8faf9;
+    --surface-soft:#eef3f0;
+    --border-dark:rgba(255,255,255,.10);
+    --border-light:#d9e3dd;
+    --text:#102019;
+    --text-light:#f7fbf8;
+    --muted:#67756e;
+    --muted-dark:#9eb0a6;
+    --primary:#22c55e;
+    --primary-dark:#16a34a;
+    --primary-soft:#dcfce7;
+    --danger:#dc2626;
+    --danger-soft:#fee2e2;
+    --warning:#f59e0b;
+    --shadow:0 24px 80px rgba(4,15,10,.28);
+}
+
+*{box-sizing:border-box}
+
+html,body{min-height:100%}
+
+body{
+    margin:0;
+    font-family:Inter,Arial,sans-serif;
+    color:var(--text);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(34,197,94,.12), transparent 28%),
+        radial-gradient(circle at 90% 90%, rgba(16,185,129,.10), transparent 30%),
+        linear-gradient(135deg,#06100c,#0a1711 55%,#07110d);
+    padding:24px;
+}
+
+button,input{font:inherit}
+
+.auth-shell{
+    width:min(1180px,100%);
+    min-height:calc(100vh - 48px);
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:minmax(0,1.1fr) minmax(420px,.9fr);
+    overflow:hidden;
+    border:1px solid var(--border-dark);
+    border-radius:30px;
+    background:rgba(10,24,17,.80);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(18px);
+}
+
+.brand-panel{
+    position:relative;
+    overflow:hidden;
+    padding:54px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    color:var(--text-light);
+    background:
+        linear-gradient(145deg,rgba(9,28,18,.94),rgba(6,20,13,.97)),
+        radial-gradient(circle at top right,rgba(34,197,94,.28),transparent 36%);
+}
+
+.brand-panel::before,
+.brand-panel::after{
+    content:"";
+    position:absolute;
+    border-radius:50%;
+    filter:blur(2px);
+    pointer-events:none;
+}
+
+.brand-panel::before{
+    width:360px;
+    height:360px;
+    top:-160px;
+    right:-130px;
+    border:1px solid rgba(34,197,94,.18);
+    box-shadow:
+        0 0 0 60px rgba(34,197,94,.035),
+        0 0 0 120px rgba(34,197,94,.02);
+}
+
+.brand-panel::after{
+    width:240px;
+    height:240px;
+    bottom:-150px;
+    left:-100px;
+    background:rgba(34,197,94,.08);
+}
+
+.brand-top,.brand-content,.brand-bottom{position:relative;z-index:1}
+
+.logo{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    text-decoration:none;
+    color:inherit;
+}
+
+.logo-mark{
+    width:46px;
+    height:46px;
+    border-radius:15px;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(135deg,var(--primary),#86efac);
+    color:#05220f;
+    font-size:22px;
+    font-weight:900;
+    box-shadow:0 12px 30px rgba(34,197,94,.24);
+}
+
+.logo-copy strong{
+    display:block;
+    font-size:20px;
+    letter-spacing:-.03em;
+}
+
+.logo-copy span{
+    display:block;
+    margin-top:2px;
+    font-size:11px;
+    color:var(--muted-dark);
+    letter-spacing:.12em;
+    text-transform:uppercase;
+}
+
+.eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:18px;
+    padding:8px 12px;
+    border:1px solid rgba(34,197,94,.20);
+    border-radius:999px;
+    background:rgba(34,197,94,.08);
+    color:#bbf7d0;
+    font-size:12px;
+    font-weight:700;
+}
+
+.eyebrow::before{
+    content:"";
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--primary);
+    box-shadow:0 0 16px rgba(34,197,94,.8);
+}
+
+.brand-content{
+    max-width:590px;
+    margin:54px 0;
+}
+
+.brand-content h1{
+    margin:0;
+    font-size:clamp(38px,5vw,66px);
+    line-height:1.02;
+    letter-spacing:-.055em;
+}
+
+.brand-content h1 span{color:#86efac}
+
+.brand-content p{
+    max-width:520px;
+    margin:22px 0 30px;
+    color:#bfd0c6;
+    font-size:17px;
+    line-height:1.7;
+}
+
+.features{
+    display:grid;
+    gap:14px;
+}
+
+.feature{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+}
+
+.feature-icon{
+    flex:0 0 34px;
+    width:34px;
+    height:34px;
+    border-radius:11px;
+    display:grid;
+    place-items:center;
+    background:rgba(34,197,94,.11);
+    border:1px solid rgba(34,197,94,.16);
+    color:#86efac;
+    font-weight:800;
+}
+
+.feature strong{
+    display:block;
+    margin-bottom:3px;
+    font-size:14px;
+}
+
+.feature span{
+    color:var(--muted-dark);
+    font-size:12px;
+    line-height:1.5;
+}
+
+.brand-bottom{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--muted-dark);
+    font-size:12px;
+}
+
+.security-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--primary);
+    box-shadow:0 0 14px rgba(34,197,94,.7);
+}
+
+.form-panel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px;
+    background:
+        radial-gradient(circle at top right,rgba(34,197,94,.08),transparent 32%),
+        var(--surface);
+}
+
+.auth-card{
+    width:min(430px,100%);
+}
+
+.mobile-logo{
+    display:none;
+    margin-bottom:30px;
+}
+
+.auth-heading{
+    margin-bottom:28px;
+}
+
+.auth-heading h2{
+    margin:0;
+    font-size:32px;
+    letter-spacing:-.04em;
+}
+
+.auth-heading p{
+    margin:9px 0 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+}
+
+.tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    margin-bottom:26px;
+    padding:5px;
+    border:1px solid var(--border-light);
+    border-radius:14px;
+    background:var(--surface-soft);
+}
+
+.tab-btn{
+    border:0;
+    border-radius:10px;
+    padding:11px 14px;
+    cursor:pointer;
+    background:transparent;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+    transition:.2s ease;
+}
+
+.tab-btn:hover{color:var(--text)}
+
+.tab-btn.active{
+    color:#0a2b16;
+    background:#fff;
+    box-shadow:0 4px 16px rgba(18,46,31,.08);
+}
+
+.pane{display:none}
+.pane.active{display:block;animation:fadeIn .24s ease}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(4px)}
+    to{opacity:1;transform:translateY(0)}
+}
+
+.form-grid{display:grid;gap:16px}
+.form-grid.two{grid-template-columns:1fr 1fr}
+
+.field{display:grid;gap:7px}
+
+.field label{
+    font-size:12px;
+    font-weight:700;
+    color:#405047;
+}
+
+.input-wrap{position:relative}
+
+.input-wrap input{
+    width:100%;
+    min-height:48px;
+    border:1px solid var(--border-light);
+    border-radius:13px;
+    background:#fff;
+    color:var(--text);
+    padding:12px 14px;
+    outline:none;
+    transition:.2s ease;
+}
+
+.input-wrap.has-action input{padding-right:48px}
+
+.input-wrap input::placeholder{color:#9aa7a0}
+
+.input-wrap input:hover{border-color:#bac8c0}
+
+.input-wrap input:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 4px rgba(34,197,94,.12);
+}
+
+.input-wrap input.invalid{
+    border-color:var(--danger);
+    box-shadow:0 0 0 4px rgba(220,38,38,.08);
+}
+
+.input-action{
+    position:absolute;
+    top:50%;
+    right:8px;
+    width:34px;
+    height:34px;
+    transform:translateY(-50%);
+    border:0;
+    border-radius:9px;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+}
+
+.input-action:hover{
+    background:var(--surface-soft);
+    color:var(--text);
+}
+
+.helper{
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.5;
+}
+
+.action{
+    width:100%;
+    min-height:50px;
+    margin-top:20px;
+    border:0;
+    border-radius:14px;
+    cursor:pointer;
+    color:#062610;
+    background:linear-gradient(135deg,var(--primary),#4ade80);
+    box-shadow:0 12px 24px rgba(34,197,94,.20);
+    font-size:14px;
+    font-weight:800;
+    transition:.2s ease;
+}
+
+.action:hover{
+    transform:translateY(-1px);
+    box-shadow:0 16px 30px rgba(34,197,94,.26);
+}
+
+.action:active{transform:translateY(0)}
+
+.action:disabled{
+    cursor:not-allowed;
+    opacity:.68;
+    transform:none;
+}
+
+.action-content{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+}
+
+.spinner{
+    width:16px;
+    height:16px;
+    display:none;
+    border:2px solid rgba(6,38,16,.22);
+    border-top-color:#062610;
+    border-radius:50%;
+    animation:spin .75s linear infinite;
+}
+
+.action.loading .spinner{display:block}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.feedback{
+    min-height:42px;
+    margin-top:16px;
+    padding:0;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:12px;
+    line-height:1.45;
+    transition:.2s ease;
+}
+
+.feedback.show{
+    padding:11px 13px;
+}
+
+.feedback.error{
+    color:#991b1b;
+    background:var(--danger-soft);
+    border:1px solid #fecaca;
+}
+
+.feedback.success{
+    color:#166534;
+    background:var(--primary-soft);
+    border:1px solid #bbf7d0;
+}
+
+.legal{
+    margin-top:22px;
+    color:#849087;
+    text-align:center;
+    font-size:11px;
+    line-height:1.6;
+}
+
+.legal a{
+    color:#466052;
+    font-weight:700;
+    text-decoration:none;
+}
+
+@media(max-width:960px){
+    body{padding:0}
+    .auth-shell{
+        min-height:100vh;
+        grid-template-columns:1fr;
+        border:0;
+        border-radius:0;
+    }
+    .brand-panel{display:none}
+    .form-panel{padding:32px 20px}
+    .mobile-logo{display:flex}
+}
+
+@media(max-width:560px){
+    .form-panel{align-items:flex-start;padding:24px 16px}
+    .auth-card{width:100%}
+    .auth-heading h2{font-size:28px}
+    .form-grid.two{grid-template-columns:1fr}
+    .mobile-logo .logo-mark{width:42px;height:42px}
+}
+
+@media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+        scroll-behavior:auto!important;
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+    }
+}
+</style>
+
+<link rel="stylesheet" href="{% static 'accounts/genfin-premium.css' %}">
+<script defer src="{% static 'accounts/genfin-premium.js' %}"></script>
 </head>
+
 <body>
-<div class="login-box">
-    <h2>GenFin</h2>
-    <div class="subtitle">Acesse seu painel financeiro</div>
+<main class="auth-shell">
+    <section class="brand-panel" aria-label="Apresentação do GenFin">
+        <div class="brand-top">
+            <a class="logo" href="/" aria-label="GenFin">
+                <span class="logo-mark">G</span>
+                <span class="logo-copy">
+                    <strong>GenFin</strong>
+                    <span>Finanças inteligentes</span>
+                </span>
+            </a>
+        </div>
 
-    <div class="tabs">
-        <button id="tabLogin" class="tab-btn active" type="button">Entrar</button>
-        <button id="tabRegister" class="tab-btn" type="button">Criar conta</button>
-    </div>
+        <div class="brand-content">
+            <div class="eyebrow">Controle financeiro em um só lugar</div>
+            <h1>Decisões melhores começam com <span>clareza financeira.</span></h1>
+            <p>
+                Organize receitas, despesas, reservas, cartões e metas em uma experiência simples,
+                segura e feita para transformar números em decisões.
+            </p>
 
-    <div id="paneLogin" class="pane active">
-        <input type="text" id="loginPhone" placeholder="Telefone (ex: 5511913305093)" autocomplete="off" />
-        <input type="password" id="loginPassword" placeholder="Senha" autocomplete="current-password" />
-        <button type="button" class="action" id="loginBtn">Entrar</button>
-    </div>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <div>
+                        <strong>Visão completa do seu dinheiro</strong>
+                        <span>Dashboard, lançamentos, compromissos e planejamento em tempo real.</span>
+                    </div>
+                </div>
 
-    <div id="paneRegister" class="pane">
-        <input type="text" id="regFirstName" placeholder="Nome" autocomplete="given-name" />
-        <input type="text" id="regLastName" placeholder="Sobrenome" autocomplete="family-name" />
-        <input type="email" id="regEmail" placeholder="Email" autocomplete="email" />
-        <input type="text" id="regPhone" placeholder="Telefone" autocomplete="tel" />
-        <input type="password" id="regPassword" placeholder="Senha (min. 6)" autocomplete="new-password" />
-        <button type="button" class="action" id="registerBtn">Criar conta</button>
-    </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <div>
+                        <strong>Planejamento com menos esforço</strong>
+                        <span>Acompanhe recorrências, projeções e evolução financeira com clareza.</span>
+                    </div>
+                </div>
 
-    <div class="error" id="error"></div>
-</div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <div>
+                        <strong>Seus dados protegidos</strong>
+                        <span>Acesso autenticado e comunicação segura com o servidor.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="brand-bottom">
+            <span class="security-dot"></span>
+            Ambiente protegido para acesso à sua conta
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="auth-card">
+            <a class="logo mobile-logo" href="/" aria-label="GenFin">
+                <span class="logo-mark">G</span>
+                <span class="logo-copy">
+                    <strong style="color:#102019">GenFin</strong>
+                    <span style="color:#67756e">Finanças inteligentes</span>
+                </span>
+            </a>
+
+            <div class="auth-heading">
+                <h2 id="authTitle">Bem-vindo de volta</h2>
+                <p id="authSubtitle">Entre para acessar seu painel financeiro.</p>
+            </div>
+
+            <div class="tabs" role="tablist" aria-label="Acesso à conta">
+                <button id="tabLogin" class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="paneLogin">
+                    Entrar
+                </button>
+                <button id="tabRegister" class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="paneRegister">
+                    Criar conta
+                </button>
+            </div>
+
+            <div id="paneLogin" class="pane active" role="tabpanel" aria-labelledby="tabLogin">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="loginPhone">Telefone</label>
+                        <div class="input-wrap">
+                            <input
+                                type="tel"
+                                id="loginPhone"
+                                placeholder="Ex.: 5511913305093"
+                                inputmode="numeric"
+                                autocomplete="username"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="loginPassword">Senha</label>
+                        <div class="input-wrap has-action">
+                            <input
+                                type="password"
+                                id="loginPassword"
+                                placeholder="Digite sua senha"
+                                autocomplete="current-password"
+                            >
+                            <button class="input-action" type="button" data-password-toggle="loginPassword" aria-label="Mostrar senha" title="Mostrar senha">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="action" id="loginBtn">
+                    <span class="action-content">
+                        <span class="spinner"></span>
+                        <span class="button-label">Entrar no GenFin</span>
+                    </span>
+                </button>
+            </div>
+
+            <div id="paneRegister" class="pane" role="tabpanel" aria-labelledby="tabRegister">
+                <div class="form-grid two">
+                    <div class="field">
+                        <label for="regFirstName">Nome</label>
+                        <div class="input-wrap">
+                            <input type="text" id="regFirstName" placeholder="Seu nome" autocomplete="given-name">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="regLastName">Sobrenome</label>
+                        <div class="input-wrap">
+                            <input type="text" id="regLastName" placeholder="Seu sobrenome" autocomplete="family-name">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="margin-top:16px">
+                    <div class="field">
+                        <label for="regEmail">E-mail</label>
+                        <div class="input-wrap">
+                            <input type="email" id="regEmail" placeholder="voce@exemplo.com" autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="regPhone">Telefone</label>
+                        <div class="input-wrap">
+                            <input type="tel" id="regPhone" placeholder="Ex.: 5511913305093" inputmode="numeric" autocomplete="tel">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="regPassword">Senha</label>
+                        <div class="input-wrap has-action">
+                            <input type="password" id="regPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password">
+                            <button class="input-action" type="button" data-password-toggle="regPassword" aria-label="Mostrar senha" title="Mostrar senha">
+                                👁
+                            </button>
+                        </div>
+                        <span class="helper">Use pelo menos 6 caracteres.</span>
+                    </div>
+                </div>
+
+                <button type="button" class="action" id="registerBtn">
+                    <span class="action-content">
+                        <span class="spinner"></span>
+                        <span class="button-label">Criar minha conta</span>
+                    </span>
+                </button>
+            </div>
+
+            <div class="feedback" id="error" role="status" aria-live="polite"></div>
+
+            <div class="legal">
+                Ao continuar, você concorda com os <a href="#">Termos de Uso</a> e a
+                <a href="#">Política de Privacidade</a>.
+            </div>
+        </div>
+    </section>
+</main>
 
 <script>
 function setTab(mode){
     const isLogin = mode === "login";
-    document.getElementById("tabLogin").classList.toggle("active", isLogin);
-    document.getElementById("tabRegister").classList.toggle("active", !isLogin);
+    const tabLogin = document.getElementById("tabLogin");
+    const tabRegister = document.getElementById("tabRegister");
+
+    tabLogin.classList.toggle("active", isLogin);
+    tabRegister.classList.toggle("active", !isLogin);
+    tabLogin.setAttribute("aria-selected", String(isLogin));
+    tabRegister.setAttribute("aria-selected", String(!isLogin));
+
     document.getElementById("paneLogin").classList.toggle("active", isLogin);
     document.getElementById("paneRegister").classList.toggle("active", !isLogin);
-    document.getElementById("error").innerText = "";
+
+    document.getElementById("authTitle").textContent = isLogin
+        ? "Bem-vindo de volta"
+        : "Comece agora";
+
+    document.getElementById("authSubtitle").textContent = isLogin
+        ? "Entre para acessar seu painel financeiro."
+        : "Crie sua conta e organize suas finanças em poucos minutos.";
+
+    clearFeedback();
+
+    requestAnimationFrame(()=>{
+        const target = document.getElementById(isLogin ? "loginPhone" : "regFirstName");
+        if(target) target.focus();
+    });
 }
 
-async function doLogin() {
-    const phone = document.getElementById("loginPhone").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const errorDiv = document.getElementById("error");
+function setFeedback(message, type="error"){
+    const el = document.getElementById("error");
+    el.textContent = message || "";
+    el.className = "feedback";
 
-    errorDiv.innerText = "";
-    if (!phone || !password) {
-        errorDiv.innerText = "Informe telefone e senha";
+    if(message){
+        el.classList.add("show", type);
+    }
+}
+
+function clearFeedback(){
+    setFeedback("");
+    document.querySelectorAll("input.invalid").forEach((input)=>input.classList.remove("invalid"));
+}
+
+function markInvalid(ids){
+    ids.forEach((id)=>{
+        const input = document.getElementById(id);
+        if(input) input.classList.add("invalid");
+    });
+}
+
+function setLoading(button, loading){
+    button.disabled = loading;
+    button.classList.toggle("loading", loading);
+
+    const label = button.querySelector(".button-label");
+    if(label){
+        label.textContent = loading
+            ? "Aguarde..."
+            : button.id === "loginBtn"
+                ? "Entrar no GenFin"
+                : "Criar minha conta";
+    }
+}
+
+function normalizePhone(value){
+    return String(value || "").replace(/\D/g,"");
+}
+
+function isValidEmail(value){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+async function doLogin(){
+    const phoneInput = document.getElementById("loginPhone");
+    const passwordInput = document.getElementById("loginPassword");
+    const loginBtn = document.getElementById("loginBtn");
+
+    const phone = normalizePhone(phoneInput.value);
+    const password = passwordInput.value;
+
+    clearFeedback();
+
+    const invalid = [];
+    if(!phone) invalid.push("loginPhone");
+    if(!password) invalid.push("loginPassword");
+
+    if(invalid.length){
+        markInvalid(invalid);
+        setFeedback("Informe telefone e senha para continuar.");
         return;
     }
 
+    setLoading(loginBtn,true);
+
     try{
-        const res = await fetch("/api/login/", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({phone_number: phone, password})
+        const res = await fetch("/api/login/",{
+            method:"POST",
+            credentials:"same-origin",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                phone_number:phone,
+                password:password
+            })
         });
 
-        if (res.ok) {
-            window.location.href = "/dashboard/";
+        if(res.ok){
+            setFeedback("Login realizado. Redirecionando...","success");
+            window.location.href="/dashboard/";
             return;
         }
-        const data = await res.json().catch(() => ({}));
-        errorDiv.innerText = data.error || "Erro ao logar";
-    } catch (_error){
-        errorDiv.innerText = "Erro de conexão com o servidor";
+
+        const data = await res.json().catch(()=>({}));
+        setFeedback(data.error || "Telefone ou senha inválidos.");
+    }catch(_error){
+        setFeedback("Não foi possível conectar ao servidor.");
+    }finally{
+        setLoading(loginBtn,false);
     }
 }
 
 async function doRegister(){
-    const payload = {
-        first_name: document.getElementById("regFirstName").value.trim(),
-        last_name: document.getElementById("regLastName").value.trim(),
-        email: document.getElementById("regEmail").value.trim(),
-        phone_number: document.getElementById("regPhone").value.trim(),
-        password: document.getElementById("regPassword").value,
-    };
-    const errorDiv = document.getElementById("error");
-    errorDiv.innerText = "";
+    const registerBtn = document.getElementById("registerBtn");
 
-    if(!payload.first_name || !payload.last_name || !payload.email || !payload.phone_number || !payload.password){
-        errorDiv.innerText = "Preencha todos os campos do cadastro";
+    const payload = {
+        first_name:document.getElementById("regFirstName").value.trim(),
+        last_name:document.getElementById("regLastName").value.trim(),
+        email:document.getElementById("regEmail").value.trim(),
+        phone_number:normalizePhone(document.getElementById("regPhone").value),
+        password:document.getElementById("regPassword").value
+    };
+
+    clearFeedback();
+
+    const invalid = [];
+    if(!payload.first_name) invalid.push("regFirstName");
+    if(!payload.last_name) invalid.push("regLastName");
+    if(!payload.email || !isValidEmail(payload.email)) invalid.push("regEmail");
+    if(!payload.phone_number) invalid.push("regPhone");
+    if(!payload.password || payload.password.length < 6) invalid.push("regPassword");
+
+    if(invalid.length){
+        markInvalid(invalid);
+        setFeedback("Revise os campos destacados antes de continuar.");
         return;
     }
 
+    setLoading(registerBtn,true);
+
     try{
-        const res = await fetch("/api/register/", {
+        const res = await fetch("/api/register/",{
             method:"POST",
             credentials:"same-origin",
             headers:{"Content-Type":"application/json"},
-            body: JSON.stringify(payload),
+            body:JSON.stringify(payload)
         });
 
         if(res.ok){
-            window.location.href = "/dashboard/";
+            setFeedback("Conta criada com sucesso. Redirecionando...","success");
+            window.location.href="/dashboard/";
             return;
         }
-        const data = await res.json().catch(() => ({}));
-        errorDiv.innerText = data.error || "Erro ao cadastrar";
-    } catch (_error){
-        errorDiv.innerText = "Erro de conexão com o servidor";
+
+        const data = await res.json().catch(()=>({}));
+        setFeedback(data.error || "Não foi possível criar sua conta.");
+    }catch(_error){
+        setFeedback("Não foi possível conectar ao servidor.");
+    }finally{
+        setLoading(registerBtn,false);
     }
 }
 
-document.getElementById("tabLogin").addEventListener("click", ()=>setTab("login"));
-document.getElementById("tabRegister").addEventListener("click", ()=>setTab("register"));
-document.getElementById("loginBtn").addEventListener("click", doLogin);
-document.getElementById("registerBtn").addEventListener("click", doRegister);
-document.getElementById("loginPassword").addEventListener("keydown", (e)=>{ if(e.key === "Enter") doLogin(); });
+function bindPasswordToggles(){
+    document.querySelectorAll("[data-password-toggle]").forEach((button)=>{
+        button.addEventListener("click",()=>{
+            const input = document.getElementById(button.dataset.passwordToggle);
+            if(!input) return;
+
+            const isPassword = input.type === "password";
+            input.type = isPassword ? "text" : "password";
+            button.textContent = isPassword ? "🙈" : "👁";
+            button.title = isPassword ? "Ocultar senha" : "Mostrar senha";
+            button.setAttribute("aria-label",button.title);
+        });
+    });
+}
+
+function bindInputCleanup(){
+    document.querySelectorAll("input").forEach((input)=>{
+        input.addEventListener("input",()=>{
+            input.classList.remove("invalid");
+            if(document.getElementById("error").classList.contains("error")){
+                clearFeedback();
+            }
+        });
+    });
+
+    ["loginPhone","regPhone"].forEach((id)=>{
+        const input = document.getElementById(id);
+        if(input){
+            input.addEventListener("input",()=>{
+                input.value = input.value.replace(/[^\d()+\-\s]/g,"");
+            });
+        }
+    });
+}
+
+document.getElementById("tabLogin").addEventListener("click",()=>setTab("login"));
+document.getElementById("tabRegister").addEventListener("click",()=>setTab("register"));
+document.getElementById("loginBtn").addEventListener("click",doLogin);
+document.getElementById("registerBtn").addEventListener("click",doRegister);
+
+document.getElementById("loginPassword").addEventListener("keydown",(event)=>{
+    if(event.key === "Enter") doLogin();
+});
+
+document.getElementById("regPassword").addEventListener("keydown",(event)=>{
+    if(event.key === "Enter") doRegister();
+});
+
+bindPasswordToggles();
+bindInputCleanup();
 </script>
 </body>
 </html>
-
