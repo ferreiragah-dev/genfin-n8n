@@ -2,392 +2,625 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>GenFin | Landing</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
-  <style>
-    :root{
-      --bg:#f3f4f6;
-      --card:#e5e7eb;
-      --line:#b8bec7;
-      --text:#1e293b;
-      --muted:#475569;
-      --green:#22a74e;
-      --red:#ef4444;
-      --orange:#f97316;
-      --blue:#0891b2;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family:Inter,Segoe UI,Arial,sans-serif;
-    }
-    .wrap{max-width:1160px;margin:0 auto;padding:14px}
-    .topbar{
-      display:flex;justify-content:space-between;align-items:center;
-      border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#dde2e8;
-    }
-    .logo{font-weight:800}
-    .actions{display:flex;gap:10px}
-    .btn{
-      text-decoration:none;font-size:14px;font-weight:700;color:var(--text);
-      border:1px solid var(--line);padding:8px 12px;border-radius:10px;background:#eceff3;
-    }
-    .btn.primary{background:#d8eef3;color:#0f172a}
-    .panel{
-      margin-top:12px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:var(--card);
-      padding:14px;
-    }
-    .panel h2,.panel h3{margin:0 0 10px}
-    .panel h2{font-size:26px}
-    .panel h3{font-size:33px}
-    .sub{margin:0;color:var(--muted)}
-    .hero{padding:20px}
+<meta charset="UTF-8">
+<title>GenFin | Controle financeiro completo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Organize suas finanças, cartões, veículos, reservas, despesas fixas e viagens em uma única plataforma.">
+<link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kpi{
-      border:1px solid var(--line);border-radius:13px;padding:10px;background:#e1e3e7;
-    }
-    .kpi span{display:block;color:#64748b;font-size:28px}
-    .kpi strong{display:block;font-size:40px;line-height:1.2}
-    .green{color:#1f8f46}.orange{color:#c96b09}
-
-    .triplet{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-    .period-card{
-      border:1px solid var(--line);border-radius:14px;padding:10px;background:#e1e3e7;margin-top:10px;
-    }
-    .period-head{display:flex;justify-content:space-between;color:#475569;font-weight:700;margin-bottom:8px}
-    .line{display:grid;grid-template-columns:74px 1fr 40px;align-items:center;gap:8px;margin:6px 0}
-    .track{height:11px;background:#cbd2dc;border-radius:999px;overflow:hidden}
-    .fill{height:100%;border-radius:999px}
-    .fill.income{background:#21a74d}
-    .fill.expense{background:linear-gradient(90deg,#f59e0b,#ef4444)}
-    .mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
-    .mini{
-      border:1px solid var(--line);border-radius:11px;padding:8px;background:#dde1e6;
-    }
-    .mini span{display:block;color:#64748b;font-size:22px}
-    .mini strong{font-size:31px}
-
-    .section-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-    .pill{
-      display:inline-block;padding:6px 10px;border-radius:999px;
-      border:1px solid #b7c5d8;background:#dce5ef;color:#334155;font-size:12px;
-      font-family:Consolas,monospace;
-    }
-    .donut-row{display:flex;gap:12px;align-items:center}
-    .donut{
-      --pct:0;
-      width:112px;height:112px;border-radius:50%;
-      background:conic-gradient(var(--orange) calc(var(--pct)*1%), #cdd4de 0);
-      position:relative;flex-shrink:0;
-    }
-    .donut::after{
-      content:"";position:absolute;inset:14px;background:#e5e7eb;border-radius:50%;
-    }
-    .donut b{
-      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-      z-index:1;font-size:20px;
-    }
-    .metric-stack span{display:block;color:#64748b}
-    .metric-stack strong{font-size:39px}
-
-    .bars .row{display:grid;grid-template-columns:95px 1fr auto;gap:8px;align-items:center;margin:6px 0}
-    .bars .track{height:12px}
-    .bars strong{font-size:28px}
-
-    .thermo{
-      height:14px;border-radius:999px;overflow:hidden;border:1px solid var(--line);
-      background:linear-gradient(90deg,#22c55e 0 35%, #eab308 35% 70%, #ef4444 70% 100%);
-      position:relative;margin:8px 0 12px;
-    }
-    .pin{
-      width:8px;height:24px;border-radius:6px;background:#0f172a;
-      position:absolute;top:-5px;left:0;transform:translateX(-50%);
-    }
-
-    .screen{
-      border:1px solid var(--line);border-radius:14px;background:#dfe2e7;overflow:hidden;
-    }
-    .screen-head{
-      display:flex;gap:7px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);color:#64748b;
-    }
-    .dot{width:9px;height:9px;border-radius:999px;background:#bcc6d3}
-    .screen-body{padding:10px;display:grid;gap:8px}
-    .item{
-      border:1px solid var(--line);border-radius:11px;background:#e8ebef;padding:9px;
-      display:flex;justify-content:space-between;align-items:center;font-size:14px;
-    }
-    .status{
-      border-radius:999px;padding:4px 8px;font-weight:700;font-size:12px;background:#d8eef3;color:#0e7490;
-    }
-    .status.warn{background:#fde8c8;color:#b45309}
-
-    .foot{text-align:center;color:#64748b;font-size:12px;margin-top:12px}
-
-    @media (max-width:960px){
-      .triplet,.section-grid{grid-template-columns:1fr}
-      .kpi-grid{grid-template-columns:1fr}
-    }
-  </style>
+<style>
+:root{
+  --bg:#06100c;
+  --bg-soft:#091711;
+  --panel:#0d1c16;
+  --panel-2:#10251c;
+  --line:rgba(255,255,255,.09);
+  --text:#f7fbf8;
+  --muted:#9eb0a6;
+  --green:#22c55e;
+  --green-2:#86efac;
+  --red:#ef4444;
+  --orange:#f59e0b;
+  --purple:#8b5cf6;
+  --blue:#38bdf8;
+  --shadow:0 30px 90px rgba(1,11,6,.28);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  color:var(--text);
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 10% 0%,rgba(34,197,94,.10),transparent 28%),
+    radial-gradient(circle at 90% 12%,rgba(56,189,248,.07),transparent 25%),
+    linear-gradient(135deg,#06100c,#091711 56%,#06100c);
+}
+a{color:inherit}
+button,input{font:inherit}
+.container{width:min(1180px,calc(100% - 32px));margin:0 auto}
+.topbar-wrap{
+  position:sticky;top:0;z-index:30;padding:14px 0;
+  background:linear-gradient(180deg,rgba(6,16,12,.94),rgba(6,16,12,.68),transparent);
+  backdrop-filter:blur(14px)
+}
+.topbar{
+  min-height:68px;padding:10px 12px 10px 18px;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;border:1px solid var(--line);border-radius:18px;background:rgba(13,28,22,.82);
+  box-shadow:0 16px 46px rgba(1,11,6,.13)
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{
+  width:40px;height:40px;display:grid;place-items:center;border-radius:13px;color:#05250f;
+  background:linear-gradient(135deg,var(--green),var(--green-2));font-weight:900;
+  box-shadow:0 10px 28px rgba(34,197,94,.22)
+}
+.logo-copy strong{display:block;font-size:17px;letter-spacing:-.03em}
+.logo-copy span{display:block;margin-top:2px;color:var(--muted);font-size:9px;letter-spacing:.14em;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:24px}
+.nav a{color:#b9c8bf;text-decoration:none;font-size:12px;font-weight:600}
+.nav a:hover{color:#fff}
+.actions{display:flex;align-items:center;gap:8px}
+.btn{
+  min-height:42px;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:1px solid var(--line);border-radius:12px;text-decoration:none;font-size:11px;font-weight:800;
+  background:rgba(255,255,255,.035);transition:.2s ease
+}
+.btn:hover{transform:translateY(-1px);border-color:rgba(34,197,94,.26)}
+.btn.primary{
+  border:0;color:#05250f;background:linear-gradient(135deg,var(--green),var(--green-2));
+  box-shadow:0 12px 28px rgba(34,197,94,.20)
+}
+.btn.large{min-height:50px;padding:13px 20px;font-size:12px}
+.hero{
+  padding:86px 0 58px;display:grid;grid-template-columns:minmax(0,1fr) minmax(460px,.96fr);
+  gap:56px;align-items:center
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:9px;margin-bottom:18px;padding:7px 10px;
+  border:1px solid rgba(34,197,94,.18);border-radius:999px;color:#bbf7d0;
+  background:rgba(34,197,94,.07);font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase
+}
+.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(34,197,94,.8)}
+.hero h1{margin:0;max-width:700px;font-size:clamp(42px,6vw,72px);line-height:.98;letter-spacing:-.06em}
+.hero h1 span{color:var(--green-2)}
+.hero-copy>p{max-width:650px;margin:22px 0 0;color:var(--muted);font-size:16px;line-height:1.75}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.hero-proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:28px}
+.proof-item{display:flex;align-items:center;gap:8px;color:#aebdb4;font-size:11px;font-weight:600}
+.proof-item::before{content:"✓";width:20px;height:20px;display:grid;place-items:center;border-radius:50%;color:#05250f;background:var(--green);font-size:11px;font-weight:900}
+.dashboard{
+  position:relative;padding:16px;border:1px solid var(--line);border-radius:28px;
+  background:linear-gradient(145deg,rgba(16,37,28,.98),rgba(7,20,14,.98));box-shadow:var(--shadow)
+}
+.dashboard::before{
+  content:"";position:absolute;inset:-1px;border-radius:28px;padding:1px;
+  background:linear-gradient(135deg,rgba(34,197,94,.32),transparent 36%,rgba(56,189,248,.14));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none
+}
+.dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dash-brand{font-size:12px;font-weight:800}
+.dash-period{padding:6px 9px;border-radius:999px;color:#bbf7d0;background:rgba(34,197,94,.08);font-size:9px;font-weight:700}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.kpi{
+  min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)
+}
+.kpi span{display:block;color:#829088;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.kpi strong{display:block;margin-top:7px;font-size:15px;letter-spacing:-.03em}
+.kpi .green{color:#86efac}.kpi .orange{color:#fbbf24}
+.chart-card{margin-top:10px;padding:13px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02)}
+.chart-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}
+.chart-head strong{font-size:11px}.chart-head span{color:var(--muted);font-size:8px}
+.chart-bars{height:126px;display:flex;align-items:flex-end;gap:9px}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.chart-bar{width:100%;max-width:27px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--green-2),var(--green))}
+.chart-col span{color:#75827a;font-size:7px}
+.dashboard-bottom{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.mini-panel{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)}
+.mini-panel span{color:#829088;font-size:8px}
+.mini-panel strong{display:block;margin-top:6px;font-size:17px}
+.section{padding:84px 0}
+.section-head{max-width:760px;margin-bottom:32px}
+.section-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.section-head .label{color:#86efac;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.section-head h2{margin:10px 0 0;font-size:clamp(30px,4vw,48px);line-height:1.08;letter-spacing:-.045em}
+.section-head p{margin:15px 0 0;color:var(--muted);font-size:14px;line-height:1.75}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feature{
+  min-height:220px;padding:22px;border:1px solid var(--line);border-radius:20px;
+  background:linear-gradient(180deg,rgba(13,28,22,.94),rgba(8,21,15,.94));transition:.25s ease
+}
+.feature:hover{transform:translateY(-4px);border-color:rgba(34,197,94,.22);box-shadow:0 20px 50px rgba(1,11,6,.16)}
+.feature-icon{
+  width:44px;height:44px;display:grid;place-items:center;border-radius:14px;color:#86efac;
+  background:rgba(34,197,94,.08);font-size:18px
+}
+.feature h3{margin:18px 0 8px;font-size:16px}
+.feature p{margin:0;color:var(--muted);font-size:11px;line-height:1.7}
+.feature-list{display:grid;gap:7px;margin-top:15px}
+.feature-list span{color:#c0cec6;font-size:10px}
+.feature-list span::before{content:"✓";margin-right:7px;color:var(--green);font-weight:900}
+.showcase{
+  display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:42px;align-items:center
+}
+.showcase.reverse{grid-template-columns:minmax(0,1.14fr) minmax(0,.86fr)}
+.showcase-copy h2{margin:0;font-size:clamp(29px,4vw,46px);line-height:1.08;letter-spacing:-.045em}
+.showcase-copy p{margin:16px 0 0;color:var(--muted);font-size:13px;line-height:1.75}
+.check-list{display:grid;gap:11px;margin-top:22px}
+.check{display:flex;gap:10px;color:#c4d0c9;font-size:11px;line-height:1.55}
+.check::before{content:"✓";flex:0 0 21px;height:21px;display:grid;place-items:center;border-radius:7px;color:#05250f;background:var(--green);font-size:10px;font-weight:900}
+.app-window{
+  overflow:hidden;border:1px solid var(--line);border-radius:22px;background:rgba(13,28,22,.94);box-shadow:var(--shadow)
+}
+.window-head{padding:11px 14px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--line)}
+.window-dot{width:8px;height:8px;border-radius:50%;background:#536159}
+.window-title{margin-left:7px;color:#7e8d84;font-size:8px}
+.window-body{padding:14px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}
+.stat-box span{display:block;color:#809087;font-size:7px;text-transform:uppercase}
+.stat-box strong{display:block;margin-top:6px;font-size:14px}
+.list{display:grid;gap:7px;margin-top:10px}
+.list-item{padding:10px 11px;display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.02);font-size:9px}
+.tag{padding:4px 7px;border-radius:999px;color:#bbf7d0;background:rgba(34,197,94,.08);font-size:7px;font-weight:800}
+.tag.orange{color:#fed7aa;background:rgba(245,158,11,.10)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:stretch}
+.plan{
+  position:relative;padding:24px;border:1px solid var(--line);border-radius:22px;
+  background:linear-gradient(180deg,rgba(13,28,22,.96),rgba(8,21,15,.96))
+}
+.plan.featured{border-color:rgba(34,197,94,.34);box-shadow:0 24px 64px rgba(34,197,94,.10)}
+.plan-badge{
+  position:absolute;top:14px;right:14px;padding:6px 8px;border-radius:999px;
+  color:#05250f;background:var(--green);font-size:8px;font-weight:900;text-transform:uppercase
+}
+.plan h3{margin:0;font-size:18px}
+.plan p{min-height:38px;margin:8px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
+.price{margin-top:18px;font-size:34px;font-weight:800;letter-spacing:-.05em}
+.price small{color:var(--muted);font-size:10px;font-weight:500;letter-spacing:0}
+.plan-list{display:grid;gap:9px;margin:20px 0}
+.plan-list span{color:#c4d0c9;font-size:10px}
+.plan-list span::before{content:"✓";margin-right:7px;color:var(--green);font-weight:900}
+.plan .btn{width:100%}
+.faq{max-width:900px;margin:0 auto;display:grid;gap:10px}
+.faq details{padding:16px 18px;border:1px solid var(--line);border-radius:15px;background:rgba(13,28,22,.85)}
+.faq summary{cursor:pointer;font-size:12px;font-weight:700}
+.faq p{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.7}
+.cta{
+  padding:48px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;
+  border:1px solid rgba(34,197,94,.18);border-radius:28px;
+  background:radial-gradient(circle at right top,rgba(34,197,94,.16),transparent 38%),linear-gradient(145deg,#10251c,#091711)
+}
+.cta h2{margin:0;font-size:clamp(29px,4vw,46px);line-height:1.07;letter-spacing:-.045em}
+.cta p{max-width:650px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.7}
+.cta-actions{display:flex;gap:9px;flex-wrap:wrap}
+footer{padding:36px 0 44px}
+.footer-grid{display:grid;grid-template-columns:1fr auto;gap:28px;padding-top:26px;border-top:1px solid var(--line)}
+.footer-copy p{max-width:460px;margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.7}
+.footer-links{display:flex;gap:18px;align-items:flex-start}
+.footer-links a{color:var(--muted);text-decoration:none;font-size:10px}
+.footer-links a:hover{color:#fff}
+.copyright{margin-top:24px;color:#67766d;font-size:9px}
+.mobile-menu{display:none}
+@media(max-width:1040px){
+  .nav{display:none}
+  .hero{grid-template-columns:1fr;padding-top:62px}
+  .hero-copy{text-align:center}
+  .hero-copy>p,.hero h1{margin-left:auto;margin-right:auto}
+  .hero-actions,.hero-proof{justify-content:center}
+  .dashboard{max-width:720px;margin:0 auto}
+  .features{grid-template-columns:repeat(2,1fr)}
+  .showcase,.showcase.reverse{grid-template-columns:1fr}
+  .showcase.reverse .showcase-copy{order:1}
+  .showcase.reverse .app-window{order:2}
+}
+@media(max-width:720px){
+  .container{width:min(100% - 20px,1180px)}
+  .topbar{padding:9px 10px}
+  .logo-copy span{display:none}
+  .actions .btn:first-child{display:none}
+  .hero{padding-top:42px;gap:34px}
+  .hero h1{font-size:42px}
+  .hero-copy>p{font-size:14px}
+  .hero-actions{flex-direction:column}
+  .hero-actions .btn{width:100%}
+  .hero-proof{display:grid;grid-template-columns:1fr 1fr;text-align:left}
+  .kpi-grid,.stats-row{grid-template-columns:1fr 1fr}
+  .features,.plans{grid-template-columns:1fr}
+  .section{padding:62px 0}
+  .cta{padding:30px 22px;grid-template-columns:1fr}
+  .cta-actions{flex-direction:column}
+  .cta-actions .btn{width:100%}
+  .footer-grid{grid-template-columns:1fr}
+  .footer-links{flex-wrap:wrap}
+}
+</style>
 
 <link rel="stylesheet" href="{% static 'accounts/genfin-premium.css' %}">
 <script defer src="{% static 'accounts/genfin-premium.js' %}"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="logo">GF | GenFin</div>
-      <div class="actions">
-        <a class="btn" href="/login/">Entrar</a>
-        <a class="btn primary" href="/login/">Criar conta</a>
-      </div>
-    </header>
+<div class="topbar-wrap">
+  <header class="container topbar">
+    <a class="logo" href="/" aria-label="GenFin">
+      <span class="logo-mark">G</span>
+      <span class="logo-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></span>
+    </a>
 
-    <section class="panel hero">
-      <h3>Painel de exemplo do GenFin</h3>
+    <nav class="nav" aria-label="Navegação principal">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#planos">Planos</a>
+      <a href="#faq">Dúvidas</a>
+    </nav>
+
+    <div class="actions">
+      <a class="btn" href="/login/">Entrar</a>
+      <a class="btn primary" href="/register/">Criar conta grátis</a>
+    </div>
+  </header>
+</div>
+
+<main>
+  <section class="container hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Seu dinheiro, finalmente organizado</div>
+      <h1>Controle toda a sua vida financeira em <span>um único lugar.</span></h1>
+      <p>O GenFin conecta movimentações, despesas fixas, cartões, reservas, veículos e viagens em um painel simples, inteligente e feito para decisões melhores.</p>
+
+      <div class="hero-actions">
+        <a class="btn primary large" href="/register/">Começar gratuitamente</a>
+        <a class="btn large" href="/login/">Já tenho uma conta</a>
+      </div>
+
+      <div class="hero-proof">
+        <div class="proof-item">Sem planilhas complicadas</div>
+        <div class="proof-item">Visão mensal completa</div>
+        <div class="proof-item">Dados centralizados</div>
+        <div class="proof-item">Acesso em qualquer dispositivo</div>
+      </div>
+    </div>
+
+    <div class="dashboard" aria-label="Prévia do dashboard GenFin">
+      <div class="dash-top">
+        <div class="dash-brand">Visão financeira</div>
+        <div class="dash-period">Este mês</div>
+      </div>
+
       <div class="kpi-grid">
-        <div class="kpi"><span>Receitas</span><strong id="heroReceita">R$ 0,00</strong></div>
-        <div class="kpi"><span>Despesas</span><strong id="heroDespesa">R$ 0,00</strong></div>
-        <div class="kpi"><span>Saldo atual</span><strong id="heroSaldo" class="green">R$ 0,00</strong></div>
-        <div class="kpi"><span>Taxa de poupanca</span><strong id="heroPoupanca">0%</strong></div>
-        <div class="kpi"><span>Burn rate diario</span><strong id="heroBurn" class="orange">R$ 0,00</strong></div>
-        <div class="kpi"><span>Runway</span><strong id="heroRunway">0 dias</strong></div>
+        <div class="kpi"><span>Receitas</span><strong id="heroReceita">R$ 15.015,85</strong></div>
+        <div class="kpi"><span>Despesas</span><strong id="heroDespesa">R$ 4.486,45</strong></div>
+        <div class="kpi"><span>Saldo atual</span><strong id="heroSaldo" class="green">R$ 10.529,40</strong></div>
+        <div class="kpi"><span>Taxa de poupança</span><strong id="heroPoupanca">70%</strong></div>
+        <div class="kpi"><span>Burn rate diário</span><strong id="heroBurn" class="orange">R$ 149,55</strong></div>
+        <div class="kpi"><span>Runway</span><strong id="heroRunway">70 dias</strong></div>
       </div>
-    </section>
 
-    <section class="panel">
-      <div id="periodList"></div>
-    </section>
+      <div class="chart-card">
+        <div class="chart-head"><strong>Evolução mensal</strong><span>Receitas x despesas</span></div>
+        <div class="chart-bars">
+          <div class="chart-col"><div class="chart-bar" style="height:42%"></div><span>JAN</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:57%"></div><span>FEV</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:51%"></div><span>MAR</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:73%"></div><span>ABR</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:66%"></div><span>MAI</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:85%"></div><span>JUN</span></div>
+          <div class="chart-col"><div class="chart-bar" style="height:76%"></div><span>JUL</span></div>
+        </div>
+      </div>
 
-    <section class="section-grid" style="margin-top:12px">
-      <article class="panel">
-        <h2>Uso de limite no cartao</h2>
-        <span class="pill">GET /api/credit-cards/summary/</span>
-        <div class="donut-row" style="margin-top:10px">
-          <div id="cardDonut" class="donut"><b id="cardPct">0%</b></div>
-          <div class="metric-stack">
-            <span>Uso total</span>
-            <strong id="cardUsed">R$ 0,00</strong>
-            <span id="cardLimit">de R$ 0,00</span>
+      <div class="dashboard-bottom">
+        <div class="mini-panel"><span>Uso dos cartões</span><strong>38,4%</strong></div>
+        <div class="mini-panel"><span>Reserva acumulada</span><strong>R$ 18.450</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="recursos" class="section">
+    <div class="container">
+      <div class="section-head center">
+        <span class="label">Tudo que o GenFin oferece</span>
+        <h2>Uma plataforma completa para cada parte da sua vida financeira.</h2>
+        <p>Do lançamento diário ao planejamento de longo prazo, todos os módulos trabalham juntos para entregar uma visão real do seu dinheiro.</p>
+      </div>
+
+      <div class="features">
+        <article class="feature">
+          <div class="feature-icon">↔</div>
+          <h3>Movimentações financeiras</h3>
+          <p>Registre receitas e despesas, organize por categoria e mantenha comprovantes anexados aos lançamentos.</p>
+          <div class="feature-list"><span>Receitas e despesas</span><span>Filtros mensais</span><span>Comprovantes</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">−</div>
+          <h3>Despesas fixas</h3>
+          <p>Controle contas recorrentes, vencimentos e pagamentos sem perder nenhuma obrigação mensal.</p>
+          <div class="feature-list"><span>Status de pagamento</span><span>Recorrência mensal</span><span>Planejamento antecipado</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">＋</div>
+          <h3>Entradas fixas</h3>
+          <p>Cadastre salários, rendas e recebimentos recorrentes para projetar melhor seu fluxo de caixa.</p>
+          <div class="feature-list"><span>Receitas recorrentes</span><span>Projeção mensal</span><span>Visão consolidada</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">◇</div>
+          <h3>Reservas e objetivos</h3>
+          <p>Crie reservas financeiras, defina metas e acompanhe seu progresso até alcançar cada objetivo.</p>
+          <div class="feature-list"><span>Metas personalizadas</span><span>Progresso visual</span><span>Aportes e retiradas</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">▣</div>
+          <h3>Cartões de crédito</h3>
+          <p>Acompanhe gastos, limite, fechamento, vencimento, cartões adicionais e pontos estimados.</p>
+          <div class="feature-list"><span>Uso de limite</span><span>Faturas consolidadas</span><span>Programa de pontos</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">◆</div>
+          <h3>Gestão de veículos</h3>
+          <p>Entenda o custo real de cada veículo incluindo combustível, FIPE, financiamento e manutenção.</p>
+          <div class="feature-list"><span>Valor FIPE</span><span>Custos automotivos</span><span>Deslocamentos frequentes</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">✦</div>
+          <h3>Planejamento de viagens</h3>
+          <p>Calcule combustível, pedágios, hospedagem e veja se a viagem cabe no seu momento financeiro.</p>
+          <div class="feature-list"><span>Custo total estimado</span><span>Impacto no saldo</span><span>Termômetro financeiro</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">⌁</div>
+          <h3>Dashboard inteligente</h3>
+          <p>Visualize saldo, taxa de poupança, burn rate, runway, categorias e evolução mensal.</p>
+          <div class="feature-list"><span>Indicadores financeiros</span><span>Comparativos</span><span>Visão executiva</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">●</div>
+          <h3>Perfil e preferências</h3>
+          <p>Personalize sua experiência, alterne temas e mantenha suas informações financeiras protegidas.</p>
+          <div class="feature-list"><span>Tema claro e escuro</span><span>Ocultação de valores</span><span>Conta personalizada</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="section">
+    <div class="container showcase">
+      <div class="showcase-copy">
+        <div class="eyebrow">Visão financeira real</div>
+        <h2>Saiba exatamente para onde seu dinheiro está indo.</h2>
+        <p>O dashboard reúne dados de todos os módulos para mostrar saldo, despesas, reservas, cartões e indicadores que ajudam você a decidir com mais segurança.</p>
+        <div class="check-list">
+          <div class="check">Acompanhe receitas, despesas e saldo consolidado.</div>
+          <div class="check">Entenda sua taxa de poupança e velocidade de gastos.</div>
+          <div class="check">Compare períodos e identifique categorias que mais pesam.</div>
+          <div class="check">Tenha uma leitura simples sem depender de planilhas.</div>
+        </div>
+      </div>
+
+      <div class="app-window">
+        <div class="window-head">
+          <span class="window-dot"></span><span class="window-dot"></span><span class="window-dot"></span>
+          <span class="window-title">Dashboard financeiro</span>
+        </div>
+        <div class="window-body">
+          <div class="stats-row">
+            <div class="stat-box"><span>Saldo atual</span><strong>R$ 10.529,40</strong></div>
+            <div class="stat-box"><span>Taxa de poupança</span><strong>70%</strong></div>
+            <div class="stat-box"><span>Runway</span><strong>70 dias</strong></div>
+          </div>
+          <div class="list">
+            <div class="list-item"><span>Moradia</span><strong>R$ 2.100,00</strong></div>
+            <div class="list-item"><span>Alimentação</span><strong>R$ 890,00</strong></div>
+            <div class="list-item"><span>Transporte</span><strong>R$ 520,00</strong></div>
+            <div class="list-item"><span>Reserva mensal</span><span class="tag">Meta alcançada</span></div>
           </div>
         </div>
-        <div class="mini-grid">
-          <div class="mini"><span>Cartoes</span><strong id="cardCount">0</strong></div>
-          <div class="mini"><span>Pontos</span><strong id="cardPoints">0</strong></div>
-          <div class="mini"><span>Cotacao USD</span><strong id="cardUsd">-</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container showcase reverse">
+      <div class="app-window">
+        <div class="window-head">
+          <span class="window-dot"></span><span class="window-dot"></span><span class="window-dot"></span>
+          <span class="window-title">Planejamento e compromissos</span>
         </div>
-      </article>
-
-      <article class="panel">
-        <h2>Despesas por categoria</h2>
-        <span class="pill">GET /api/dashboard/categories/</span>
-        <div id="categoryBars" class="bars" style="margin-top:10px"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Resumo de veiculos</h2>
-        <span class="pill">GET /api/vehicles/summary/</span>
-        <div id="vehicleBars" class="bars" style="margin-top:10px"></div>
-        <div class="mini-grid">
-          <div class="mini"><span>Custo mensal</span><strong id="vehicleMonthly">R$ 0,00</strong></div>
-          <div class="mini"><span>Deslocamento</span><strong id="vehicleCommute">R$ 0,00</strong></div>
-          <div class="mini"><span>Veiculos</span><strong id="vehicleCount">0</strong></div>
-        </div>
-      </article>
-    </section>
-
-    <section class="section-grid" style="margin-top:12px">
-      <article class="panel">
-        <h2>Movimentacoes + comprovante</h2>
-        <span class="pill">POST /api/financial-entry/ | GET /api/entries/</span>
-        <div class="screen" style="margin-top:10px">
-          <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Lancamentos</div>
-          <div class="screen-body">
-            <div class="item"><b>10/02/2026 · Alimentacao</b><span>R$ 58,90</span></div>
-            <div class="item"><span>Tipo: DESPESA</span><span class="status">Comprovante anexado</span></div>
-            <div class="item"><span>09/02/2026 · Salario</span><span>R$ 6.900,00</span></div>
+        <div class="window-body">
+          <div class="list">
+            <div class="list-item"><span>Aluguel · vence dia 10</span><span class="tag">Pago</span></div>
+            <div class="list-item"><span>Internet · vence dia 12</span><span class="tag">Pago</span></div>
+            <div class="list-item"><span>Cartão principal · vence dia 15</span><span class="tag orange">Pendente</span></div>
+            <div class="list-item"><span>Reserva de emergência</span><strong>72%</strong></div>
+            <div class="list-item"><span>Viagem para o litoral</span><span class="tag">Boa hora</span></div>
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="panel">
-        <h2>Planejamento de fixas</h2>
-        <span class="pill">GET /api/planner/ | /api/fixed-incomes/ | /api/reserves/</span>
-        <div class="screen" style="margin-top:10px">
-          <div class="screen-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Planejamento</div>
-          <div class="screen-body">
-            <div class="item"><b>Internet</b><span>R$ 129,90</span></div>
-            <div class="item"><span>Status</span><span class="status">Paga</span></div>
-            <div class="item"><b>Aluguel</b><span>R$ 2.100,00</span></div>
-            <div class="item"><span>Status</span><span class="status warn">Nao paga</span></div>
+      <div class="showcase-copy">
+        <div class="eyebrow">Planejamento sem surpresas</div>
+        <h2>Antecipe contas, compromissos e grandes decisões.</h2>
+        <p>O GenFin transforma seus dados em planejamento. Você visualiza o que já foi pago, o que ainda vence e como novos gastos afetam seu saldo.</p>
+        <div class="check-list">
+          <div class="check">Organize despesas e entradas recorrentes.</div>
+          <div class="check">Acompanhe faturas e uso de limite dos cartões.</div>
+          <div class="check">Planeje viagens com avaliação de impacto financeiro.</div>
+          <div class="check">Controle reservas para emergências e objetivos.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="planos" class="section">
+    <div class="container">
+      <div class="section-head center">
+        <span class="label">Planos simples</span>
+        <h2>Comece gratuitamente e evolua quando precisar.</h2>
+        <p>Uma estrutura clara para você experimentar o GenFin e acessar recursos avançados conforme sua rotina financeira cresce.</p>
+      </div>
+
+      <div class="plans">
+        <article class="plan">
+          <h3>Gratuito</h3>
+          <p>Para começar a organizar sua vida financeira.</p>
+          <div class="price">R$ 0 <small>/mês</small></div>
+          <div class="plan-list">
+            <span>Dashboard básico</span>
+            <span>Movimentações mensais</span>
+            <span>1 cartão de crédito</span>
+            <span>1 veículo</span>
+            <span>Histórico limitado</span>
           </div>
-        </div>
-      </article>
+          <a class="btn" href="/register/">Criar conta grátis</a>
+        </article>
 
-      <article class="panel">
-        <h2>Termometro de viagem</h2>
-        <span class="pill">POST /api/trips/evaluate/</span>
-        <p class="sub" style="margin:8px 0">Campos usados no backend: trip_total_cost, commitment_pct_balance, runway_days_after, risk_level e recommendation.</p>
-        <div class="thermo"><div id="tripPin" class="pin"></div></div>
-        <div class="mini-grid">
-          <div class="mini"><span>Recomendacao</span><strong id="tripReco">Atenção</strong></div>
-          <div class="mini"><span>Compromete saldo</span><strong id="tripCommit">0%</strong></div>
-          <div class="mini"><span>Runway apos</span><strong id="tripRunway">0 dias</strong></div>
-        </div>
-      </article>
-    </section>
+        <article class="plan featured">
+          <div class="plan-badge">Mais escolhido</div>
+          <h3>Premium</h3>
+          <p>Todos os recursos para controle financeiro completo.</p>
+          <div class="price">R$ 19,90 <small>/mês</small></div>
+          <div class="plan-list">
+            <span>Todos os módulos liberados</span>
+            <span>Movimentações ilimitadas</span>
+            <span>Cartões e veículos ilimitados</span>
+            <span>Comprovantes e histórico completo</span>
+            <span>Planejamento de viagens</span>
+          </div>
+          <a class="btn primary" href="/register/">Começar agora</a>
+        </article>
 
-    <div class="foot">GenFin • exemplos visuais reais do app</div>
+        <article class="plan">
+          <h3>Premium anual</h3>
+          <p>Economize contratando doze meses de acesso.</p>
+          <div class="price">R$ 159,90 <small>/ano</small></div>
+          <div class="plan-list">
+            <span>Todos os recursos Premium</span>
+            <span>Equivalente a R$ 13,33/mês</span>
+            <span>Histórico completo</span>
+            <span>Atualizações incluídas</span>
+            <span>Melhor custo-benefício</span>
+          </div>
+          <a class="btn" href="/register/">Escolher anual</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section">
+    <div class="container">
+      <div class="section-head center">
+        <span class="label">Perguntas frequentes</span>
+        <h2>Tudo que você precisa saber antes de começar.</h2>
+      </div>
+
+      <div class="faq">
+        <details>
+          <summary>Preciso instalar algum programa?</summary>
+          <p>Não. O GenFin funciona diretamente no navegador e pode ser acessado pelo computador, tablet ou celular.</p>
+        </details>
+        <details>
+          <summary>Posso começar gratuitamente?</summary>
+          <p>Sim. Você pode criar sua conta gratuita e começar a registrar seus dados financeiros imediatamente.</p>
+        </details>
+        <details>
+          <summary>O GenFin controla cartões e veículos?</summary>
+          <p>Sim. A plataforma possui módulos específicos para cartões de crédito, gastos automotivos, FIPE, financiamento, deslocamentos e viagens.</p>
+        </details>
+        <details>
+          <summary>Consigo ocultar meus valores na tela?</summary>
+          <p>Sim. O GenFin possui uma preferência para ocultar valores sensíveis quando você estiver utilizando a plataforma em ambientes compartilhados.</p>
+        </details>
+        <details>
+          <summary>Posso cancelar a assinatura?</summary>
+          <p>Sim. O plano pode ser cancelado conforme as condições apresentadas no momento da contratação, sem impedir o acesso aos seus dados durante o período já pago.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="container cta">
+    <div>
+      <h2>Comece hoje a tomar decisões melhores com seu dinheiro.</h2>
+      <p>Crie sua conta e centralize movimentações, contas, cartões, reservas, veículos e viagens em uma experiência única.</p>
+    </div>
+    <div class="cta-actions">
+      <a class="btn primary large" href="/register/">Criar conta grátis</a>
+      <a class="btn large" href="/login/">Entrar no GenFin</a>
+    </div>
+  </section>
+</main>
+
+<footer class="container">
+  <div class="footer-grid">
+    <div class="footer-copy">
+      <a class="logo" href="/">
+        <span class="logo-mark">G</span>
+        <span class="logo-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></span>
+      </a>
+      <p>Controle financeiro pessoal completo para organizar o presente, planejar o futuro e tomar decisões com mais tranquilidade.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="#faq">Dúvidas</a>
+      <a href="/login/">Entrar</a>
+      <a href="/register/">Criar conta</a>
+    </div>
   </div>
+  <div class="copyright">© 2026 GenFin. Todos os direitos reservados.</div>
+</footer>
 
-  <script>
-    const fallback = {
-      daily: { total_receita: 3500, total_despesa: 420, movimentacoes: 8, percent_receita: 89, percent_despesa: 11 },
-      weekly: { total_receita: 7900, total_despesa: 1820, movimentacoes: 27, percent_receita: 81, percent_despesa: 19 },
-      monthly: { total_receita: 15015.85, total_despesa: 486.45, movimentacoes: 36, percent_receita: 97, percent_despesa: 3 },
-      categories: [
-        { category: "Moradia", total: 2100 },
-        { category: "Alimentacao", total: 890 },
-        { category: "Transporte", total: 520 },
-        { category: "Lazer", total: 280 },
-        { category: "Saude", total: 170 }
-      ],
-      vehicle: {
-        monthly_total: 1890.4,
-        commute_monthly_cost: 612.2,
-        vehicle_count: 2,
-        by_category: [
-          { category: "COMBUSTIVEL", total: 870.1 },
-          { category: "MANUTENCAO", total: 310.0 },
-          { category: "PEDAGIO", total: 180.0 },
-          { category: "ESTACIONAMENTO", total: 132.1 },
-          { category: "FINANCIAMENTO", total: 398.2 }
-        ]
-      },
-      card: {
-        card_count: 3,
-        total_spent: 6212.85,
-        total_limit: 6260.0,
-        usage_percent: 99.2,
-        estimated_points: 1147,
-        usd_brl_rate: 5.42
-      },
-      trip: {
-        recommendation: "Atenção",
-        commitment_pct_balance: 18.4,
-        runway_days_after: 84
-      }
-    };
+<script>
+const fallback = {
+  monthly:{total_receita:15015.85,total_despesa:4486.45},
+  card:{usage_percent:38.4},
+  reserve:{total:18450}
+};
 
-    function brl(v){
-      return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v || 0));
-    }
-    async function getJson(url, fb){
-      try{
-        const r = await fetch(url, { credentials:"same-origin" });
-        if(!r.ok) return fb;
-        return await r.json();
-      }catch(_e){
-        return fb;
-      }
-    }
-    function setText(id, value){
-      const el = document.getElementById(id);
-      if(el) el.textContent = value;
-    }
-    function periodTemplate(title, label, data){
-      return `
-      <div class="period-card">
-        <div class="period-head"><span>${title}</span><span>${label}</span></div>
-        <div class="line">
-          <span>Receita</span>
-          <div class="track"><div class="fill income" style="width:${Math.max(0,Math.min(100,Number(data.percent_receita||0)))}%"></div></div>
-          <b>${Math.round(Number(data.percent_receita||0))}%</b>
-        </div>
-        <div class="line">
-          <span>Despesa</span>
-          <div class="track"><div class="fill expense" style="width:${Math.max(0,Math.min(100,Number(data.percent_despesa||0)))}%"></div></div>
-          <b>${Math.round(Number(data.percent_despesa||0))}%</b>
-        </div>
-        <div class="mini-grid">
-          <div class="mini"><span>Receita</span><strong>${brl(data.total_receita)}</strong></div>
-          <div class="mini"><span>Despesa</span><strong>${brl(data.total_despesa)}</strong></div>
-          <div class="mini"><span>Movimentacoes</span><strong>${Number(data.movimentacoes||0)}</strong></div>
-        </div>
-      </div>`;
-    }
-    function renderBars(containerId, rows){
-      const box = document.getElementById(containerId);
-      const list = (rows || []).slice(0,5);
-      const max = Math.max(...list.map((i)=>Number(i.total || 0)), 1);
-      box.innerHTML = list.map((item)=>{
-        const pct = (Number(item.total || 0) / max) * 100;
-        const name = String(item.category || "").slice(0,12);
-        return `<div class="row"><span>${name}</span><div class="track"><div class="fill income" style="width:${pct}%"></div></div><strong>${brl(item.total)}</strong></div>`;
-      }).join("");
-    }
+function brl(value){
+  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(value||0));
+}
 
-    async function init(){
-      const [daily, weekly, monthly, categories, vehicle, card] = await Promise.all([
-        getJson("/api/stats/daily/", fallback.daily),
-        getJson("/api/stats/weekly/", fallback.weekly),
-        getJson("/api/stats/monthly/", fallback.monthly),
-        getJson("/api/dashboard/categories/", fallback.categories),
-        getJson("/api/vehicles/summary/", fallback.vehicle),
-        getJson("/api/credit-cards/summary/", fallback.card)
-      ]);
+async function getJson(url,fallbackValue){
+  try{
+    const response=await fetch(url,{credentials:"same-origin"});
+    if(!response.ok) return fallbackValue;
+    return await response.json();
+  }catch(_error){
+    return fallbackValue;
+  }
+}
 
-      const saldo = Number(monthly.total_receita || 0) - Number(monthly.total_despesa || 0);
-      const burn = Number(monthly.total_despesa || 0) / 10;
-      const runway = burn > 0 ? Math.round(saldo / burn) : 0;
-      const poupanca = Number(monthly.total_receita || 0) > 0
-        ? Math.round((saldo / Number(monthly.total_receita || 0)) * 100)
-        : 0;
+async function hydrateLanding(){
+  const monthly=await getJson("/api/stats/monthly/",fallback.monthly);
+  const income=Number(monthly.total_receita||0);
+  const expense=Number(monthly.total_despesa||0);
+  const balance=income-expense;
+  const savings=income>0?Math.round((balance/income)*100):0;
+  const burn=expense/30;
+  const runway=burn>0?Math.round(balance/burn):0;
 
-      setText("heroReceita", brl(monthly.total_receita));
-      setText("heroDespesa", brl(monthly.total_despesa));
-      setText("heroSaldo", brl(saldo));
-      setText("heroPoupanca", `${poupanca}%`);
-      setText("heroBurn", brl(burn));
-      setText("heroRunway", `${runway} dias`);
+  document.getElementById("heroReceita").textContent=brl(income);
+  document.getElementById("heroDespesa").textContent=brl(expense);
+  document.getElementById("heroSaldo").textContent=brl(balance);
+  document.getElementById("heroPoupanca").textContent=`${savings}%`;
+  document.getElementById("heroBurn").textContent=brl(burn);
+  document.getElementById("heroRunway").textContent=`${runway} dias`;
+}
 
-      document.getElementById("periodList").innerHTML = [
-        periodTemplate("Diario", "/api/stats/daily/", daily),
-        periodTemplate("Semanal", "/api/stats/weekly/", weekly),
-        periodTemplate("Mensal", "/api/stats/monthly/", monthly)
-      ].join("");
-
-      const usage = Math.max(0, Math.min(100, Number(card.usage_percent || 0)));
-      document.getElementById("cardDonut").style.setProperty("--pct", usage.toFixed(2));
-      setText("cardPct", `${usage.toFixed(1)}%`);
-      setText("cardUsed", brl(card.total_spent));
-      setText("cardLimit", `de ${brl(card.total_limit)}`);
-      setText("cardCount", Number(card.card_count || 0));
-      setText("cardPoints", Math.round(Number(card.estimated_points || 0)));
-      setText("cardUsd", card.usd_brl_rate ? Number(card.usd_brl_rate).toFixed(2) : "-");
-
-      renderBars("categoryBars", categories);
-      renderBars("vehicleBars", vehicle.by_category || fallback.vehicle.by_category);
-
-      setText("vehicleMonthly", brl(vehicle.monthly_total));
-      setText("vehicleCommute", brl(vehicle.commute_monthly_cost));
-      setText("vehicleCount", Number(vehicle.vehicle_count || 0));
-
-      const trip = fallback.trip;
-      const pinPos = Math.max(5, Math.min(95, Number(trip.commitment_pct_balance || 0)));
-      document.getElementById("tripPin").style.left = `${pinPos}%`;
-      setText("tripReco", trip.recommendation);
-      setText("tripCommit", `${Number(trip.commitment_pct_balance || 0).toFixed(1)}%`);
-      setText("tripRunway", `${Number(trip.runway_days_after || 0).toFixed(0)} dias`);
-    }
-    init();
-  </script>
+hydrateLanding();
+</script>
 </body>
 </html>
