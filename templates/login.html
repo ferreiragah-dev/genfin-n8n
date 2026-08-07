@@ -9,684 +9,292 @@
 <link rel="icon" type="image/svg+xml" href="{% static 'accounts/favicon.svg' %}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'accounts/genfin-premium.css' %}">
 <style>
 :root{
-    --bg:#07110d;
-    --bg-soft:#0b1712;
-    --panel:#0d1c16;
-    --panel-2:#10251c;
-    --surface:#f8faf9;
-    --surface-soft:#eef3f0;
-    --border-dark:rgba(255,255,255,.10);
-    --border-light:#d9e3dd;
-    --text:#102019;
-    --text-light:#f7fbf8;
-    --muted:#67756e;
-    --muted-dark:#9eb0a6;
-    --primary:#22c55e;
-    --primary-dark:#16a34a;
-    --primary-soft:#dcfce7;
-    --danger:#dc2626;
-    --danger-soft:#fee2e2;
-    --warning:#f59e0b;
-    --shadow:0 24px 80px rgba(4,15,10,.28);
+  --bg:#020a06;--panel:#081b13;--panel2:#0b2318;--border:rgba(71,255,173,.10);
+  --border2:rgba(71,255,173,.22);--text:#f2fff8;--muted:#769486;
+  --green:#1ee486;--green2:#60f5ad;--red:#ff7f77;--yellow:#ffbf58;
 }
-
 *{box-sizing:border-box}
-
 html,body{min-height:100%}
-
 body{
-    margin:0;
-    font-family:Inter,Arial,sans-serif;
-    color:var(--text);
-    background:
-        radial-gradient(circle at 10% 10%, rgba(34,197,94,.12), transparent 28%),
-        radial-gradient(circle at 90% 90%, rgba(16,185,129,.10), transparent 30%),
-        linear-gradient(135deg,#06100c,#0a1711 55%,#07110d);
-    padding:24px;
+  margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--text);
+  background:
+    radial-gradient(circle at 100% -10%,rgba(30,228,134,.22),transparent 28%),
+    radial-gradient(circle at -5% 100%,rgba(30,228,134,.10),transparent 24%),
+    linear-gradient(135deg,#020906,#03110b 55%,#020805);
+  overflow-x:hidden;
 }
-
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;
+  background:repeating-linear-gradient(120deg,transparent 0 24px,rgba(67,255,173,.03) 24px 26px)
+}
 button,input{font:inherit}
-
 .auth-shell{
-    width:min(1180px,100%);
-    min-height:calc(100vh - 48px);
-    margin:0 auto;
-    display:grid;
-    grid-template-columns:minmax(0,1.1fr) minmax(420px,.9fr);
-    overflow:hidden;
-    border:1px solid var(--border-dark);
-    border-radius:30px;
-    background:rgba(10,24,17,.80);
-    box-shadow:var(--shadow);
-    backdrop-filter:blur(18px);
+  width:min(1220px,calc(100% - 32px));
+  min-height:calc(100vh - 32px);
+  margin:16px auto;
+  display:grid;grid-template-columns:minmax(0,1.12fr) minmax(420px,.88fr);
+  overflow:hidden;border:1px solid var(--border);border-radius:26px;
+  background:rgba(5,18,12,.78);backdrop-filter:blur(20px);
+  box-shadow:0 30px 90px rgba(0,0,0,.38)
 }
-
 .brand-panel{
-    position:relative;
-    overflow:hidden;
-    padding:54px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    color:var(--text-light);
-    background:
-        linear-gradient(145deg,rgba(9,28,18,.94),rgba(6,20,13,.97)),
-        radial-gradient(circle at top right,rgba(34,197,94,.28),transparent 36%);
+  position:relative;overflow:hidden;padding:48px;display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    radial-gradient(circle at 88% 10%,rgba(30,228,134,.20),transparent 26%),
+    linear-gradient(145deg,rgba(10,31,22,.96),rgba(5,18,12,.98))
 }
-
-.brand-panel::before,
 .brand-panel::after{
-    content:"";
-    position:absolute;
-    border-radius:50%;
-    filter:blur(2px);
-    pointer-events:none;
+  content:"";position:absolute;right:-110px;bottom:-130px;width:360px;height:360px;border-radius:50%;
+  border:1px solid rgba(30,228,134,.10);box-shadow:0 0 0 60px rgba(30,228,134,.025),0 0 0 120px rgba(30,228,134,.015)
 }
-
-.brand-panel::before{
-    width:360px;
-    height:360px;
-    top:-160px;
-    right:-130px;
-    border:1px solid rgba(34,197,94,.18);
-    box-shadow:
-        0 0 0 60px rgba(34,197,94,.035),
-        0 0 0 120px rgba(34,197,94,.02);
-}
-
-.brand-panel::after{
-    width:240px;
-    height:240px;
-    bottom:-150px;
-    left:-100px;
-    background:rgba(34,197,94,.08);
-}
-
-.brand-top,.brand-content,.brand-bottom{position:relative;z-index:1}
-
 .logo{
-    display:inline-flex;
-    align-items:center;
-    gap:12px;
-    text-decoration:none;
-    color:inherit;
+  position:relative;z-index:1;display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:inherit
 }
-
 .logo-mark{
-    width:46px;
-    height:46px;
-    border-radius:15px;
-    display:grid;
-    place-items:center;
-    background:linear-gradient(135deg,var(--primary),#86efac);
-    color:#05220f;
-    font-size:22px;
-    font-weight:900;
-    box-shadow:0 12px 30px rgba(34,197,94,.24);
+  width:46px;height:46px;border-radius:15px;display:grid;place-items:center;
+  background:linear-gradient(145deg,var(--green2),var(--green));color:#032312;font-weight:900;font-size:22px;
+  box-shadow:0 14px 30px rgba(30,228,134,.24)
 }
-
-.logo-copy strong{
-    display:block;
-    font-size:20px;
-    letter-spacing:-.03em;
-}
-
-.logo-copy span{
-    display:block;
-    margin-top:2px;
-    font-size:11px;
-    color:var(--muted-dark);
-    letter-spacing:.12em;
-    text-transform:uppercase;
-}
-
+.logo-copy strong{display:block;font-size:20px;letter-spacing:-.03em}
+.logo-copy span{display:block;margin-top:2px;color:#8ca79a;font-size:9px;letter-spacing:.13em;text-transform:uppercase}
+.brand-content{position:relative;z-index:1;max-width:620px;margin:50px 0}
 .eyebrow{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    margin-bottom:18px;
-    padding:8px 12px;
-    border:1px solid rgba(34,197,94,.20);
-    border-radius:999px;
-    background:rgba(34,197,94,.08);
-    color:#bbf7d0;
-    font-size:12px;
-    font-weight:700;
+  display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(30,228,134,.16);
+  border-radius:999px;color:#8dfbbf;background:rgba(30,228,134,.06);font-size:9px;font-weight:900;
+  letter-spacing:.12em;text-transform:uppercase
 }
-
-.eyebrow::before{
-    content:"";
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:var(--primary);
-    box-shadow:0 0 16px rgba(34,197,94,.8);
-}
-
-.brand-content{
-    max-width:590px;
-    margin:54px 0;
-}
-
-.brand-content h1{
-    margin:0;
-    font-size:clamp(38px,5vw,66px);
-    line-height:1.02;
-    letter-spacing:-.055em;
-}
-
-.brand-content h1 span{color:#86efac}
-
-.brand-content p{
-    max-width:520px;
-    margin:22px 0 30px;
-    color:#bfd0c6;
-    font-size:17px;
-    line-height:1.7;
-}
-
-.features{
-    display:grid;
-    gap:14px;
-}
-
+.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 15px rgba(30,228,134,.8)}
+.brand-content h1{margin:18px 0 0;font-size:clamp(40px,5.5vw,68px);line-height:.98;letter-spacing:-.06em}
+.brand-content h1 span{color:var(--green2)}
+.brand-content p{max-width:560px;margin:20px 0 0;color:#9bb2a4;font-size:14px;line-height:1.75}
+.features{display:grid;gap:10px;margin-top:28px}
 .feature{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
+  display:flex;align-items:flex-start;gap:11px;padding:11px;border:1px solid rgba(71,255,173,.08);
+  border-radius:13px;background:rgba(255,255,255,.012)
 }
-
 .feature-icon{
-    flex:0 0 34px;
-    width:34px;
-    height:34px;
-    border-radius:11px;
-    display:grid;
-    place-items:center;
-    background:rgba(34,197,94,.11);
-    border:1px solid rgba(34,197,94,.16);
-    color:#86efac;
-    font-weight:800;
+  flex:0 0 30px;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+  color:var(--green);background:rgba(30,228,134,.07);font-size:10px;font-weight:900
 }
-
-.feature strong{
-    display:block;
-    margin-bottom:3px;
-    font-size:14px;
-}
-
-.feature span{
-    color:var(--muted-dark);
-    font-size:12px;
-    line-height:1.5;
-}
-
-.brand-bottom{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    color:var(--muted-dark);
-    font-size:12px;
-}
-
-.security-dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:var(--primary);
-    box-shadow:0 0 14px rgba(34,197,94,.7);
-}
-
+.feature strong{display:block;font-size:10px}
+.feature span{display:block;margin-top:3px;color:#789486;font-size:8px;line-height:1.5}
+.brand-bottom{position:relative;z-index:1;display:flex;align-items:center;gap:8px;color:#6f887c;font-size:8px}
+.security-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(30,228,134,.7)}
 .form-panel{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:48px;
-    background:
-        radial-gradient(circle at top right,rgba(34,197,94,.08),transparent 32%),
-        var(--surface);
+  display:flex;align-items:center;justify-content:center;padding:38px;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(30,228,134,.08),transparent 30%),
+    linear-gradient(145deg,#081b13,#06130d)
 }
-
-.auth-card{
-    width:min(430px,100%);
-}
-
-.mobile-logo{
-    display:none;
-    margin-bottom:30px;
-}
-
-.auth-heading{
-    margin-bottom:28px;
-}
-
-.auth-heading h2{
-    margin:0;
-    font-size:32px;
-    letter-spacing:-.04em;
-}
-
-.auth-heading p{
-    margin:9px 0 0;
-    color:var(--muted);
-    font-size:14px;
-    line-height:1.6;
-}
-
+.auth-card{width:min(430px,100%)}
+.mobile-logo{display:none;margin-bottom:26px}
+.auth-heading{margin-bottom:20px}
+.auth-heading h2{margin:0;font-size:30px;letter-spacing:-.045em}
+.auth-heading p{margin:8px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
 .tabs{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:6px;
-    margin-bottom:26px;
-    padding:5px;
-    border:1px solid var(--border-light);
-    border-radius:14px;
-    background:var(--surface-soft);
+  display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:20px;padding:4px;
+  border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.015)
 }
-
 .tab-btn{
-    border:0;
-    border-radius:10px;
-    padding:11px 14px;
-    cursor:pointer;
-    background:transparent;
-    color:var(--muted);
-    font-size:13px;
-    font-weight:700;
-    transition:.2s ease;
+  min-height:38px;border:0;border-radius:9px;background:transparent;color:#789184;cursor:pointer;
+  font-size:9px;font-weight:900
 }
-
-.tab-btn:hover{color:var(--text)}
-
-.tab-btn.active{
-    color:#0a2b16;
-    background:#fff;
-    box-shadow:0 4px 16px rgba(18,46,31,.08);
-}
-
-.pane{display:none}
-.pane.active{display:block;animation:fadeIn .24s ease}
-
-@keyframes fadeIn{
-    from{opacity:0;transform:translateY(4px)}
-    to{opacity:1;transform:translateY(0)}
-}
-
-.form-grid{display:grid;gap:16px}
-.form-grid.two{grid-template-columns:1fr 1fr}
-
-.field{display:grid;gap:7px}
-
-.field label{
-    font-size:12px;
-    font-weight:700;
-    color:#405047;
-}
-
+.tab-btn.active{color:#032312;background:linear-gradient(145deg,var(--green2),var(--green))}
+.pane{display:none}.pane.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.form-grid{display:grid;gap:12px}.form-grid.two{grid-template-columns:1fr 1fr}
+.field{display:grid;gap:6px}
+.field label{color:#9eb5a9;font-size:8px;font-weight:800;text-transform:uppercase}
 .input-wrap{position:relative}
-
 .input-wrap input{
-    width:100%;
-    min-height:48px;
-    border:1px solid var(--border-light);
-    border-radius:13px;
-    background:#fff;
-    color:var(--text);
-    padding:12px 14px;
-    outline:none;
-    transition:.2s ease;
+  width:100%;min-height:44px;border:1px solid var(--border);border-radius:12px;
+  background:rgba(255,255,255,.018);color:var(--text);padding:10px 12px;outline:none
 }
-
-.input-wrap.has-action input{padding-right:48px}
-
-.input-wrap input::placeholder{color:#9aa7a0}
-
-.input-wrap input:hover{border-color:#bac8c0}
-
-.input-wrap input:focus{
-    border-color:var(--primary);
-    box-shadow:0 0 0 4px rgba(34,197,94,.12);
-}
-
-.input-wrap input.invalid{
-    border-color:var(--danger);
-    box-shadow:0 0 0 4px rgba(220,38,38,.08);
-}
-
+.input-wrap.has-action input{padding-right:46px}
+.input-wrap input::placeholder{color:#536c60}
+.input-wrap input:focus{border-color:var(--border2);box-shadow:0 0 0 4px rgba(30,228,134,.08)}
+.input-wrap input.invalid{border-color:rgba(255,127,119,.6);box-shadow:0 0 0 4px rgba(255,127,119,.08)}
 .input-action{
-    position:absolute;
-    top:50%;
-    right:8px;
-    width:34px;
-    height:34px;
-    transform:translateY(-50%);
-    border:0;
-    border-radius:9px;
-    background:transparent;
-    color:var(--muted);
-    cursor:pointer;
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;border:0;border-radius:9px;background:transparent;color:#7c9689;cursor:pointer
 }
-
-.input-action:hover{
-    background:var(--surface-soft);
-    color:var(--text);
-}
-
-.helper{
-    font-size:11px;
-    color:var(--muted);
-    line-height:1.5;
-}
-
+.input-action:hover{background:rgba(255,255,255,.03);color:#fff}
+.helper{font-size:8px;color:#6c8678}
 .action{
-    width:100%;
-    min-height:50px;
-    margin-top:20px;
-    border:0;
-    border-radius:14px;
-    cursor:pointer;
-    color:#062610;
-    background:linear-gradient(135deg,var(--primary),#4ade80);
-    box-shadow:0 12px 24px rgba(34,197,94,.20);
-    font-size:14px;
-    font-weight:800;
-    transition:.2s ease;
+  width:100%;min-height:46px;margin-top:16px;border:0;border-radius:12px;cursor:pointer;
+  color:#032312;background:linear-gradient(145deg,var(--green2),var(--green));
+  box-shadow:0 12px 26px rgba(30,228,134,.18);font-size:10px;font-weight:900
 }
-
-.action:hover{
-    transform:translateY(-1px);
-    box-shadow:0 16px 30px rgba(34,197,94,.26);
-}
-
-.action:active{transform:translateY(0)}
-
-.action:disabled{
-    cursor:not-allowed;
-    opacity:.68;
-    transform:none;
-}
-
-.action-content{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:9px;
-}
-
+.action:hover{transform:translateY(-1px);filter:brightness(1.03)}
+.action:disabled{opacity:.62;cursor:not-allowed;transform:none}
+.action-content{display:flex;align-items:center;justify-content:center;gap:8px}
 .spinner{
-    width:16px;
-    height:16px;
-    display:none;
-    border:2px solid rgba(6,38,16,.22);
-    border-top-color:#062610;
-    border-radius:50%;
-    animation:spin .75s linear infinite;
+  width:14px;height:14px;display:none;border:2px solid rgba(3,35,18,.22);border-top-color:#032312;
+  border-radius:50%;animation:spin .75s linear infinite
 }
-
-.action.loading .spinner{display:block}
-
-@keyframes spin{to{transform:rotate(360deg)}}
-
+.action.loading .spinner{display:block}@keyframes spin{to{transform:rotate(360deg)}}
 .feedback{
-    min-height:42px;
-    margin-top:16px;
-    padding:0;
-    border-radius:12px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    font-size:12px;
-    line-height:1.45;
-    transition:.2s ease;
+  min-height:38px;margin-top:14px;display:flex;align-items:center;justify-content:center;text-align:center;
+  border-radius:11px;font-size:9px;line-height:1.45
 }
-
-.feedback.show{
-    padding:11px 13px;
+.feedback.show{padding:9px 11px}
+.feedback.error{color:#ffb0aa;background:rgba(255,127,119,.07);border:1px solid rgba(255,127,119,.18)}
+.feedback.success{color:#8dfbbf;background:rgba(30,228,134,.07);border:1px solid rgba(30,228,134,.16)}
+.legal{margin-top:18px;color:#5e796b;text-align:center;font-size:8px;line-height:1.6}
+.legal a{color:#8aa99a;text-decoration:none;font-weight:800}
+.back-home{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;color:#718b7e;text-decoration:none;font-size:8px;font-weight:800
 }
-
-.feedback.error{
-    color:#991b1b;
-    background:var(--danger-soft);
-    border:1px solid #fecaca;
-}
-
-.feedback.success{
-    color:#166534;
-    background:var(--primary-soft);
-    border:1px solid #bbf7d0;
-}
-
-.legal{
-    margin-top:22px;
-    color:#849087;
-    text-align:center;
-    font-size:11px;
-    line-height:1.6;
-}
-
-.legal a{
-    color:#466052;
-    font-weight:700;
-    text-decoration:none;
-}
-
+.back-home:hover{color:#b9d4c6}
 @media(max-width:960px){
-    body{padding:0}
-    .auth-shell{
-        min-height:100vh;
-        grid-template-columns:1fr;
-        border:0;
-        border-radius:0;
-    }
-    .brand-panel{display:none}
-    .form-panel{padding:32px 20px}
-    .mobile-logo{display:flex}
+  body{background:#04100a}
+  .auth-shell{width:100%;min-height:100vh;margin:0;grid-template-columns:1fr;border:0;border-radius:0}
+  .brand-panel{display:none}.form-panel{padding:28px 18px}.mobile-logo{display:flex}
 }
-
 @media(max-width:560px){
-    .form-panel{align-items:flex-start;padding:24px 16px}
-    .auth-card{width:100%}
-    .auth-heading h2{font-size:28px}
-    .form-grid.two{grid-template-columns:1fr}
-    .mobile-logo .logo-mark{width:42px;height:42px}
-}
-
-@media(prefers-reduced-motion:reduce){
-    *,*::before,*::after{
-        scroll-behavior:auto!important;
-        animation-duration:.01ms!important;
-        animation-iteration-count:1!important;
-        transition-duration:.01ms!important;
-    }
+  .form-panel{align-items:flex-start;padding:22px 14px}
+  .auth-heading h2{font-size:27px}
+  .form-grid.two{grid-template-columns:1fr}
 }
 </style>
-
-<link rel="stylesheet" href="{% static 'accounts/genfin-premium.css' %}">
 <script defer src="{% static 'accounts/genfin-premium.js' %}"></script>
 </head>
-
 <body>
 <main class="auth-shell">
-    <section class="brand-panel" aria-label="Apresentação do GenFin">
-        <div class="brand-top">
-            <a class="logo" href="/" aria-label="GenFin">
-                <span class="logo-mark">G</span>
-                <span class="logo-copy">
-                    <strong>GenFin</strong>
-                    <span>Finanças inteligentes</span>
-                </span>
-            </a>
+  <section class="brand-panel">
+    <div class="brand-top">
+      <a class="logo" href="/">
+        <span class="logo-mark">G</span>
+        <span class="logo-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></span>
+      </a>
+    </div>
+
+    <div class="brand-content">
+      <div class="eyebrow">Controle financeiro em um só lugar</div>
+      <h1>Decisões melhores começam com <span>clareza financeira.</span></h1>
+      <p>Organize receitas, despesas, reservas, cartões, veículos e viagens em uma experiência simples, segura e feita para transformar números em decisões.</p>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">✓</span>
+          <div><strong>Visão completa do seu dinheiro</strong><span>Dashboard, movimentações, compromissos e planejamento em tempo real.</span></div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">✓</span>
+          <div><strong>Planejamento com menos esforço</strong><span>Recorrências, reservas, faturas, veículos e viagens em um só painel.</span></div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">✓</span>
+          <div><strong>Acesso protegido</strong><span>Autenticação integrada ao servidor e dados vinculados à sua conta.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="brand-bottom">
+      <span class="security-dot"></span>
+      Ambiente protegido para acesso à sua conta
+    </div>
+  </section>
+
+  <section class="form-panel">
+    <div class="auth-card">
+      <a class="logo mobile-logo" href="/">
+        <span class="logo-mark">G</span>
+        <span class="logo-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></span>
+      </a>
+
+      <div class="auth-heading">
+        <h2 id="authTitle">Bem-vindo de volta</h2>
+        <p id="authSubtitle">Entre para acessar seu painel financeiro.</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Acesso à conta">
+        <button id="tabLogin" class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="paneLogin">Entrar</button>
+        <button id="tabRegister" class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="paneRegister">Criar conta</button>
+      </div>
+
+      <div id="paneLogin" class="pane active" role="tabpanel" aria-labelledby="tabLogin">
+        <div class="form-grid">
+          <div class="field">
+            <label for="loginPhone">Telefone</label>
+            <div class="input-wrap">
+              <input type="tel" id="loginPhone" placeholder="Ex.: 5511913305093" inputmode="numeric" autocomplete="username">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="loginPassword">Senha</label>
+            <div class="input-wrap has-action">
+              <input type="password" id="loginPassword" placeholder="Digite sua senha" autocomplete="current-password">
+              <button class="input-action" type="button" data-password-toggle="loginPassword" aria-label="Mostrar senha" title="Mostrar senha">👁</button>
+            </div>
+          </div>
         </div>
 
-        <div class="brand-content">
-            <div class="eyebrow">Controle financeiro em um só lugar</div>
-            <h1>Decisões melhores começam com <span>clareza financeira.</span></h1>
-            <p>
-                Organize receitas, despesas, reservas, cartões e metas em uma experiência simples,
-                segura e feita para transformar números em decisões.
-            </p>
+        <button type="button" class="action" id="loginBtn">
+          <span class="action-content">
+            <span class="spinner"></span>
+            <span class="button-label">Entrar no GenFin</span>
+          </span>
+        </button>
+      </div>
 
-            <div class="features">
-                <div class="feature">
-                    <span class="feature-icon">✓</span>
-                    <div>
-                        <strong>Visão completa do seu dinheiro</strong>
-                        <span>Dashboard, lançamentos, compromissos e planejamento em tempo real.</span>
-                    </div>
-                </div>
+      <div id="paneRegister" class="pane" role="tabpanel" aria-labelledby="tabRegister">
+        <div class="form-grid two">
+          <div class="field">
+            <label for="regFirstName">Nome</label>
+            <div class="input-wrap"><input type="text" id="regFirstName" placeholder="Seu nome" autocomplete="given-name"></div>
+          </div>
 
-                <div class="feature">
-                    <span class="feature-icon">✓</span>
-                    <div>
-                        <strong>Planejamento com menos esforço</strong>
-                        <span>Acompanhe recorrências, projeções e evolução financeira com clareza.</span>
-                    </div>
-                </div>
-
-                <div class="feature">
-                    <span class="feature-icon">✓</span>
-                    <div>
-                        <strong>Seus dados protegidos</strong>
-                        <span>Acesso autenticado e comunicação segura com o servidor.</span>
-                    </div>
-                </div>
-            </div>
+          <div class="field">
+            <label for="regLastName">Sobrenome</label>
+            <div class="input-wrap"><input type="text" id="regLastName" placeholder="Seu sobrenome" autocomplete="family-name"></div>
+          </div>
         </div>
 
-        <div class="brand-bottom">
-            <span class="security-dot"></span>
-            Ambiente protegido para acesso à sua conta
+        <div class="form-grid" style="margin-top:12px">
+          <div class="field">
+            <label for="regEmail">E-mail</label>
+            <div class="input-wrap"><input type="email" id="regEmail" placeholder="voce@exemplo.com" autocomplete="email"></div>
+          </div>
+
+          <div class="field">
+            <label for="regPhone">Telefone</label>
+            <div class="input-wrap"><input type="tel" id="regPhone" placeholder="Ex.: 5511913305093" inputmode="numeric" autocomplete="tel"></div>
+          </div>
+
+          <div class="field">
+            <label for="regPassword">Senha</label>
+            <div class="input-wrap has-action">
+              <input type="password" id="regPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password">
+              <button class="input-action" type="button" data-password-toggle="regPassword" aria-label="Mostrar senha" title="Mostrar senha">👁</button>
+            </div>
+            <span class="helper">Use pelo menos 6 caracteres.</span>
+          </div>
         </div>
-    </section>
 
-    <section class="form-panel">
-        <div class="auth-card">
-            <a class="logo mobile-logo" href="/" aria-label="GenFin">
-                <span class="logo-mark">G</span>
-                <span class="logo-copy">
-                    <strong style="color:#102019">GenFin</strong>
-                    <span style="color:#67756e">Finanças inteligentes</span>
-                </span>
-            </a>
+        <button type="button" class="action" id="registerBtn">
+          <span class="action-content">
+            <span class="spinner"></span>
+            <span class="button-label">Criar minha conta</span>
+          </span>
+        </button>
+      </div>
 
-            <div class="auth-heading">
-                <h2 id="authTitle">Bem-vindo de volta</h2>
-                <p id="authSubtitle">Entre para acessar seu painel financeiro.</p>
-            </div>
+      <div class="feedback" id="error" role="status" aria-live="polite"></div>
 
-            <div class="tabs" role="tablist" aria-label="Acesso à conta">
-                <button id="tabLogin" class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="paneLogin">
-                    Entrar
-                </button>
-                <button id="tabRegister" class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="paneRegister">
-                    Criar conta
-                </button>
-            </div>
+      <div class="legal">
+        Ao continuar, você concorda com os <a href="#">Termos de Uso</a> e a
+        <a href="#">Política de Privacidade</a>.
+      </div>
 
-            <div id="paneLogin" class="pane active" role="tabpanel" aria-labelledby="tabLogin">
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="loginPhone">Telefone</label>
-                        <div class="input-wrap">
-                            <input
-                                type="tel"
-                                id="loginPhone"
-                                placeholder="Ex.: 5511913305093"
-                                inputmode="numeric"
-                                autocomplete="username"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="loginPassword">Senha</label>
-                        <div class="input-wrap has-action">
-                            <input
-                                type="password"
-                                id="loginPassword"
-                                placeholder="Digite sua senha"
-                                autocomplete="current-password"
-                            >
-                            <button class="input-action" type="button" data-password-toggle="loginPassword" aria-label="Mostrar senha" title="Mostrar senha">
-                                👁
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="button" class="action" id="loginBtn">
-                    <span class="action-content">
-                        <span class="spinner"></span>
-                        <span class="button-label">Entrar no GenFin</span>
-                    </span>
-                </button>
-            </div>
-
-            <div id="paneRegister" class="pane" role="tabpanel" aria-labelledby="tabRegister">
-                <div class="form-grid two">
-                    <div class="field">
-                        <label for="regFirstName">Nome</label>
-                        <div class="input-wrap">
-                            <input type="text" id="regFirstName" placeholder="Seu nome" autocomplete="given-name">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="regLastName">Sobrenome</label>
-                        <div class="input-wrap">
-                            <input type="text" id="regLastName" placeholder="Seu sobrenome" autocomplete="family-name">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-grid" style="margin-top:16px">
-                    <div class="field">
-                        <label for="regEmail">E-mail</label>
-                        <div class="input-wrap">
-                            <input type="email" id="regEmail" placeholder="voce@exemplo.com" autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="regPhone">Telefone</label>
-                        <div class="input-wrap">
-                            <input type="tel" id="regPhone" placeholder="Ex.: 5511913305093" inputmode="numeric" autocomplete="tel">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="regPassword">Senha</label>
-                        <div class="input-wrap has-action">
-                            <input type="password" id="regPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password">
-                            <button class="input-action" type="button" data-password-toggle="regPassword" aria-label="Mostrar senha" title="Mostrar senha">
-                                👁
-                            </button>
-                        </div>
-                        <span class="helper">Use pelo menos 6 caracteres.</span>
-                    </div>
-                </div>
-
-                <button type="button" class="action" id="registerBtn">
-                    <span class="action-content">
-                        <span class="spinner"></span>
-                        <span class="button-label">Criar minha conta</span>
-                    </span>
-                </button>
-            </div>
-
-            <div class="feedback" id="error" role="status" aria-live="polite"></div>
-
-            <div class="legal">
-                Ao continuar, você concorda com os <a href="#">Termos de Uso</a> e a
-                <a href="#">Política de Privacidade</a>.
-            </div>
-        </div>
-    </section>
+      <a class="back-home" href="/">← Voltar para a página inicial</a>
+    </div>
+  </section>
 </main>
 
 <script>
