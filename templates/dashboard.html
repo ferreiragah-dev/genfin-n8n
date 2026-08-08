@@ -2257,25 +2257,22 @@ document.addEventListener("DOMContentLoaded", load);
 
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="sidebar-brand-mark">GF</div>
-      <div class="sidebar-brand-copy">
-        <strong>GenFin</strong>
-        <small>Gestão financeira inteligente</small>
-      </div>
+    <div class="brand">
+      <div class="brand-mark">G</div>
+      <div class="brand-copy"><strong>GenFin</strong><span>Finanças inteligentes</span></div>
     </div>
-    <h4>Visão geral</h4>
-    <a class="side-link active" href="/">Dashboard</a>
-    <h4>Planejamento</h4>
-    <a class="side-link" href="/fixed-expenses/">Despesas Fixas</a>
-    <a class="side-link" href="/fixed-incomes/">Entradas Fixas</a>
-    <a class="side-link" href="/reserves/">Reservas</a>
-    <h4>Patrimônio e consumo</h4>
-    <a class="side-link" href="/vehicles/">Veículos</a>
-    <a class="side-link" href="/trips/">Viagens</a>
-    <a class="side-link" href="/credit-cards/">Cartões</a>
-    <h4>Conta</h4>
-    <a class="side-link" href="/profile/">Perfil</a>
+    <div class="nav-label">Principal</div>
+    <a class="side-link" href="/dashboard/"><span class="nav-icon">⌂</span>Resumo</a>
+    <a class="side-link" href="/transactions/"><span class="nav-icon">↔</span>Movimentações</a>
+    <a class="side-link active" href="/fixed-expenses/"><span class="nav-icon">◫</span>Despesas fixas</a>
+    <a class="side-link" href="/fixed-incomes/"><span class="nav-icon">＋</span>Entradas</a>
+    <a class="side-link" href="/reserves/"><span class="nav-icon">◇</span>Reservas</a>
+    <a class="side-link" href="/credit-cards/"><span class="nav-icon">▣</span>Cartões</a>
+    <a class="side-link" href="/vehicles/"><span class="nav-icon">◆</span>Veículos</a>
+    <a class="side-link" href="/trips/"><span class="nav-icon">✈</span>Viagens</a>
+    <div class="nav-label">Conta</div>
+    <a class="side-link" href="/profile/"><span class="nav-icon">⚙</span>Perfil</a>
+    <div class="sidebar-footer">Controle mensal de compromissos recorrentes e pagamentos.</div>
   </aside>
 
 <div class="container">
