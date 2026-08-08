@@ -173,6 +173,25 @@ body.theme-light .input-wrap input,body.theme-light .btn-secondary{background:#f
   .hero-card{grid-template-columns:1fr;text-align:center;justify-items:center}.profile-status{width:auto}
   .form-row{grid-template-columns:1fr}.side-stack{grid-template-columns:1fr}.actions{flex-direction:column}.btn-primary,.btn-secondary{width:100%}
 }
+
+.danger-zone{margin-top:14px;padding:16px;border:1px solid rgba(255,127,119,.20);border-radius:18px;background:linear-gradient(145deg,rgba(50,15,16,.35),rgba(18,8,8,.35))}
+.danger-zone-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.danger-zone-icon{width:34px;height:34px;flex:0 0 34px;border-radius:11px;display:grid;place-items:center;color:#ffaaa4;background:rgba(255,127,119,.10);border:1px solid rgba(255,127,119,.16)}
+.danger-zone h3{margin:0;color:#ffd8d5;font-size:12px}.danger-zone p{margin:5px 0 0;color:#a98c8a;font-size:8px;line-height:1.6}
+.reset-list{display:grid;gap:6px;margin:12px 0;padding:0;list-style:none}.reset-list li{display:flex;align-items:center;gap:7px;color:#a98c8a;font-size:8px}.reset-list li::before{content:"×";color:#ff8e87;font-weight:900}
+.btn-reset{width:100%;min-height:40px;padding:9px 13px;border:1px solid rgba(255,127,119,.25);border-radius:11px;background:rgba(255,127,119,.09);color:#ffaaa4;cursor:pointer;font-size:8px;font-weight:900}
+.btn-reset:hover{background:rgba(255,127,119,.14);border-color:rgba(255,127,119,.42)}
+.reset-overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.74);backdrop-filter:blur(8px)}
+.reset-overlay.open{display:flex}.reset-modal{width:min(480px,96vw);padding:18px;border:1px solid rgba(255,127,119,.22);border-radius:18px;background:linear-gradient(145deg,#15100f,#090d0a);box-shadow:0 30px 90px rgba(0,0,0,.5)}
+.reset-modal h3{margin:0;color:#ffd8d5;font-size:15px}.reset-modal p{margin:8px 0 0;color:#a98c8a;font-size:9px;line-height:1.65}
+.reset-warning{margin:14px 0;padding:10px;border:1px solid rgba(255,127,119,.16);border-radius:11px;color:#ffb8b3;background:rgba(255,127,119,.06);font-size:8px;line-height:1.55}
+.reset-confirm-label{display:block;margin-bottom:6px;color:#a98c8a;font-size:8px;font-weight:800;text-transform:uppercase}
+.reset-confirm-input{width:100%;min-height:42px;border:1px solid rgba(255,127,119,.18);border-radius:11px;padding:9px 11px;background:rgba(255,255,255,.025);color:#fff;outline:none}
+.reset-confirm-input:focus{border-color:rgba(255,127,119,.50);box-shadow:0 0 0 4px rgba(255,127,119,.07)}
+.reset-modal-actions{display:flex;gap:8px;margin-top:14px}.reset-cancel,.reset-confirm{flex:1;min-height:39px;border-radius:10px;cursor:pointer;font-size:8px;font-weight:900}
+.reset-cancel{border:1px solid var(--border);background:rgba(255,255,255,.025);color:#c5d6cd}.reset-confirm{border:0;background:#df554d;color:white}.reset-confirm:disabled{opacity:.4;cursor:not-allowed}
+.reset-status{min-height:16px;margin-top:9px;font-size:8px}
+
 </style>
 <script defer src="{% static 'accounts/genfin-premium.js' %}"></script>
 </head>
@@ -206,6 +225,10 @@ body.theme-light .input-wrap input,body.theme-light .btn-secondary{background:#f
       </div>
 
       <div class="top-actions">
+        <div class="theme-switch">
+          <button id="themeDayBtn" class="theme-btn" type="button">☀ Dia</button>
+          <button id="themeNightBtn" class="theme-btn active" type="button">☾ Noite</button>
+        </div>
         <a href="/dashboard/" class="icon-link" title="Dashboard">⌂</a>
         <a href="/logout/" class="icon-link logout" title="Sair">⎋</a>
       </div>
@@ -345,10 +368,44 @@ body.theme-light .input-wrap input,body.theme-light .btn-secondary{background:#f
               </div>
             </div>
           </section>
+
+          <section class="danger-zone">
+            <div class="danger-zone-head">
+              <span class="danger-zone-icon">!</span>
+              <div>
+                <h3>Zerar dados financeiros</h3>
+                <p>Apaga os dados financeiros da conta para você recomeçar do zero. Seu login, telefone e senha serão mantidos.</p>
+              </div>
+            </div>
+            <ul class="reset-list">
+              <li>Movimentações e comprovantes</li>
+              <li>Despesas fixas, entradas fixas e reservas</li>
+              <li>Cartões, gastos e faturas geradas</li>
+              <li>Veículos, gastos e destinos frequentes</li>
+              <li>Viagens e pedágios cadastrados</li>
+            </ul>
+            <button id="openResetAccountBtn" class="btn-reset" type="button">ZERAR DADOS FINANCEIROS</button>
+          </section>
         </aside>
       </div>
     </div>
   </main>
+</div>
+
+
+<div id="resetAccountOverlay" class="reset-overlay" aria-hidden="true">
+  <div class="reset-modal" role="dialog" aria-modal="true" aria-labelledby="resetAccountTitle">
+    <h3 id="resetAccountTitle">Zerar todos os dados financeiros?</h3>
+    <p>Esta ação é permanente. Depois dela, os módulos financeiros da sua conta ficarão vazios.</p>
+    <div class="reset-warning">Seu usuário continuará existindo. Telefone, senha e dados de perfil não serão apagados.</div>
+    <label class="reset-confirm-label" for="resetAccountConfirmInput">Digite ZERAR para confirmar</label>
+    <input id="resetAccountConfirmInput" class="reset-confirm-input" type="text" autocomplete="off" placeholder="ZERAR">
+    <div id="resetAccountStatus" class="reset-status"></div>
+    <div class="reset-modal-actions">
+      <button id="cancelResetAccountBtn" class="reset-cancel" type="button">Cancelar</button>
+      <button id="confirmResetAccountBtn" class="reset-confirm" type="button" disabled>Zerar definitivamente</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -604,6 +661,65 @@ document.addEventListener("DOMContentLoaded",async()=>{
     setMessage("Não foi possível carregar os dados do perfil.",true);
   }
 });
+
+
+function initAccountReset(){
+  const openBtn=document.getElementById("openResetAccountBtn");
+  const overlay=document.getElementById("resetAccountOverlay");
+  const cancelBtn=document.getElementById("cancelResetAccountBtn");
+  const confirmBtn=document.getElementById("confirmResetAccountBtn");
+  const input=document.getElementById("resetAccountConfirmInput");
+  const statusEl=document.getElementById("resetAccountStatus");
+  if(!openBtn||!overlay||!cancelBtn||!confirmBtn||!input)return;
+
+  const close=()=>{
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden","true");
+    input.value="";
+    confirmBtn.disabled=true;
+    confirmBtn.textContent="Zerar definitivamente";
+    statusEl.textContent="";
+  };
+
+  openBtn.addEventListener("click",()=>{
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden","false");
+    setTimeout(()=>input.focus(),30);
+  });
+  cancelBtn.addEventListener("click",close);
+  overlay.addEventListener("click",(e)=>{if(e.target===overlay)close();});
+  input.addEventListener("input",()=>{confirmBtn.disabled=input.value.trim().toUpperCase()!=="ZERAR";});
+
+  confirmBtn.addEventListener("click",async()=>{
+    if(input.value.trim().toUpperCase()!=="ZERAR")return;
+    confirmBtn.disabled=true;
+    confirmBtn.textContent="Zerando...";
+    statusEl.textContent="Apagando os dados financeiros...";
+    statusEl.style.color="#ffbf58";
+    try{
+      const response=await fetch("/api/profile/reset-data/",{
+        method:"DELETE",
+        credentials:"same-origin",
+        headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},
+        body:JSON.stringify({confirmation:"ZERAR"})
+      });
+      let data={};
+      try{data=await response.json();}catch(_error){}
+      if(!response.ok)throw new Error(data.error||"Não foi possível zerar os dados.");
+      statusEl.textContent="Dados zerados com sucesso. Redirecionando...";
+      statusEl.style.color="#60f5ad";
+      localStorage.removeItem("genfin_values_hidden");
+      setTimeout(()=>{window.location.href="/dashboard/";},900);
+    }catch(error){
+      statusEl.textContent=error.message||"Erro ao zerar os dados.";
+      statusEl.style.color="#ff8e87";
+      confirmBtn.disabled=false;
+      confirmBtn.textContent="Zerar definitivamente";
+    }
+  });
+}
+document.addEventListener("DOMContentLoaded",initAccountReset);
+
 </script>
 </body>
 </html>

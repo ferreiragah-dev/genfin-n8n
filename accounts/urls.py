@@ -46,9 +46,11 @@ from .views import (
     WhatsAppSummaryWebhookView,
     WeeklyStatsView,
     UserManualPdfView,
+    ProfileResetDataView,
 )
 
 urlpatterns = [
+    path("profile/reset-data/", ProfileResetDataView.as_view()),
     path("validate-phone/", ValidatePhoneView.as_view()),
     path("register/", RegisterView.as_view()),
     path("financial-entry/", FinancialEntryCreateView.as_view()),
