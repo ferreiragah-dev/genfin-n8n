@@ -50,7 +50,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path("profile/reset-data/", ProfileResetDataView.as_view()),
+    
     path("validate-phone/", ValidatePhoneView.as_view()),
     path("register/", RegisterView.as_view()),
     path("financial-entry/", FinancialEntryCreateView.as_view()),
@@ -96,4 +96,5 @@ urlpatterns = [
     path("stats/weekly/", WeeklyStatsView.as_view()),
     path("stats/monthly/", MonthlyStatsView.as_view()),
     path("whatsapp-summary/", WhatsAppSummaryWebhookView.as_view()),
+    path("profile/reset-data/", ProfileResetDataView.as_view()),
 ]

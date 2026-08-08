@@ -9,6 +9,7 @@ from urllib import request as urllib_request
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Sum
+from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -19,7 +20,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import transaction
+
 
 from .models import (
     CreditCard,
@@ -34,6 +35,7 @@ from .models import (
     Vehicle,
     VehicleFrequentDestination,
     VehicleExpense,
+    ProfileResetDataView,
 )
 
 
