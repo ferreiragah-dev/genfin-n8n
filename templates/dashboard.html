@@ -2228,7 +2228,6 @@ async function load(){
     const nowRef = new Date();
     monthsWithData.add(`${nowRef.getFullYear()}-${nowRef.getMonth()}`);
     monthNames.forEach((name, idx)=>{
-      if(!monthsWithData.has(`${selectedYear}-${idx}`)) return;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "month-chip";
@@ -2237,10 +2236,10 @@ async function load(){
       btn.addEventListener("click", ()=>renderTopSectionByMonth(idx));
       monthBar.appendChild(btn);
     });
-    const fallbackMonth = monthsWithData.has(`${selectedYear}-${selectedMonth}`)
-      ? selectedMonth
-      : (()=>{ for(let i=11;i>=0;i--){ if(monthsWithData.has(`${selectedYear}-${i}`)) return i; } return selectedMonth; })();
-    renderTopSectionByMonth(fallbackMonth);
+
+    // Mantém o mês atual selecionado por padrão.
+    // Todos os meses ficam disponíveis, mesmo sem movimentações.
+    renderTopSectionByMonth(selectedMonth);
   } catch (error){
     console.error(error);
     document.getElementById("top5").textContent = "Erro ao carregar dados do dashboard.";
@@ -2790,7 +2789,6 @@ body.theme-light .sidebar{background:rgba(248,251,249,.95)}
 </div>
 </body>
 </html>
-
 
 
 
