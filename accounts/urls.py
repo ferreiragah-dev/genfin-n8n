@@ -24,6 +24,7 @@ from .views import (
     PlannedReserveListView,
     PhoneLoginView,
     ProfileView,
+    ProfileResetDataView,
     PlannerCreateView,
     PlannerDetailView,
     PlannerListView,
@@ -46,7 +47,6 @@ from .views import (
     WhatsAppSummaryWebhookView,
     WeeklyStatsView,
     UserManualPdfView,
-    ProfileResetDataView,
 )
 
 urlpatterns = [
@@ -96,5 +96,7 @@ urlpatterns = [
     path("stats/weekly/", WeeklyStatsView.as_view()),
     path("stats/monthly/", MonthlyStatsView.as_view()),
     path("whatsapp-summary/", WhatsAppSummaryWebhookView.as_view()),
-    path("profile/reset-data/", ProfileResetDataView.as_view()),
+path("profile/", ProfileView.as_view()),
+path("profile/reset-data/", ProfileResetDataView.as_view()),
+path("profile/manual-pdf/", UserManualPdfView.as_view()),
 ]

@@ -35,7 +35,6 @@ from .models import (
     Vehicle,
     VehicleFrequentDestination,
     VehicleExpense,
-    ProfileResetDataView,
 )
 
 
@@ -2692,3 +2691,74 @@ class WhatsAppSummaryWebhookView(APIView):
         )
 
 
+class ProfileResetDataView(APIView):
+    def delete(self, request):
+        user = get_logged_user(request)
+
+        if not user:
+            return Response(
+                {"error": "Nao autenticado"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        confirmation = str(
+            request.data.get("confirmation", "")
+        ).strip().upper()
+
+        if confirmation != "ZERAR":
+            return Response(
+                {"error": "Confirmacao invalida. Digite ZERAR."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entries_with_receipts = list(
+            user.entries
+            .exclude(receipt_file="")
+            .exclude(receipt_file__isnull=True)
+        )
+
+        try:
+            with transaction.atomic():
+
+                # Remove comprovantes físicos
+                for entry in entries_with_receipts:
+                    if entry.receipt_file:
+                        try:
+                            entry.receipt_file.delete(save=False)
+                        except Exception:
+                            pass
+
+                # Cartões
+                user.credit_card_expenses.all().delete()
+                user.credit_cards.all().delete()
+
+                # Viagens
+                user.trip_plans.all().delete()
+
+                # Veículos
+                user.vehicle_expenses.all().delete()
+                user.vehicle_destinations.all().delete()
+                user.vehicles.all().delete()
+
+                # Planejamento
+                user.planned_reserves.all().delete()
+                user.planned_incomes.all().delete()
+                user.planned_expenses.all().delete()
+
+                # Movimentações
+                user.entries.all().delete()
+
+        except Exception as error:
+            print("ERRO RESET GENFIN:", error)
+
+            return Response(
+                {"error": "Nao foi possivel zerar os dados financeiros."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {
+                "message": "Dados financeiros zerados com sucesso."
+            },
+            status=status.HTTP_200_OK,
+        )
